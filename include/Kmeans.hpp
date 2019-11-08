@@ -11,7 +11,7 @@ private:
      */
     int numClusters;             // the number of clusters to cluster to data into
     int numRestarts;             // the number of times Kmeans should try to cluster the data
-    value_t bestError;             // the error in the best clustering
+    value_t bestError;           // the error in the best clustering
     clusters_t clusters;         // the cluster centers
     clusters_t bestClusters;     // the best cluster centers
     clustering_t clustering;     // the cluster assignments for each data point
@@ -35,7 +35,8 @@ private:
      * @param initIters - The number of iterations of cluster sampling to do
      * @return std::vector<value_t>
      */
-    std::vector<value_t> scaleableKmeans(dataset_t &data, int &overSampling, value_t (*func)(datapoint_t &, datapoint_t &), int initIters = 3);
+    std::vector<value_t> scaleableKmeans(dataset_t &data, int &overSampling,
+                                         value_t (*func)(datapoint_t &, datapoint_t &), int initIters = 3);
 
     /**
      * @brief Function for finding the closest cluster center to a datapoint and assigning that data point to that
@@ -48,10 +49,20 @@ private:
      */
     value_t nearest(datapoint_t &point, int &pointIdx, value_t (*func)(datapoint_t &, datapoint_t &));
 
+    /**
+     * @brief - Finds the closest cluster to a datapoint out of the set of newly added clusters and the cluster that the
+     *          datapoint was already assigned to. If the datapoint point is closer to a new cluster than its old
+     *          cluster, the function update the distance vector and the cluster assignment for that point. This
+     *          function is only used in the initialization step.
+     *
+     * @param point - The datapoint to be considered.
+     * @param pointIdx - The index of the datapoint in the dataset.
+     * @param clusterIdx - The starting index of the set of new clusters.
+     * @param distances - The distance vector.
+     * @param func - The distance function to use.
+     */
     void smartClusterUpdate(datapoint_t &point, int &pointIdx, int &clusterIdx, std::vector<value_t> &distances,
                             value_t (*func)(datapoint_t &, datapoint_t &));
-
-    value_t clusterUpdate(datapoint_t &point, int &pointIdx, value_t (*func)(datapoint_t &, datapoint_t &));
 
 public:
     /**

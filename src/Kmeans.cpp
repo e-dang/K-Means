@@ -76,7 +76,7 @@ void Kmeans::fit(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t &))
         currError = 0;
         for (int i = 0; i < numData; i++)
         {
-            currError += func(data[i], clusters[clustering[i]].coords);
+            currError += std::pow(func(data[i], clusters[clustering[i]].coords), 2);
         }
 
         // if this round produced lowest error, keep clustering
@@ -112,7 +112,7 @@ void Kmeans::kPlusPlus(dataset_t &data, value_t (*func)(datapoint_t &, datapoint
                                                                                               : sum)
         for (int pointIdx = 0; pointIdx < data.size(); pointIdx++)
         {
-            distances[pointIdx] = std::pow(nearest(data[pointIdx], pointIdx, func), 2);
+            distances[pointIdx] = nearest(data[pointIdx], pointIdx, func);
             sum += distances[pointIdx];
         }
 
@@ -143,8 +143,7 @@ value_t Kmeans::nearest(datapoint_t &point, int &pointIdx, value_t (*func)(datap
     // find distance between point and all clusters
     for (int i = 0; i < clusters.size(); i++)
     {
-        tempDist = func(point, clusters[i].coords);
-
+        tempDist = std::pow(func(point, clusters[i].coords), 2);
         if (minDist > tempDist)
         {
             minDist = tempDist;
@@ -208,7 +207,7 @@ void Kmeans::fit(dataset_t &data, int overSampling, value_t (*func)(datapoint_t 
                 {
 
                     int before = clustering[i];
-                    closestDists[i] = clusterUpdate(data[i], i, func);
+                    closestDists[i] = nearest(data[i], i, func);
                     if (before != clustering[i])
                     {
                         changed++;
@@ -221,7 +220,7 @@ void Kmeans::fit(dataset_t &data, int overSampling, value_t (*func)(datapoint_t 
         currError = 0;
         for (int i = 0; i < data.size(); i++)
         {
-            currError += func(data[i], clusters[clustering[i]].coords);
+            currError += std::pow(func(data[i], clusters[clustering[i]].coords), 2);
         }
 
         // if this round produced lowest error, keep clustering
@@ -333,7 +332,7 @@ std::vector<value_t> Kmeans::scaleableKmeans(dataset_t &data, int &overSampling,
     {
         if (clustering[i] == -1)
         {
-            closestDists[i] = clusterUpdate(data[i], i, func);
+            closestDists[i] = nearest(data[i], i, func);
         }
     }
 
@@ -363,25 +362,6 @@ void Kmeans::smartClusterUpdate(datapoint_t &point, int &pointIdx, int &clusterI
         distances[pointIdx] = minDist;
         clustering[pointIdx] = minDistIdx;
     }
-}
-
-value_t Kmeans::clusterUpdate(datapoint_t &point, int &pointIdx, value_t (*func)(datapoint_t &, datapoint_t &))
-{
-
-    value_t tempDist, minDist = INT_MAX - 1;
-
-    // find the closest new cluster to the point
-    for (int i = 0; i < clusters.size(); i++)
-    {
-        tempDist = std::pow(func(point, clusters[i].coords), 2);
-        if (tempDist < minDist)
-        {
-            minDist = tempDist;
-            clustering[pointIdx] = i;
-        }
-    }
-
-    return minDist;
 }
 
 bool Kmeans::setNumClusters(int numClusters)
