@@ -3,6 +3,8 @@
 #include "boost/generator_iterator.hpp"
 #include <time.h>
 
+typedef boost::mt19937 RNGType;
+
 Kmeans::Kmeans(int numClusters, int numRestarts) : numClusters(numClusters), numRestarts(numRestarts)
 {
     bestError = INT_MAX;
