@@ -12,10 +12,30 @@ private:
     int numClusters;             // the number of clusters to cluster to data into
     int numRestarts;             // the number of times Kmeans should try to cluster the data
     float bestError;             // the error in the best clustering
-    cluster_t clusters;          // the cluster centers
-    cluster_t bestClusters;      // the best cluster centers
+    clusters_t clusters;         // the cluster centers
+    clusters_t bestClusters;     // the best cluster centers
     clustering_t clustering;     // the cluster assignments for each data point
     clustering_t bestClustering; // the best cluster assignments
+
+    /**
+     * @brief An implementation of the Kmeans++ algorithm for initializing cluster centers. Does this by trying to
+     *        maximize the distance between cluster centers.
+     *
+     * @param data - A pointer to the data that is being clustered.
+     * @param func - The distance function to use.
+     */
+    void kPlusPlus(dataset_t data, float (*func)(datapoint_t &, datapoint_t &));
+
+    /**
+     * @brief Function for finding the closest cluster center to a datapoint and assigning that data point to that
+     *        cluster.
+     *
+     * @param point - The data point to be considered.
+     * @param pointIdx - The index of the data point in the dataset.
+     * @param func - The distance function to use.
+     * @return float - The square of the minimum distance.
+     */
+    float nearest(datapoint_t &point, int &pointIdx, float (*func)(datapoint_t &, datapoint_t &));
 
 public:
     /**
@@ -61,7 +81,7 @@ public:
      *
      * @return clustersPtr_t
      */
-    cluster_t getClusters() { return bestClusters; }
+    clusters_t getClusters() { return bestClusters; }
 
     /**
      * @brief Get the bestError.
