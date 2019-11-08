@@ -14,7 +14,7 @@ Kmeans::~Kmeans()
 {
 }
 
-void Kmeans::fit(dataset_t data, float (*func)(datapoint_t &, datapoint_t &))
+void Kmeans::fit(dataset_t &data, float (*func)(datapoint_t &, datapoint_t &))
 {
 
     int changed;
@@ -153,6 +153,85 @@ float Kmeans::nearest(datapoint_t &point, int &pointIdx, float (*func)(datapoint
     }
 
     return minDist;
+}
+
+void Kmeans::fit(dataset_t &data, int overSampling, float (*func)(datapoint_t &, datapoint_t &), int initIters)
+{
+
+    int changed;
+    float currError;
+    int numFeatures = data[0].size();
+
+    for (int run = 0; run < numRestarts; run++)
+    {
+        clusters = clusters_t();
+        clustering = clustering_t(data.size(), -1);
+
+        // initialize clusters with scalableKmeans algorithm
+        std::vector<float> closestDists = scaleableKmeans(data, overSampling, func, initIters);
+
+        do
+        {
+            // reinitialize clusters
+            for (int i = 0; i < numClusters; i++)
+            {
+                clusters[i] = {0, datapoint_t(numFeatures, 0.)};
+            }
+
+            // calc sum of each feature for all points belonging to a cluster
+            for (int i = 0; i < data.size(); i++)
+            {
+                for (int j = 0; j < numFeatures; j++)
+                {
+                    clusters[clustering[i]].coords[j] += data[i][j];
+                }
+                clusters[clustering[i]].count++;
+            }
+
+            // divide sum by number of points belonging to the cluster to obtain average
+            for (int i = 0; i < numClusters; i++)
+            {
+                for (int j = 0; j < numFeatures; j++)
+                {
+                    clusters[i].coords[j] /= clusters[i].count;
+                }
+            }
+
+            // reassign points to cluster
+            changed = 0;
+#pragma omp parallel for shared(data, closestDists), schedule(static), num_threads(8), reduction(+ \
+                                                                                                 : changed)
+            for (int i = 0; i < data.size(); i++)
+            {
+                float dist = std::pow(func(data[i], clusters[clustering[i]].coords), 2);
+                if (dist > closestDists[i] || closestDists[i] < 0)
+                {
+
+                    int before = clustering[i];
+                    closestDists[i] = clusterUpdate(data[i], i, func);
+                    if (before != clustering[i])
+                    {
+                        changed++;
+                    }
+                }
+            }
+        } while (changed > (data.size() >> 10)); // do until 99.9% of data doesnt change
+
+        // get total sum of distances from each point to their cluster center
+        currError = 0;
+        for (int i = 0; i < data.size(); i++)
+        {
+            currError += func(data[i], clusters[clustering[i]].coords);
+        }
+
+        // if this round produced lowest error, keep clustering
+        if (currError < bestError)
+        {
+            bestError = currError;
+            std::copy(std::begin(clustering), std::end(clustering), bestClustering);
+            std::copy(std::begin(clusters), std::end(clusters), bestClusters);
+        }
+    }
 }
 
 std::vector<float> Kmeans::scaleableKmeans(dataset_t &data, int &overSampling, float (*func)(datapoint_t &, datapoint_t &), int initIters)

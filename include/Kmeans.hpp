@@ -74,7 +74,18 @@ public:
      * @param data - The data to be clustered.
      * @param func - The distance function to use.
      */
-    void fit(dataset_t data, float (*func)(datapoint_t &, datapoint_t &));
+    void fit(dataset_t &data, float (*func)(datapoint_t &, datapoint_t &));
+
+    /**
+     * @brief Overloaded variant that uses Keamns Parallel as an initialization method and a quick version of the lloyd
+     *        algorithm.
+     *
+     * @param data - The data to be clustered.
+     * @param overSampling - The over sampling factor to be used in initialization.
+     * @param func - The distance function to use.
+     * @param initIters - The number of iters to do in initialization.
+     */
+    void fit(dataset_t &data, int overSampling, float (*func)(datapoint_t &, datapoint_t &), int initIters = 3);
 
     /**
      * @brief Get the numClusters object.
