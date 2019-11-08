@@ -9,6 +9,7 @@ private:
      * @brief Private member variables
      *
      */
+    int numThreads;              // the number of threads to use
     int numClusters;             // the number of clusters to cluster to data into
     int numRestarts;             // the number of times Kmeans should try to cluster the data
     value_t bestError;           // the error in the best clustering
@@ -70,8 +71,9 @@ public:
      *
      * @param numClusters - The number of clusters.
      * @param numRestarts - The number of times to repeat the Kmeans calculation before returning an answer.
+     * @param numThreads - The number of threads to use. Defaults to 8.
      */
-    Kmeans(int numClusters, int numRestarts);
+    Kmeans(int numClusters, int numRestarts, int numThreads = 8);
 
     /**
      * @brief Destroy the Kmeans object.
@@ -137,6 +139,13 @@ public:
     value_t getError() { return bestError; };
 
     /**
+     * @brief Get the numThreads object
+     *
+     * @return int
+     */
+    int getNumThreads() { return numThreads; };
+
+    /**
      * @brief Set the numClusters object.
      *
      * @param numClusters
@@ -153,6 +162,15 @@ public:
      * @return false
      */
     bool setNumRestarts(int numRestarts);
+
+    /**
+     * @brief Set the numThreads object.
+     *
+     * @param numThreads
+     * @return true
+     * @return false
+     */
+    bool setNumThreads(int numThreads);
 
     /**
      * @brief The L2 norm between two data points.

@@ -1,13 +1,16 @@
 #include "Kmeans.hpp"
 #include "boost/random.hpp"
 #include "boost/generator_iterator.hpp"
+#include <omp.h>
 #include <time.h>
 
 typedef boost::mt19937 RNGType;
 
-Kmeans::Kmeans(int numClusters, int numRestarts) : numClusters(numClusters), numRestarts(numRestarts)
+Kmeans::Kmeans(int numClusters, int numRestarts, int numThreads) : numClusters(numClusters), numRestarts(numRestarts),
+                                                                   numThreads(numThreads)
 {
     bestError = INT_MAX;
+    setNumThreads(numThreads);
 }
 
 Kmeans::~Kmeans()
@@ -59,8 +62,8 @@ void Kmeans::fit(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t &))
 
             // reassign points to cluster
             changed = 0;
-#pragma omp parallel for shared(data), schedule(static), num_threads(8), reduction(+ \
-                                                                                   : changed)
+#pragma omp parallel for shared(data), schedule(static), reduction(+ \
+                                                                   : changed)
             for (int i = 0; i < numData; i++)
             {
                 int before = clustering[i];
@@ -108,8 +111,8 @@ void Kmeans::kPlusPlus(dataset_t &data, value_t (*func)(datapoint_t &, datapoint
     {
         // find distance between each data point and nearest cluster
         sum = 0;
-#pragma omp parallel for shared(data, distances), schedule(static), num_threads(8), reduction(+ \
-                                                                                              : sum)
+#pragma omp parallel for shared(data, distances), schedule(static), reduction(+ \
+                                                                              : sum)
         for (int pointIdx = 0; pointIdx < data.size(); pointIdx++)
         {
             distances[pointIdx] = nearest(data[pointIdx], pointIdx, func);
@@ -129,7 +132,7 @@ void Kmeans::kPlusPlus(dataset_t &data, value_t (*func)(datapoint_t &, datapoint
     }
 
 // assign data points to nearest clusters
-#pragma omp parallel for shared(data), schedule(static), num_threads(8)
+#pragma omp parallel for shared(data), schedule(static)
     for (int i = 0; i < data.size(); i++)
     {
         nearest(data[i], i, func);
@@ -198,8 +201,8 @@ void Kmeans::fit(dataset_t &data, int overSampling, value_t (*func)(datapoint_t 
 
             // reassign points to cluster
             changed = 0;
-#pragma omp parallel for shared(data, closestDists), schedule(static), num_threads(8), reduction(+ \
-                                                                                                 : changed)
+#pragma omp parallel for shared(data, closestDists), schedule(static), reduction(+ \
+                                                                                 : changed)
             for (int i = 0; i < data.size(); i++)
             {
                 value_t dist = std::pow(func(data[i], clusters[clustering[i]].coords), 2);
@@ -254,8 +257,8 @@ std::vector<value_t> Kmeans::scaleableKmeans(dataset_t &data, int &overSampling,
     for (int i = 0; i < initIters; i++)
     {
         sum = 0;
-#pragma omp parallel for shared(data, closestDists), num_threads(8), schedule(static), reduction(+ \
-                                                                                                 : sum)
+#pragma omp parallel for shared(data, closestDists), schedule(static), reduction(+ \
+                                                                                 : sum)
         for (int i = 0; i < data.size(); i++)
         {
             smartClusterUpdate(data[i], i, prevNumClusters, closestDists, func);
@@ -275,7 +278,7 @@ std::vector<value_t> Kmeans::scaleableKmeans(dataset_t &data, int &overSampling,
     }
 
     // reassign points to last round of new clusters
-#pragma omp parallel for shared(data), num_threads(8), schedule(static)
+#pragma omp parallel for shared(data), schedule(static)
     for (int i = 0; i < data.size(); i++)
     {
         smartClusterUpdate(data[i], i, prevNumClusters, closestDists, func);
@@ -311,7 +314,7 @@ std::vector<value_t> Kmeans::scaleableKmeans(dataset_t &data, int &overSampling,
                 clusters.erase(clusters.begin() + j);
                 weights.erase(weights.begin() + j);
 
-#pragma omp parallel for shared(data, selectedClusterings), num_threads(8), schedule(static)
+#pragma omp parallel for shared(data, selectedClusterings), schedule(static)
                 for (int k = 0; k < data.size(); k++)
                 {
                     if (clustering[k] == j)
@@ -327,7 +330,7 @@ std::vector<value_t> Kmeans::scaleableKmeans(dataset_t &data, int &overSampling,
     // assign data points to nearest clusters
     std::copy(std::begin(selectedClusters), std::end(selectedClusters), clusters);
     std::copy(std::begin(selectedClusterings), std::end(selectedClusterings), clustering);
-#pragma omp parallel for shared(data, closestDists), num_threads(8), schedule(static)
+#pragma omp parallel for shared(data, closestDists), schedule(static)
     for (int i = 0; i < data.size(); i++)
     {
         if (clustering[i] == -1)
@@ -373,6 +376,13 @@ bool Kmeans::setNumClusters(int numClusters)
 bool Kmeans::setNumRestarts(int numRestarts)
 {
     this->numRestarts = numRestarts;
+    return true;
+}
+
+bool Kmeans::setNumThreads(int numThreads)
+{
+    this->numThreads = numThreads;
+    omp_set_num_threads(this->numThreads);
     return true;
 }
 
