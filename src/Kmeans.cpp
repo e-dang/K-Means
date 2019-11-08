@@ -316,3 +316,14 @@ bool Kmeans::setNumRestarts(int numRestarts)
     this->numRestarts = numRestarts;
     return true;
 }
+
+float Kmeans::distanceL2(datapoint_t &p1, datapoint_t &p2)
+{
+    float sum = 0;
+    for (int i = 0; i < p1.size(); i++)
+    {
+        sum += (p1[i] - p2[i]) * (p1[i] - p2[i]);
+    }
+
+    return std::sqrt(sum);
+}

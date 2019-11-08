@@ -131,4 +131,13 @@ public:
      * @return false
      */
     bool setNumRestarts(int numRestarts);
+
+    /**
+     * @brief The L2 norm between two data points.
+     *
+     * @param p1 - The first data point.
+     * @param p2 - The second data point.
+     * @return float - The distance.
+     */
+    static float distanceL2(datapoint_t &p1, datapoint_t &p2);
 };
