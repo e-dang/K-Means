@@ -86,8 +86,8 @@ void Kmeans::fit(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t &))
         if (currError < bestError)
         {
             bestError = currError;
-            std::copy(std::begin(clustering), std::end(clustering), bestClustering);
-            std::copy(std::begin(clusters), std::end(clusters), bestClusters);
+            bestClustering = clustering;
+            bestClusters = clusters;
         }
     }
 }
@@ -230,8 +230,8 @@ void Kmeans::fit(dataset_t &data, int overSampling, value_t (*func)(datapoint_t 
         if (currError < bestError)
         {
             bestError = currError;
-            std::copy(std::begin(clustering), std::end(clustering), bestClustering);
-            std::copy(std::begin(clusters), std::end(clusters), bestClusters);
+            bestClustering = clustering;
+            bestClusters = clusters;
         }
     }
 }
@@ -328,8 +328,8 @@ std::vector<value_t> Kmeans::scaleableKmeans(dataset_t &data, int &overSampling,
     }
 
     // assign data points to nearest clusters
-    std::copy(std::begin(selectedClusters), std::end(selectedClusters), clusters);
-    std::copy(std::begin(selectedClusterings), std::end(selectedClusterings), clustering);
+    clustering = selectedClusterings;
+    clusters = selectedClusters;
 #pragma omp parallel for shared(data, closestDists), schedule(static)
     for (int i = 0; i < data.size(); i++)
     {
