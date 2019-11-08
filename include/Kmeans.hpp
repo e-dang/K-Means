@@ -11,7 +11,7 @@ private:
      */
     int numClusters;             // the number of clusters to cluster to data into
     int numRestarts;             // the number of times Kmeans should try to cluster the data
-    float bestError;             // the error in the best clustering
+    value_t bestError;             // the error in the best clustering
     clusters_t clusters;         // the cluster centers
     clusters_t bestClusters;     // the best cluster centers
     clustering_t clustering;     // the cluster assignments for each data point
@@ -24,7 +24,7 @@ private:
      * @param data - The data that is being clustered.
      * @param func - The distance function to use.
      */
-    void kPlusPlus(dataset_t &data, float (*func)(datapoint_t &, datapoint_t &));
+    void kPlusPlus(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t &));
 
     /**
      * @brief An implementation of the Kmeans Parallel initialization algorithm.
@@ -33,9 +33,9 @@ private:
      * @param overSampling - The expected amount of clusters to sample in each iteration
      * @param func - The distance function to use
      * @param initIters - The number of iterations of cluster sampling to do
-     * @return std::vector<float>
+     * @return std::vector<value_t>
      */
-    std::vector<float> scaleableKmeans(dataset_t &data, int &overSampling, float (*func)(datapoint_t &, datapoint_t &), int initIters = 3);
+    std::vector<value_t> scaleableKmeans(dataset_t &data, int &overSampling, value_t (*func)(datapoint_t &, datapoint_t &), int initIters = 3);
 
     /**
      * @brief Function for finding the closest cluster center to a datapoint and assigning that data point to that
@@ -44,14 +44,14 @@ private:
      * @param point - The datapoint to be considered.
      * @param pointIdx - The index of the datapoint in the dataset.
      * @param func - The distance function to use.
-     * @return float - The square of the minimum distance.
+     * @return value_t - The square of the minimum distance.
      */
-    float nearest(datapoint_t &point, int &pointIdx, float (*func)(datapoint_t &, datapoint_t &));
+    value_t nearest(datapoint_t &point, int &pointIdx, value_t (*func)(datapoint_t &, datapoint_t &));
 
-    void smartClusterUpdate(datapoint_t &point, int &pointIdx, int &clusterIdx, std::vector<float> &distances,
-                            float (*func)(datapoint_t &, datapoint_t &));
+    void smartClusterUpdate(datapoint_t &point, int &pointIdx, int &clusterIdx, std::vector<value_t> &distances,
+                            value_t (*func)(datapoint_t &, datapoint_t &));
 
-    float clusterUpdate(datapoint_t &point, int &pointIdx, float (*func)(datapoint_t &, datapoint_t &));
+    value_t clusterUpdate(datapoint_t &point, int &pointIdx, value_t (*func)(datapoint_t &, datapoint_t &));
 
 public:
     /**
@@ -74,7 +74,7 @@ public:
      * @param data - The data to be clustered.
      * @param func - The distance function to use.
      */
-    void fit(dataset_t &data, float (*func)(datapoint_t &, datapoint_t &));
+    void fit(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t &));
 
     /**
      * @brief Overloaded variant that uses Keamns Parallel as an initialization method and a quick version of the lloyd
@@ -85,7 +85,7 @@ public:
      * @param func - The distance function to use.
      * @param initIters - The number of iters to do in initialization.
      */
-    void fit(dataset_t &data, int overSampling, float (*func)(datapoint_t &, datapoint_t &), int initIters = 3);
+    void fit(dataset_t &data, int overSampling, value_t (*func)(datapoint_t &, datapoint_t &), int initIters = 3);
 
     /**
      * @brief Get the numClusters object.
@@ -123,7 +123,7 @@ public:
      *
      * @return int
      */
-    float getError() { return bestError; };
+    value_t getError() { return bestError; };
 
     /**
      * @brief Set the numClusters object.
@@ -148,7 +148,7 @@ public:
      *
      * @param p1 - The first data point.
      * @param p2 - The second data point.
-     * @return float - The distance.
+     * @return value_t - The distance.
      */
-    static float distanceL2(datapoint_t &p1, datapoint_t &p2);
+    static value_t distanceL2(datapoint_t &p1, datapoint_t &p2);
 };
