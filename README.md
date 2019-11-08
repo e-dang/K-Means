@@ -12,6 +12,6 @@ make
 ```
 
 ### Dependencies
-[OpenMP](https://www.openmp.org/)
-[Boost](https://www.boost.org/)
-[CMake](https://cmake.org/) 3.0
+- [OpenMP](https://www.openmp.org/)
+- [Boost](https://www.boost.org/)
+- [CMake](https://cmake.org/) 3.0
