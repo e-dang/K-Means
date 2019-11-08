@@ -21,21 +21,37 @@ private:
      * @brief An implementation of the Kmeans++ algorithm for initializing cluster centers. Does this by trying to
      *        maximize the distance between cluster centers.
      *
-     * @param data - A pointer to the data that is being clustered.
+     * @param data - The data that is being clustered.
      * @param func - The distance function to use.
      */
     void kPlusPlus(dataset_t &data, float (*func)(datapoint_t &, datapoint_t &));
 
     /**
+     * @brief An implementation of the Kmeans Parallel initialization algorithm.
+     *
+     * @param data - The data that is being clustered
+     * @param overSampling - The expected amount of clusters to sample in each iteration
+     * @param func - The distance function to use
+     * @param initIters - The number of iterations of cluster sampling to do
+     * @return std::vector<float>
+     */
+    std::vector<float> scaleableKmeans(dataset_t &data, int &overSampling, float (*func)(datapoint_t &, datapoint_t &), int initIters = 3);
+
+    /**
      * @brief Function for finding the closest cluster center to a datapoint and assigning that data point to that
      *        cluster.
      *
-     * @param point - The data point to be considered.
-     * @param pointIdx - The index of the data point in the dataset.
+     * @param point - The datapoint to be considered.
+     * @param pointIdx - The index of the datapoint in the dataset.
      * @param func - The distance function to use.
      * @return float - The square of the minimum distance.
      */
     float nearest(datapoint_t &point, int &pointIdx, float (*func)(datapoint_t &, datapoint_t &));
+
+    void smartClusterUpdate(datapoint_t &point, int &pointIdx, int &clusterIdx, std::vector<float> &distances,
+                            float (*func)(datapoint_t &, datapoint_t &));
+
+    float clusterUpdate(datapoint_t &point, int &pointIdx, float (*func)(datapoint_t &, datapoint_t &));
 
 public:
     /**
