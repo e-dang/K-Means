@@ -81,8 +81,8 @@ void Kmeans::fit(dataset_t data, float (*func)(datapoint_t &, datapoint_t &))
         if (currError < bestError)
         {
             bestError = currError;
-            bestClustering = clustering;
-            bestClusters = clusters;
+            std::copy(std::begin(clustering), std::end(clustering), bestClustering);
+            std::copy(std::begin(clusters), std::end(clusters), bestClusters);
         }
     }
 }
