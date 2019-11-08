@@ -12,7 +12,82 @@ Kmeans::~Kmeans()
 {
 }
 
-void Kmeans::kPlusPlus(dataset_t data, float (*func)(datapoint_t &, datapoint_t &))
+void Kmeans::fit(dataset_t data, float (*func)(datapoint_t &, datapoint_t &))
+{
+
+    int changed;
+    int numData = data.size();
+    int numFeatures = data.at(0).size();
+    float currError;
+
+    for (int run = 0; run < numRestarts; run++)
+    {
+        clusters = clusters_t();
+        clustering = clustering_t(numData, -1);
+
+        // initialize clusters with k++ algorithm
+        kPlusPlus(data, func);
+
+        do
+        {
+            // reinitialize clusters
+            for (int i = 0; i < numClusters; i++)
+            {
+                clusters.at(i) = {0, datapoint_t(numFeatures, 0.)};
+            }
+
+            // calc sum of each feature for all points belonging to a cluster
+            for (int i = 0; i < numData; i++)
+            {
+                for (int j = 0; j < numFeatures; j++)
+                {
+                    clusters.at(clustering.at(i)).coords[j] += data.at(i)[j];
+                }
+                clusters.at(clustering.at(i)).count++;
+            }
+
+            // divide sum by number of points belonging to the cluster to obtain average
+            for (int i = 0; i < numClusters; i++)
+            {
+                for (int j = 0; j < numFeatures; j++)
+                {
+                    clusters.at(i).coords[j] /= clusters.at(i).count;
+                }
+            }
+
+            // reassign points to cluster
+            changed = 0;
+#pragma omp parallel for shared(data), schedule(static), num_threads(8), reduction(+ \
+                                                                                   : changed)
+            for (int i = 0; i < numData; i++)
+            {
+                int before = clustering.at(i);
+                nearest(data.at(i), i, func);
+                if (before != clustering.at(i))
+                {
+                    changed++;
+                }
+            }
+        } while (changed > (numData >> 10)); // do until 99.9% of data doesnt change
+
+        // get total sum of distances from each point to their cluster center
+        currError = 0;
+        for (int i = 0; i < numData; i++)
+        {
+            currError += func(data.at(i), clusters.at(clustering.at(i)).coords);
+        }
+
+        // if this round produced lowest error, keep clustering
+        if (currError < bestError)
+        {
+            bestError = currError;
+            bestClustering = clustering;
+            bestClusters = clusters;
+        }
+    }
+}
+
+void Kmeans::kPlusPlus(dataset_t &data, float (*func)(datapoint_t &, datapoint_t &))
 {
     RNGType rng(time(NULL));
     boost::uniform_int<> intRange(0, data.size());

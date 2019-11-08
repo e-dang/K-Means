@@ -24,7 +24,7 @@ private:
      * @param data - A pointer to the data that is being clustered.
      * @param func - The distance function to use.
      */
-    void kPlusPlus(dataset_t data, float (*func)(datapoint_t &, datapoint_t &));
+    void kPlusPlus(dataset_t &data, float (*func)(datapoint_t &, datapoint_t &));
 
     /**
      * @brief Function for finding the closest cluster center to a datapoint and assigning that data point to that
@@ -51,6 +51,14 @@ public:
      *
      */
     ~Kmeans();
+
+    /**
+     * @brief Top level function that performs the clustering using lloyd's algorithm.
+     *
+     * @param data - The data to be clustered.
+     * @param func - The distance function to use.
+     */
+    void fit(dataset_t data, float (*func)(datapoint_t &, datapoint_t &));
 
     /**
      * @brief Get the numClusters object.
