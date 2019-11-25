@@ -9,6 +9,12 @@ typedef std::vector<int> clustering_t;
 
 typedef struct
 {
+    dataset_t data;
+    std::vector<value_t> weights;
+} coreset_t;
+
+typedef struct
+{
     int count;
     datapoint_t coords;
 } cluster_t;

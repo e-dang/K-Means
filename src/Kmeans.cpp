@@ -367,6 +367,78 @@ void Kmeans::smartClusterUpdate(datapoint_t &point, int &pointIdx, int &clusterI
     }
 }
 
+void Kmeans::createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(datapoint_t &, datapoint_t &))
+{
+    coreset.data.reserve(sampleSize);
+    coreset.weights.reserve(sampleSize);
+
+    RNGType rng(time(NULL));
+    boost::uniform_real<> floatRange(0, 1);
+    boost::variate_generator<RNGType, boost::uniform_real<>> floatDistr(rng, floatRange);
+
+    // calculate the mean of the data
+    datapoint_t mean(0, data[0].size());
+    for (auto &datapoint : data)
+    {
+        for (int i = 0; i < datapoint.size(); i++)
+        {
+            mean[i] += datapoint[i];
+        }
+    }
+
+    for (int i = 0; i < mean.size(); i++)
+    {
+        mean[i] /= data.size();
+    }
+
+    // calculate distances between the mean and all datapoints
+    double distanceSum = 0;
+    std::vector<value_t> distances;
+    distances.reserve(data.size());
+    for (int i = 0; i < data.size(); i++)
+    {
+        distances[i] = func(mean, data[i]);
+        distanceSum += distances[i];
+    }
+
+    // calculate the distribution used to choose the datapoints to create the coreset
+    value_t partOne = 0.5 * (1 / data.size()); // first portion of distribution calculation that is constant
+    double sum = 0;
+    std::vector<value_t> distribution;
+    distribution.reserve(data.size());
+    for (int i = 0; i < data.size(); i++)
+    {
+        distribution[i] = partOne + 0.5 * distances[i] / distanceSum;
+        sum += distribution[i];
+    }
+
+    // create pointers to each datapoint in data
+    std::vector<datapoint_t *> ptrData;
+    ptrData.reserve(data.size());
+    for (int i = 0; i < data.size(); i++)
+    {
+        ptrData[i] = &data[i];
+    }
+
+    // create the coreset
+    double randNum;
+    for (int i = 0; i < sampleSize; i++)
+    {
+        randNum = floatDistr() * sum;
+        for (int j = 0; j < ptrData.size(); j++)
+        {
+            if ((randNum -= distribution[j]) <= 0)
+            {
+                coreset.data[i] = *ptrData[j];
+                coreset.weights[i] = 1 / (sampleSize * distribution[j]);
+                sum -= distribution[j];
+                ptrData.erase(ptrData.begin() + j);
+                distribution.erase(distribution.begin() + j);
+            }
+        }
+    }
+}
+
 bool Kmeans::setNumClusters(int numClusters)
 {
     this->numClusters = numClusters;

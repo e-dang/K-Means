@@ -17,6 +17,7 @@ private:
     clusters_t bestClusters;     // the best cluster centers
     clustering_t clustering;     // the cluster assignments for each data point
     clustering_t bestClustering; // the best cluster assignments
+    coreset_t coreset;           // the coreset to run clustering on if specified to do so
 
     /**
      * @brief An implementation of the Kmeans++ algorithm for initializing cluster centers. Does this by trying to
@@ -64,6 +65,16 @@ private:
      */
     void smartClusterUpdate(datapoint_t &point, int &pointIdx, int &clusterIdx, std::vector<value_t> &distances,
                             value_t (*func)(datapoint_t &, datapoint_t &));
+
+    /**
+     * @brief Create the coreset used for representative kmeans clustering on the whole dataset. The coreset is stored
+     *        in the private member variable coreset.
+     *
+     * @param data - The data to be clustered.
+     * @param sampleSize - The number of datapoints to include in the coreset.
+     * @param func - The distance function to use.
+     */
+    void createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(datapoint_t &, datapoint_t &));
 
 public:
     /**
