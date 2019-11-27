@@ -1,5 +1,6 @@
 #include <iostream>
 #include <chrono>
+#include <mpi.h>
 #include "Kmeans.hpp"
 #include "boost/random.hpp"
 #include "boost/math/distributions/normal.hpp"
@@ -7,10 +8,10 @@
 
 typedef boost::mt19937 RNGType;
 
-int main()
+int main(int argc, char* argv[])
 {
-    int numData = 100000;
-    int numFeatures = 7000;
+    int numData = 10000;
+    int numFeatures = 250;
     int numClusters = 5;
     int numRestarts = 10;
 
@@ -62,29 +63,46 @@ int main()
         }
     }
 
-    // cluster data
-    Kmeans kmeans(numClusters, 1);
 
-    auto start = std::chrono::high_resolution_clock::now();
-    kmeans.fit(data, Kmeans::distanceL2); // kmeans++
-    // kmeans.fit(data, numClusters / 3, Kmeans::distanceL2); // scalableKmeans
-    auto stop = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-    std::cout << "Total time: " << duration.count() << std::endl;
+    bool MPI = true;
+    if (MPI)
+    {
+        // Runs MPI implementation of K++
+        Kmeans kmeans(numClusters, 1);
+        MPI_Init(&argc, &argv);
+        auto start = std::chrono::high_resolution_clock::now();
+        kmeans.fit_MPI(data, Kmeans::distanceL2);
+        auto stop = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+        std::cout << "Total time: " << duration.count() << std::endl;
+        MPI_Finalize();
 
-    // std::cout << "Cluster Centers:" << std::endl;
-    // for (auto &center : kmeans.getClusters())
-    // {
-    //     for (auto &coord : center.coords)
-    //     {
-    //         std::cout << coord << " ";
-    //     }
-    //     std::cout << std::endl;
-    // }
+    }
+    else
+    {
+        // cluster data
+        Kmeans kmeans(numClusters, 1);
+        auto start = std::chrono::high_resolution_clock::now();
+        kmeans.fit(data, Kmeans::distanceL2); // kmeans++
+        // kmeans.fit(data, numClusters / 3, Kmeans::distanceL2); // scalableKmeans
+        auto stop = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+        std::cout << "Total time: " << duration.count() << std::endl;
 
-    // std::cout << "Clustering:" << std::endl;
-    // for (auto &assignment : kmeans.getClustering())
-    // {
-    //     std::cout << assignment << " ";
-    // }
+        // std::cout << "Cluster Centers:" << std::endl;
+        // for (auto &center : kmeans.getClusters())
+        // {
+        //     for (auto &coord : center.coords)
+        //     {
+        //         std::cout << coord << " ";
+        //     }
+        //     std::cout << std::endl;
+        // }
+
+        // std::cout << "Clustering:" << std::endl;
+        // for (auto &assignment : kmeans.getClustering())
+        // {
+        //     std::cout << assignment << " ";
+        // }
+    }
 }

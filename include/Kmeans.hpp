@@ -67,6 +67,15 @@ private:
                             value_t (*func)(datapoint_t &, datapoint_t &));
 
     /**
+     * @brief An implementation of the Kmeans++ algorithm for initializing cluster centers. Does this by trying to
+     *        maximize the distance between cluster centers. Uses MPI
+     *
+     * @param data - The data that is being clustered.
+     * @param func - The distance function to use.
+     */
+    void kPlusPlus_MPI(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t &));
+
+    /**
      * @brief Create the coreset used for representative kmeans clustering on the whole dataset. The coreset is stored
      *        in the private member variable coreset.
      *
@@ -74,6 +83,8 @@ private:
      * @param sampleSize - The number of datapoints to include in the coreset.
      * @param func - The distance function to use.
      */
+
+    
     void createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(datapoint_t &, datapoint_t &));
 
 public:
@@ -110,6 +121,14 @@ public:
      * @param initIters - The number of iters to do in initialization.
      */
     void fit(dataset_t &data, int overSampling, value_t (*func)(datapoint_t &, datapoint_t &), int initIters = 3);
+
+    /**
+     * @brief Top level function that performs the clustering using lloyd's algorithm. Uses MPI implementation
+     *
+     * @param data - The data to be clustered.
+     * @param func - The distance function to use.
+     */
+    void fit_MPI(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t &));
 
     /**
      * @brief Get the numClusters object.
