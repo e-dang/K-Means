@@ -95,6 +95,9 @@ void Kmeans::fit(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t &))
 
 void Kmeans::fit_MPI(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t &))
 {
+    int rank, numProcs;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
     int changed;
     int numData = data.size();
@@ -138,17 +141,29 @@ void Kmeans::fit_MPI(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t
 
             // reassign points to cluster
             changed = 0;
-#pragma omp parallel for shared(data), schedule(static), reduction(+ \
-                                                                   : changed)
-            for (int i = 0; i < numData; i++)
+            int local_changed = 0;
+
+            // Datapoints allocated for each process to compute
+            int chunk = data.size() / numProcs;
+            int scrap = chunk + (data.size() % numProcs);
+            // Start index for data
+            int start = chunk * rank;
+            // End index of Data
+            int end = start + chunk - 1;
+            // Last process gets leftover datapoints
+            if (rank == (numProcs - 1)) end = start + scrap - 1;
+            
+            for (int i = start; i < end; i++)
             {
                 int before = clustering[i];
                 nearest(data[i], i, func);
                 if (before != clustering[i])
                 {
-                    changed++;
+                    local_changed++;
                 }
             }
+            // Aggregate changed
+            MPI_Allreduce(&local_changed, &changed, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
         } while (changed > (numData >> 10)); // do until 99.9% of data doesnt change
 
         // get total sum of distances from each point to their cluster center
