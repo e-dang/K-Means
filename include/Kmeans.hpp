@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Definitions.hpp"
+#include <mpi.h>
 
 class Kmeans
 {
@@ -18,6 +19,21 @@ private:
     clustering_t clustering;     // the cluster assignments for each data point
     clustering_t bestClustering; // the best cluster assignments
     coreset_t coreset;           // the coreset to run clustering on if specified to do so
+    MPI_Win dataWin;
+    MPI_Win clusteringWin;
+    MPI_Win clusterCoordWin;
+    MPI_Win clusterCountWin;
+
+
+    dataset_t getDataVecFromMPIWin(int start, int end, int numFeatures);
+    datapoint_t getClusterCoord(int idx, int numFeatures);
+    int getClusterCount(int idx);
+    int getClustering(int idx);
+
+    void setClusterCoord(int idx, int numFeatures, datapoint_t* coord);
+    void setClusterCount(int idx, int* count);
+
+    
 
     /**
      * @brief An implementation of the Kmeans++ algorithm for initializing cluster centers. Does this by trying to
@@ -52,6 +68,17 @@ private:
     value_t nearest(datapoint_t &point, int &pointIdx, value_t (*func)(datapoint_t &, datapoint_t &));
 
     /**
+     * @brief Function for finding the closest cluster center to a datapoint and assigning that data point to that
+     *        cluster. Uses MPI windows
+     *
+     * @param point - The datapoint to be considered.
+     * @param pointIdx - The index of the datapoint in the dataset.
+     * @param func - The distance function to use.
+     * @return value_t - The square of the minimum distance.
+     */
+    value_t nearest_MPI(datapoint_t &point, int pointIdx, value_t (*func)(datapoint_t &, datapoint_t &), int clusterCount);
+
+    /**
      * @brief - Finds the closest cluster to a datapoint out of the set of newly added clusters and the cluster that the
      *          datapoint was already assigned to. If the datapoint point is closer to a new cluster than its old
      *          cluster, the function update the distance vector and the cluster assignment for that point. This
@@ -70,10 +97,10 @@ private:
      * @brief An implementation of the Kmeans++ algorithm for initializing cluster centers. Does this by trying to
      *        maximize the distance between cluster centers. Uses MPI
      *
-     * @param data - The data that is being clustered.
+     * @param data - MPI shared data window.
      * @param func - The distance function to use.
      */
-    void kPlusPlus_MPI(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t &));
+    void kPlusPlus_MPI(int numData, int numFeatures, value_t (*func)(datapoint_t &, datapoint_t &));
 
     /**
      * @brief Create the coreset used for representative kmeans clustering on the whole dataset. The coreset is stored
@@ -128,7 +155,7 @@ public:
      * @param data - The data to be clustered.
      * @param func - The distance function to use.
      */
-    void fit_MPI(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t &));
+    void fit_MPI(int numData, int numFeatures, value_t (*func)(datapoint_t &, datapoint_t &));
 
     /**
      * @brief Get the numClusters object.
@@ -210,4 +237,6 @@ public:
      * @return value_t - The distance.
      */
     static value_t distanceL2(datapoint_t &p1, datapoint_t &p2);
+
+    void setMPIWindows(MPI_Win dataWin, MPI_Win clusteringWin, MPI_Win clusterCoordWin, MPI_Win clusterCountWin);
 };

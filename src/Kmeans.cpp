@@ -4,18 +4,85 @@
 #include <mpi.h>
 #include <omp.h>
 #include <time.h>
+#include <assert.h>
 
 typedef boost::mt19937 RNGType;
 
 Kmeans::Kmeans(int numClusters, int numRestarts, int numThreads) : numClusters(numClusters), numRestarts(numRestarts),
                                                                    numThreads(numThreads)
 {
+    
     bestError = INT_MAX;
     setNumThreads(numThreads);
 }
 
 Kmeans::~Kmeans()
 {
+}
+
+void Kmeans::setMPIWindows(MPI_Win dataWin, MPI_Win clusteringWin, MPI_Win clusterCoordWin, MPI_Win clusterCountWin)
+{
+    this->dataWin = dataWin;
+    this->clusteringWin = clusteringWin;
+    this->clusterCoordWin = clusterCoordWin;
+    this->clusterCountWin = clusterCountWin;
+}
+// value_t g_data[250000];
+dataset_t Kmeans::getDataVecFromMPIWin(int start, int end, int numFeatures)
+{
+    int startIdx = start * numFeatures;
+    int endIdx = end * numFeatures;
+    int size = endIdx - startIdx;
+    value_t data[size];
+    MPI_Get(data, size, MPI_FLOAT, 0, startIdx, size, MPI_FLOAT, dataWin);
+
+    dataset_t dataVec = dataset_t((end - start + 1), datapoint_t(numFeatures));
+
+    for(int i=0; i<dataVec.size(); i++)
+    {
+        for(int j=0; j<numFeatures; j++)
+        {
+            dataVec[i][j] = data[(i*numFeatures)+j];
+        }
+    }
+    return dataVec;
+}
+
+datapoint_t Kmeans::getClusterCoord(int idx, int numFeatures)
+{
+    value_t coord[numFeatures];
+    MPI_Get(coord, numFeatures, MPI_FLOAT, 0, idx*numFeatures, numFeatures, MPI_FLOAT, clusterCoordWin);
+
+    datapoint_t coordVec(numFeatures);
+
+    for(int i = 0; i < coordVec.size(); i++)
+    {
+        coordVec[i] = coord[i];
+    }
+    return coordVec;
+}
+int Kmeans::getClusterCount(int idx)
+{
+    int count;
+    MPI_Get(&count, 1, MPI_INT, 0, idx, 1, MPI_INT, clusterCoordWin);
+    return count;
+}
+
+int Kmeans::getClustering(int idx)
+{
+    int count;
+    MPI_Get(&count, 1, MPI_INT, 0, idx, 1, MPI_INT, clusteringWin);
+    return count;
+}
+
+void Kmeans::setClusterCount(int idx, int* count)
+{
+    MPI_Put(count, 1, MPI_INT, 0, idx, 1, MPI_INT, clusterCountWin);
+}
+
+void Kmeans::setClusterCoord(int idx, int numFeatures, datapoint_t* coord)
+{
+    MPI_Put(coord, coord->size(), MPI_FLOAT, 0, idx*numFeatures, coord->size(), MPI_FLOAT, clusterCoordWin);
 }
 
 void Kmeans::fit(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t &))
@@ -93,49 +160,71 @@ void Kmeans::fit(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t &))
     }
 }
 
-void Kmeans::fit_MPI(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t &))
+void Kmeans::fit_MPI(int numData, int numFeatures, value_t (*func)(datapoint_t &, datapoint_t &))
 {
     int rank, numProcs;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
     int changed;
-    int numData = data.size();
-    int numFeatures = data[0].size();
     value_t currError;
 
     for (int run = 0; run < numRestarts; run++)
     {
-        clusters = clusters_t();
-        clustering = clustering_t(numData, -1);
+        // if(rank == 0)
+        // {
+        //     clusters = clusters_t();
+        //     // clustering = clustering_t(numData, -1);
+        // }
 
         // initialize clusters with k++ algorithm
-        kPlusPlus_MPI(data, func);
+        kPlusPlus_MPI(numData, numFeatures, func);
 
         do
         {
-            // reinitialize clusters
-            for (int i = 0; i < numClusters; i++)
+            if(rank == 0)
             {
-                clusters[i] = {0, datapoint_t(numFeatures, 0.)};
-            }
-
-            // calc sum of each feature for all points belonging to a cluster
-            for (int i = 0; i < numData; i++)
-            {
-                for (int j = 0; j < numFeatures; j++)
+                // reinitialize clusters
+                for (int i = 0; i < numClusters; i++)
                 {
-                    clusters[clustering[i]].coords[j] += data[i][j];
+                    int count = 0;
+                    setClusterCount(i, &count);
+                    datapoint_t tempCoord(numFeatures, 0.);
+                    setClusterCoord(i, numFeatures, &tempCoord);
+                    // clusters[i] = {0, datapoint_t(numFeatures, 0.)};
                 }
-                clusters[clustering[i]].count++;
-            }
+            
 
-            // divide sum by number of points belonging to the cluster to obtain average
-            for (int i = 0; i < numClusters; i++)
-            {
-                for (int j = 0; j < numFeatures; j++)
+                // calc sum of each feature for all points belonging to a cluster
+                for (int i = 0; i < numData; i++)
                 {
-                    clusters[i].coords[j] /= clusters[i].count;
+                    int clst = getClustering(i);
+                    assert(clst < 5);
+                    datapoint_t coord = getClusterCoord(clst, numFeatures);
+                    datapoint_t data = getDataVecFromMPIWin(i, i+1, numFeatures)[0];
+                    for (int j = 0; j < numFeatures; j++)
+                    {
+                        coord[j] += data[j];
+                        // clusters[clustering[i]].coords[j] +=  data[i][j];
+                    }
+                    setClusterCoord(clst, numFeatures, &coord);
+                    int count = getClusterCount(i);
+                    count++;
+                    setClusterCount(clst, &count);
+                    // clusters[clustering[i]].count++;
+                }
+
+                // divide sum by number of points belonging to the cluster to obtain average
+                for (int i = 0; i < numClusters; i++)
+                {
+                    datapoint_t coord = getClusterCoord(i, numFeatures);
+                    int count = getClusterCount(i);
+                    for (int j = 0; j < numFeatures; j++)
+                    {
+                        coord[j] /= count;
+                        // clusters[i].coords[j] /= clusters[i].count;
+                    }
+                    setClusterCoord(i, numFeatures, &coord);
                 }
             }
 
@@ -144,20 +233,23 @@ void Kmeans::fit_MPI(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t
             int local_changed = 0;
 
             // Datapoints allocated for each process to compute
-            int chunk = data.size() / numProcs;
-            int scrap = chunk + (data.size() % numProcs);
+            int chunk = numData / numProcs;
+            int scrap = chunk + (numData % numProcs);
             // Start index for data
             int start = chunk * rank;
             // End index of Data
             int end = start + chunk - 1;
             // Last process gets leftover datapoints
             if (rank == (numProcs - 1)) end = start + scrap - 1;
+            dataset_t data = getDataVecFromMPIWin(start, end, numFeatures);
             
-            for (int i = start; i < end; i++)
+            for (int i = 0; i < data.size(); i++)
             {
-                int before = clustering[i];
-                nearest(data[i], i, func);
-                if (before != clustering[i])
+                int before, current;
+                MPI_Get(&before, 1, MPI_INT, 0, i+start, 1, MPI_INT, clusteringWin);
+                nearest_MPI(data[i], i+start, func, numClusters);
+                MPI_Get(&current, 1, MPI_INT, 0, i+start, 1, MPI_INT, clusteringWin);
+                if (before != current)
                 {
                     local_changed++;
                 }
@@ -166,12 +258,34 @@ void Kmeans::fit_MPI(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t
             MPI_Allreduce(&local_changed, &changed, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
         } while (changed > (numData >> 10)); // do until 99.9% of data doesnt change
 
+
+
         // get total sum of distances from each point to their cluster center
         currError = 0;
-        for (int i = 0; i < numData; i++)
+        value_t localError = 0;
+
+        // Datapoints allocated for each process to compute
+        int chunk = numData / numProcs;
+        int scrap = chunk + (numData % numProcs);
+        // Start index for data
+        int start = chunk * rank;
+        // End index of Data
+        int end = start + chunk - 1;
+        // Last process gets leftover datapoints
+        if (rank == (numProcs - 1)) end = start + scrap - 1;
+        dataset_t data = getDataVecFromMPIWin(start, end, numFeatures);
+
+        for (int i = 0; i < data.size(); i++)
         {
-            currError += std::pow(func(data[i], clusters[clustering[i]].coords), 2);
+            int idx = i + start;
+            int clst = getClustering(idx);
+            assert(clst < numClusters);
+            datapoint_t coord = getClusterCoord(clst, numFeatures);
+            localError += std::pow(func(data[i], coord), 2);
+            // localError += std::pow(func(data[i], clusters[clustering[i]].coords), 2);
         }
+
+        MPI_Allreduce(&localError, &currError, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
 
         // if this round produced lowest error, keep clustering
         if (currError < bestError)
@@ -183,32 +297,39 @@ void Kmeans::fit_MPI(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t
     }
 }
 
-void Kmeans::kPlusPlus_MPI(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t &))
+void Kmeans::kPlusPlus_MPI(int numData, int numFeatures, value_t (*func)(datapoint_t &, datapoint_t &))
 {
-    int rank, numProcs;
+    int rank, numProcs, clusterCount = 0;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
+
     RNGType rng(time(NULL));
-    boost::uniform_int<> intRange(0, data.size());
+    boost::uniform_int<> intRange(0, numData);
     boost::uniform_real<> floatRange(0, 1);
     boost::variate_generator<RNGType, boost::uniform_int<>> intDistr(rng, intRange);
     boost::variate_generator<RNGType, boost::uniform_real<>> floatDistr(rng, floatRange);
 
-    value_t sum;
-    value_t distances[data.size()];
+    value_t sum = 0;
+    value_t distances[numData];
 
-    // initialize first cluster randomly
-    clusters.push_back({0, datapoint_t(data[intDistr()])});
+    if(rank == 0)
+    {
+        int ranNum = intDistr();
+        dataset_t randomDataPoint = getDataVecFromMPIWin(ranNum, ranNum+1, numFeatures);
+        // initialize first cluster randomly
+        setClusterCoord(0, numFeatures, &randomDataPoint[0]);
+        clusterCount++;
+        // clusters.push_back({0, datapoint_t(randomDataPoint[0])});
+    }
 
-    for (int clustIdx = 1; clustIdx < numClusters; clustIdx++)
+    for (int clustIdx = 1; clustIdx <= numClusters; clustIdx++)
     {
         // find distance between each data point and nearest cluster
-        sum = 0;
         value_t local_sum = 0;
         // Datapoints allocated for each process to compute
-        int chunk = data.size() / numProcs;
-        int scrap = chunk + (data.size() % numProcs);
+        int chunk = numData / numProcs;
+        int scrap = chunk + (numData % numProcs);
         // Start index for data
         int start = chunk * rank;
         // End index of Data
@@ -216,11 +337,12 @@ void Kmeans::kPlusPlus_MPI(dataset_t &data, value_t (*func)(datapoint_t &, datap
         // Last process gets leftover datapoints
         if (rank == (numProcs - 1)) end = start + scrap - 1;
         value_t local_distances[end-start];
+        dataset_t data = getDataVecFromMPIWin(start, end, numFeatures);
 
-        for (int pointIdx = 0; pointIdx <= (end - start); pointIdx++)
+        for (int pointIdx = 0; pointIdx < data.size(); pointIdx++)
         {
             int dataIdx = pointIdx + start;
-            local_distances[pointIdx] = nearest(data[dataIdx], dataIdx, func);
+            local_distances[pointIdx] = nearest_MPI(data[pointIdx], dataIdx, func, numClusters);
             local_sum += local_distances[pointIdx];
         }
 
@@ -241,21 +363,42 @@ void Kmeans::kPlusPlus_MPI(dataset_t &data, value_t (*func)(datapoint_t &, datap
         MPI_Allreduce(&local_sum, &sum, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
 
 
-        // select point to be next cluster center weighted by nearest distance squared
-        sum *= floatDistr();
-        for (int j = 0; j < data.size(); j++)
+        
+        if(rank == 0)
         {
-            if ((sum -= distances[j]) <= 0)
+            dataset_t data = getDataVecFromMPIWin(0, numData - 1, numFeatures);
+            // select point to be next cluster center weighted by nearest distance squared
+            sum *= floatDistr();
+            for (int j = 0; j < data.size(); j++)
             {
-                clusters.push_back({0, datapoint_t(data[j])});
-                break;
+                if ((sum -= distances[j]) <= 0)
+                {
+                    int count = 0;
+                    setClusterCoord(clusterCount, numFeatures, &data[j]);
+                    setClusterCount(clusterCount, &count);
+                    clusterCount++;
+                    // clusters.push_back({0, datapoint_t(data[j])});
+                    break;
+                }
             }
         }
     }
-    // TODO: MPI-itize
+
+    // Datapoints allocated for each process to compute
+    int chunk = numData / numProcs;
+    int scrap = chunk + (numData % numProcs);
+    // Start index for data
+    int start = chunk * rank;
+    // End index of Data
+    int end = start + chunk - 1;
+    // Last process gets leftover datapoints
+    if (rank == (numProcs - 1)) end = start + scrap - 1;
+    value_t local_distances[end-start];
+    dataset_t data = getDataVecFromMPIWin(start, end, numFeatures);
+
     for (int i = 0; i < data.size(); i++)
     {
-        nearest(data[i], i, func);
+        nearest_MPI(data[i], i+start, func, clusterCount);
     }
 
 }
@@ -319,6 +462,26 @@ value_t Kmeans::nearest(datapoint_t &point, int &pointIdx, value_t (*func)(datap
         {
             minDist = tempDist;
             clustering[pointIdx] = i;
+        }
+    }
+
+    return minDist;
+}
+
+value_t Kmeans::nearest_MPI(datapoint_t &point, int pointIdx, value_t (*func)(datapoint_t &, datapoint_t &), int clusterCount)
+{
+    value_t tempDist, minDist = INT_MAX - 1;
+
+    // find distance between point and all clusters
+    for (int i = 0; i < clusterCount; i++)
+    {
+        datapoint_t coord = getClusterCoord(i, point.size());
+        tempDist = std::pow(func(point, coord), 2);
+        if (minDist > tempDist)
+        {
+            minDist = tempDist;
+            // Put clustering number into window
+            MPI_Put(&i, 1, MPI_INT, 0, pointIdx, 1, MPI_INT, clusteringWin);
         }
     }
 
