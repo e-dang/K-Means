@@ -149,16 +149,24 @@ int main(int argc, char* argv[])
             MPI_Win_allocate_shared(0, sizeof(int), MPI_INFO_NULL, MPI_COMM_WORLD, &clusterCount, &clusterCountWin);
             MPI_Win_allocate_shared(0, sizeof(value_t), MPI_INFO_NULL, MPI_COMM_WORLD, &clusterCoord, &clusterCoordWin);
         }
+
         MPI_Win_fence(MPI_MODE_NOPRECEDE, dataWin);
         MPI_Win_fence(MPI_MODE_NOPRECEDE, clusteringWin);
         MPI_Win_fence(MPI_MODE_NOPRECEDE, clusterCountWin);
         MPI_Win_fence(MPI_MODE_NOPRECEDE, clusterCoordWin);
+
         kmeans.setMPIWindows(dataWin, clusteringWin, clusterCountWin, clusterCoordWin);
+
         auto start = std::chrono::high_resolution_clock::now();
         kmeans.fit_MPI(numData, numFeatures, Kmeans::distanceL2);
         auto stop = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-        std::cout << "Total time: " << duration.count() << std::endl;
+
+        if(rank == 0)
+        {
+            std::cout << "Total time: " << duration.count() << std::endl;
+        }
+
         MPI_Win_free(&dataWin);
         MPI_Win_free(&clusteringWin);
         MPI_Win_free(&clusterCountWin);

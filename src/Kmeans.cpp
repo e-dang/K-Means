@@ -20,71 +20,6 @@ Kmeans::~Kmeans()
 {
 }
 
-void Kmeans::setMPIWindows(MPI_Win dataWin, MPI_Win clusteringWin, MPI_Win clusterCoordWin, MPI_Win clusterCountWin)
-{
-    this->dataWin = dataWin;
-    this->clusteringWin = clusteringWin;
-    this->clusterCoordWin = clusterCoordWin;
-    this->clusterCountWin = clusterCountWin;
-}
-// value_t g_data[250000];
-dataset_t Kmeans::getDataVecFromMPIWin(int start, int end, int numFeatures)
-{
-    int startIdx = start * numFeatures;
-    int endIdx = end * numFeatures;
-    int size = endIdx - startIdx;
-    value_t data[size];
-    MPI_Get(data, size, MPI_FLOAT, 0, startIdx, size, MPI_FLOAT, dataWin);
-
-    dataset_t dataVec = dataset_t((end - start + 1), datapoint_t(numFeatures));
-
-    for(int i=0; i<dataVec.size(); i++)
-    {
-        for(int j=0; j<numFeatures; j++)
-        {
-            dataVec[i][j] = data[(i*numFeatures)+j];
-        }
-    }
-    return dataVec;
-}
-
-datapoint_t Kmeans::getClusterCoord(int idx, int numFeatures)
-{
-    value_t coord[numFeatures];
-    MPI_Get(coord, numFeatures, MPI_FLOAT, 0, idx*numFeatures, numFeatures, MPI_FLOAT, clusterCoordWin);
-
-    datapoint_t coordVec(numFeatures);
-
-    for(int i = 0; i < coordVec.size(); i++)
-    {
-        coordVec[i] = coord[i];
-    }
-    return coordVec;
-}
-int Kmeans::getClusterCount(int idx)
-{
-    int count;
-    MPI_Get(&count, 1, MPI_INT, 0, idx, 1, MPI_INT, clusterCoordWin);
-    return count;
-}
-
-int Kmeans::getClustering(int idx)
-{
-    int count;
-    MPI_Get(&count, 1, MPI_INT, 0, idx, 1, MPI_INT, clusteringWin);
-    return count;
-}
-
-void Kmeans::setClusterCount(int idx, int* count)
-{
-    MPI_Put(count, 1, MPI_INT, 0, idx, 1, MPI_INT, clusterCountWin);
-}
-
-void Kmeans::setClusterCoord(int idx, int numFeatures, datapoint_t* coord)
-{
-    MPI_Put(coord, coord->size(), MPI_FLOAT, 0, idx*numFeatures, coord->size(), MPI_FLOAT, clusterCoordWin);
-}
-
 void Kmeans::fit(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t &))
 {
 
@@ -95,8 +30,8 @@ void Kmeans::fit(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t &))
 
     for (int run = 0; run < numRestarts; run++)
     {
-        clusters = clusters_t();
-        clustering = clustering_t(numData, -1);
+        bestClusters = clusters_t();
+        bestClustering = clustering_t(numData, -1);
 
         // initialize clusters with k++ algorithm
         kPlusPlus(data, func);
@@ -169,14 +104,15 @@ void Kmeans::fit_MPI(int numData, int numFeatures, value_t (*func)(datapoint_t &
     int changed;
     value_t currError;
 
+    if(rank == 0)
+    {
+        clusters = clusters_t(numClusters);
+        clustering = clustering_t(numData);
+        // clustering = clustering_t(numData, -1);
+    }
+
     for (int run = 0; run < numRestarts; run++)
     {
-        // if(rank == 0)
-        // {
-        //     clusters = clusters_t();
-        //     // clustering = clustering_t(numData, -1);
-        // }
-
         // initialize clusters with k++ algorithm
         kPlusPlus_MPI(numData, numFeatures, func);
 
@@ -227,6 +163,8 @@ void Kmeans::fit_MPI(int numData, int numFeatures, value_t (*func)(datapoint_t &
                     setClusterCoord(i, numFeatures, &coord);
                 }
             }
+            MPI_Win_fence(MPI_MODE_NOPRECEDE, clusterCountWin);
+            MPI_Win_fence(MPI_MODE_NOPRECEDE, clusterCoordWin);
 
             // reassign points to cluster
             changed = 0;
@@ -286,13 +224,24 @@ void Kmeans::fit_MPI(int numData, int numFeatures, value_t (*func)(datapoint_t &
         }
 
         MPI_Allreduce(&localError, &currError, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
-
-        // if this round produced lowest error, keep clustering
-        if (currError < bestError)
+        if(rank == 0)
         {
-            bestError = currError;
-            bestClustering = clustering;
-            bestClusters = clusters;
+            // if this round produced lowest error, keep clustering
+            if (currError < bestError)
+            {
+                bestError = currError;
+
+                // Fill best clustering from shared window
+                MPI_Get(&bestClustering[0], 1, MPI_INT, 0, numData, 1, MPI_INT, clusteringWin);
+                
+                // Fill best clusters from shared window
+                for(int i = 0; i < numClusters; i++)
+                {
+                    bestClusters[i].count = getClusterCount(i);
+                    bestClusters[i].coords = getClusterCoord(i, numFeatures);
+                }
+                
+            }
         }
     }
 }
@@ -768,6 +717,71 @@ void Kmeans::createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(dat
             }
         }
     }
+}
+
+void Kmeans::setMPIWindows(MPI_Win dataWin, MPI_Win clusteringWin, MPI_Win clusterCoordWin, MPI_Win clusterCountWin)
+{
+    this->dataWin = dataWin;
+    this->clusteringWin = clusteringWin;
+    this->clusterCoordWin = clusterCoordWin;
+    this->clusterCountWin = clusterCountWin;
+}
+
+dataset_t Kmeans::getDataVecFromMPIWin(int start, int end, int numFeatures)
+{
+    int startIdx = start * numFeatures;
+    int endIdx = end * numFeatures;
+    int size = endIdx - startIdx;
+    value_t data[size];
+    MPI_Get(data, size, MPI_FLOAT, 0, startIdx, size, MPI_FLOAT, dataWin);
+
+    dataset_t dataVec = dataset_t((end - start + 1), datapoint_t(numFeatures));
+
+    for(int i=0; i<dataVec.size(); i++)
+    {
+        for(int j=0; j<numFeatures; j++)
+        {
+            dataVec[i][j] = data[(i*numFeatures)+j];
+        }
+    }
+    return dataVec;
+}
+
+datapoint_t Kmeans::getClusterCoord(int idx, int numFeatures)
+{
+    value_t coord[numFeatures];
+    MPI_Get(coord, numFeatures, MPI_FLOAT, 0, idx*numFeatures, numFeatures, MPI_FLOAT, clusterCoordWin);
+
+    datapoint_t coordVec(numFeatures);
+
+    for(int i = 0; i < coordVec.size(); i++)
+    {
+        coordVec[i] = coord[i];
+    }
+    return coordVec;
+}
+int Kmeans::getClusterCount(int idx)
+{
+    int count;
+    MPI_Get(&count, 1, MPI_INT, 0, idx, 1, MPI_INT, clusterCoordWin);
+    return count;
+}
+
+int Kmeans::getClustering(int idx)
+{
+    int count;
+    MPI_Get(&count, 1, MPI_INT, 0, idx, 1, MPI_INT, clusteringWin);
+    return count;
+}
+
+void Kmeans::setClusterCount(int idx, int* count)
+{
+    MPI_Put(count, 1, MPI_INT, 0, idx, 1, MPI_INT, clusterCountWin);
+}
+
+void Kmeans::setClusterCoord(int idx, int numFeatures, datapoint_t* coord)
+{
+    MPI_Put(coord, coord->size(), MPI_FLOAT, 0, idx*numFeatures, coord->size(), MPI_FLOAT, clusterCoordWin);
 }
 
 bool Kmeans::setNumClusters(int numClusters)
