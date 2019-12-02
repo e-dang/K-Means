@@ -23,3 +23,6 @@ Where NUM_PROCS is an integer.
 - [Boost](https://www.boost.org/)
 - [CMake](https://cmake.org/) 3.0
 - [OpenMPI](https://www.open-mpi.org/)
+
+### Report Doc
+- [Kmeans Report](https://docs.google.com/document/d/16eGwxOLUhvTCcHL0FJ_clUwuB37_pZPFDyxGHFDVrWA/edit?usp=sharing)
