@@ -232,7 +232,7 @@ void Kmeans::fit_MPI(int numData, int numFeatures, value_t (*func)(datapoint_t &
                 bestError = currError;
 
                 // Fill best clustering from shared window
-                MPI_Get(&bestClustering[0], 1, MPI_INT, 0, numData, 1, MPI_INT, clusteringWin);
+                MPI_Put(&bestClustering[0], 1, MPI_INT, 0, numData, 1, MPI_INT, clusteringWin);
                 
                 // Fill best clusters from shared window
                 for(int i = 0; i < numClusters; i++)
