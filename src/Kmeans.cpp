@@ -135,7 +135,7 @@ void Kmeans::fit_MPI(int numData, int numFeatures, value_t (*func)(datapoint_t &
                 for (int i = 0; i < numData; i++)
                 {
                     int clst = getClustering(i);
-                    assert(clst < 5);
+                    assert(clst < numClusters);
                     datapoint_t coord = getClusterCoord(clst, numFeatures);
                     datapoint_t data = getDataVecFromMPIWin(i, i+1, numFeatures)[0];
                     for (int j = 0; j < numFeatures; j++)
@@ -223,7 +223,7 @@ void Kmeans::fit_MPI(int numData, int numFeatures, value_t (*func)(datapoint_t &
             // localError += std::pow(func(data[i], clusters[clustering[i]].coords), 2);
         }
 
-        MPI_Allreduce(&localError, &currError, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+        MPI_Reduce(&localError, &currError, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
         if(rank == 0)
         {
             // if this round produced lowest error, keep clustering
@@ -307,9 +307,9 @@ void Kmeans::kPlusPlus_MPI(int numData, int numFeatures, value_t (*func)(datapoi
         recLen[numProcs-1] = scrap;
         // TODO: Allgather not a great use of memory
         // Aggregate distances, distribute to all processes
-        MPI_Allgatherv(local_distances, (end - start + 1), MPI_FLOAT, distances, recLen, disp, MPI_FLOAT, MPI_COMM_WORLD);
+        MPI_Gatherv(local_distances, (end - start + 1), MPI_FLOAT, distances, recLen, disp, MPI_FLOAT, 0, MPI_COMM_WORLD);
         // Reduce sum, distribute to all processes
-        MPI_Allreduce(&local_sum, &sum, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+        MPI_Reduce(&local_sum, &sum, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
 
 
         
