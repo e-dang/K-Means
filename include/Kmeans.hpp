@@ -25,16 +25,61 @@ private:
     MPI_Win clusterCountWin;
 
 
+    /**
+     * @brief  Uses MPI window dataWin to retireve a chunk of the dataset
+     * @note   
+     * @param  start: Start datapoint index
+     * @param  end: End datapoint inbex
+     * @param  numFeatures: Number of features in each datapoint
+     * @retval A dataset_t with the subset of the data
+     */
     dataset_t getDataVecFromMPIWin(int start, int end, int numFeatures);
+
+    /**
+     * @brief  Uses MPI window clusterCoordWin to retrieve coordinates of a datapoint
+     * @note   
+     * @param  idx: Index of the datapoint
+     * @param  numFeatures: Number of features in each datapoint
+     * @retval A datapoint_t correspointing the index given
+     */
     datapoint_t getClusterCoord(int idx, int numFeatures);
+
+    /**
+     * @brief  Uses MPI window clusterCountWin to retrieve the count for the specified cluster
+     * @note   
+     * @param  idx: Index of cluster
+     * @retval count int
+     */
     int getClusterCount(int idx);
+
+    /**
+     * @brief  Uses MPI window clusteringWin to retrieve cluster assigned to datapoint
+     * @note   
+     * @param  idx: Index of datapoint
+     * @retval cluster number
+     */
     int getClustering(int idx);
 
+    /**
+     * @brief  Sets datapoint coordinates in clusterCoordWin
+     * @note   
+     * @param  idx: index of cluster
+     * @param  numFeatures: number of features in coordinates
+     * @param  coord: datapoint_t corresponding to the coordinates to be set
+     * @retval None
+     */
     void setClusterCoord(int idx, int numFeatures, datapoint_t* coord);
+
+    /**
+     * @brief  Sets cluster count in clusterCountWin
+     * @note   
+     * @param  idx: index of cluster
+     * @param  count: count to set
+     * @retval None
+     */
     void setClusterCount(int idx, int* count);
 
     
-
     /**
      * @brief An implementation of the Kmeans++ algorithm for initializing cluster centers. Does this by trying to
      *        maximize the distance between cluster centers.
