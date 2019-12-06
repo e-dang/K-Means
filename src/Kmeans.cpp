@@ -658,11 +658,13 @@ void Kmeans::createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(dat
 
     // calculate the mean of the data
     datapoint_t mean(0, data[0].size());
-    for (auto &datapoint : data)
+    auto mean_data = mean.data();
+#pragma omp parallel for shared(data), schedule(static), reduction(+ : mean_data[: data[0].size()])
+    for (int nth_datapoint = 0; nth_datapoint < data.size(); nth_datapoint++)
     {
-        for (int i = 0; i < datapoint.size(); i++)
+        for (int i = 0; i < data[0].size(); i++)
         {
-            mean[i] += datapoint[i];
+            mean_data[i] += datapoint[nth_datapoint][i];
         }
     }
 
@@ -675,6 +677,7 @@ void Kmeans::createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(dat
     double distanceSum = 0;
     std::vector<value_t> distances;
     distances.reserve(data.size());
+#pragma omp parallel for shared(data, distances), schedule(static), reduction(+ : distanceSum) 
     for (int i = 0; i < data.size(); i++)
     {
         distances[i] = func(mean, data[i]);
@@ -686,6 +689,7 @@ void Kmeans::createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(dat
     double sum = 0;
     std::vector<value_t> distribution;
     distribution.reserve(data.size());
+#pragma omp parallel for shared(distribution, distances), schedule(static), reduction(+ : sum) 
     for (int i = 0; i < data.size(); i++)
     {
         distribution[i] = partOne + 0.5 * distances[i] / distanceSum;
@@ -695,6 +699,7 @@ void Kmeans::createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(dat
     // create pointers to each datapoint in data
     std::vector<datapoint_t *> ptrData;
     ptrData.reserve(data.size());
+#pragma omp parallel for shared(data, ptrData), schedule(static) // this section might have false sharing, which will degrade performance
     for (int i = 0; i < data.size(); i++)
     {
         ptrData[i] = &data[i];
