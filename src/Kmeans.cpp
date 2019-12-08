@@ -20,6 +20,74 @@ Kmeans::~Kmeans()
 {
 }
 
+void Kmeans::initMPIMembers(int numData, int numFeatures, value_t *data)
+{
+    int rank, numProcs;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+
+    if(rank == 0)
+    {
+        assert(data != NULL);
+    }
+
+    // Set data start/end indices
+    
+    // Datapoints allocated for each process to compute
+    int chunk = numData / numProcs;
+    int scrap = chunk + (numData % numProcs);
+    // Start index for data
+    startIdx_MPI = chunk * rank;
+    // End index of Data
+    endIdx_MPI = startIdx_MPI + chunk - 1;
+    // Last process gets leftover datapoints
+    if (rank == (numProcs - 1)) endIdx_MPI = startIdx_MPI + scrap - 1;
+
+    int size = endIdx_MPI - startIdx_MPI + 1;
+    // Resize member vectors
+    clusterCount_MPI.resize(numClusters);
+    clusterCoord_MPI.resize(numClusters);
+    clustering_MPI.resize(size);
+
+    // Size of each sub-array to gather
+    vLens_MPI.resize(numProcs);
+    // Index of each sub-array to gather
+    vDisps_MPI.resize(numProcs);
+    for(int i = 0; i < numProcs; i++)
+    {
+        vLens_MPI[i] = chunk;
+        vDisps_MPI[i] = i * chunk;
+    }
+    vLens_MPI[numProcs-1] = scrap;
+    
+    // Create disp/len arrays for data scatter
+    int dataLens[numProcs];
+    int dataDisps[numProcs];
+    for (int i=0; i<numProcs; i++)
+    {
+        dataLens[i] = vLens_MPI[i] * numFeatures;
+        dataDisps[i] = vDisps_MPI[i] * numFeatures;
+    }
+
+    value_t tempData[size * numFeatures];
+
+    // scatter data
+    if(rank == 0)
+    {
+        assert(data != NULL);
+        MPI_Scatterv(data, dataLens, dataDisps, MPI_FLOAT, tempData, dataLens[rank], MPI_FLOAT, 0, MPI_COMM_WORLD);
+    }
+    else
+    {
+        MPI_Scatterv(NULL, dataLens, dataDisps, MPI_FLOAT, tempData, dataLens[rank], MPI_FLOAT, 0, MPI_COMM_WORLD);
+    }
+
+
+    // convert to dataset_t
+    data_MPI = arrayToDataset(tempData, size, numFeatures);
+
+}
+
 void Kmeans::fit(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t &))
 {
 
@@ -95,7 +163,7 @@ void Kmeans::fit(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t &))
     }
 }
 
-void Kmeans::fit_MPI(int numData, int numFeatures, value_t (*func)(datapoint_t &, datapoint_t &))
+void Kmeans::fit_MPI_win(int numData, int numFeatures, value_t (*func)(datapoint_t &, datapoint_t &))
 {
     int rank, numProcs;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -114,7 +182,7 @@ void Kmeans::fit_MPI(int numData, int numFeatures, value_t (*func)(datapoint_t &
     for (int run = 0; run < numRestarts; run++)
     {
         // initialize clusters with k++ algorithm
-        kPlusPlus_MPI(numData, numFeatures, func);
+        kPlusPlus_MPI_win(numData, numFeatures, func);
 
         do
         {
@@ -185,7 +253,7 @@ void Kmeans::fit_MPI(int numData, int numFeatures, value_t (*func)(datapoint_t &
             {
                 int before, current;
                 MPI_Get(&before, 1, MPI_INT, 0, i+start, 1, MPI_INT, clusteringWin);
-                nearest_MPI(data[i], i+start, func, numClusters);
+                nearest_MPI_win(data[i], i+start, func, numClusters);
                 MPI_Get(&current, 1, MPI_INT, 0, i+start, 1, MPI_INT, clusteringWin);
                 if (before != current)
                 {
@@ -246,7 +314,12 @@ void Kmeans::fit_MPI(int numData, int numFeatures, value_t (*func)(datapoint_t &
     }
 }
 
-void Kmeans::kPlusPlus_MPI(int numData, int numFeatures, value_t (*func)(datapoint_t &, datapoint_t &))
+void Kmeans::fit_MPI(int numData, int numFeatures, value_t (*func)(datapoint_t &, datapoint_t &))
+{
+    //TODO: in-progress
+}
+
+void Kmeans::kPlusPlus_MPI_win(int numData, int numFeatures, value_t (*func)(datapoint_t &, datapoint_t &))
 {
     int rank, numProcs, clusterCount = 0;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -291,7 +364,7 @@ void Kmeans::kPlusPlus_MPI(int numData, int numFeatures, value_t (*func)(datapoi
         for (int pointIdx = 0; pointIdx < data.size(); pointIdx++)
         {
             int dataIdx = pointIdx + start;
-            local_distances[pointIdx] = nearest_MPI(data[pointIdx], dataIdx, func, numClusters);
+            local_distances[pointIdx] = nearest_MPI_win(data[pointIdx], dataIdx, func, numClusters);
             local_sum += local_distances[pointIdx];
         }
 
@@ -347,9 +420,14 @@ void Kmeans::kPlusPlus_MPI(int numData, int numFeatures, value_t (*func)(datapoi
 
     for (int i = 0; i < data.size(); i++)
     {
-        nearest_MPI(data[i], i+start, func, clusterCount);
+        nearest_MPI_win(data[i], i+start, func, clusterCount);
     }
 
+}
+
+void Kmeans::kPlusPlus_MPI(int numData, int numFeatures, value_t (*func)(datapoint_t &, datapoint_t &))
+{
+    //TODO: In-progress
 }
 
 void Kmeans::kPlusPlus(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t &))
@@ -417,7 +495,7 @@ value_t Kmeans::nearest(datapoint_t &point, int &pointIdx, value_t (*func)(datap
     return minDist;
 }
 
-value_t Kmeans::nearest_MPI(datapoint_t &point, int pointIdx, value_t (*func)(datapoint_t &, datapoint_t &), int clusterCount)
+value_t Kmeans::nearest_MPI_win(datapoint_t &point, int pointIdx, value_t (*func)(datapoint_t &, datapoint_t &), int clusterCount)
 {
     value_t tempDist, minDist = INT_MAX - 1;
 
@@ -435,6 +513,11 @@ value_t Kmeans::nearest_MPI(datapoint_t &point, int pointIdx, value_t (*func)(da
     }
 
     return minDist;
+}
+
+value_t Kmeans::nearest_MPI(datapoint_t &point, int pointIdx, value_t (*func)(datapoint_t &, datapoint_t &), int clusterCount)
+{
+    // TODO: in-progress
 }
 
 void Kmeans::fit(dataset_t &data, int overSampling, value_t (*func)(datapoint_t &, datapoint_t &), int initIters)
@@ -725,6 +808,22 @@ void Kmeans::setMPIWindows(MPI_Win dataWin, MPI_Win clusteringWin, MPI_Win clust
     this->clusteringWin = clusteringWin;
     this->clusterCoordWin = clusterCoordWin;
     this->clusterCountWin = clusterCountWin;
+}
+
+dataset_t Kmeans::arrayToDataset(value_t* data, int size, int numFeatures)
+{
+
+    dataset_t dataVec = dataset_t(size, datapoint_t(numFeatures));
+
+    for(int i=0; i<dataVec.size(); i++)
+    {
+        for(int j=0; j<numFeatures; j++)
+        {
+            // std::cout << (i*numFeatures)+j << std::endl;
+            dataVec[i][j] = data[(i*numFeatures)+j];
+        }
+    }
+    return dataVec;
 }
 
 dataset_t Kmeans::getDataVecFromMPIWin(int start, int end, int numFeatures)

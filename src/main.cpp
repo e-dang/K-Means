@@ -60,8 +60,9 @@ dataset_t generateDataset(int numData, int numFeatures, int numClusters)
     return data;
 }
 
-void generateDataset(int numData, int numFeatures, int numClusters, value_t* data)
+value_t* generateDataset_MPI(int numData, int numFeatures, int numClusters)
 {
+    value_t* data = new value_t[numData * numFeatures];
     // init normal distributions for generating psuedo data
     RNGType rng(time(NULL));
     boost::normal_distribution<> nd0(0.0, 1.0);
@@ -108,6 +109,7 @@ void generateDataset(int numData, int numFeatures, int numClusters, value_t* dat
             }
         }
     }
+    return data;
 }
 
 int main(int argc, char* argv[])
@@ -121,6 +123,8 @@ int main(int argc, char* argv[])
     bool MPI = true;
     if (MPI)
     {
+        bool MPI_windows = false;
+        
         // Runs MPI implementation of K++
         Kmeans kmeans(numClusters, 1);
         MPI_Init(&argc, &argv);
@@ -129,50 +133,64 @@ int main(int argc, char* argv[])
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
         MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
-        MPI_Win dataWin, clusteringWin, clusterCountWin, clusterCoordWin;
-        value_t* data, clusterCoord;
-        int* clustering, clusterCount;
-        if (rank == 0)
+        // Run with scatter/gather MPI
+        if (MPI_windows == false)
         {
-            // Shared Mem for data, clustering, cluster count, cluster coord
-            MPI_Win_allocate_shared(numData * numFeatures * sizeof(value_t), sizeof(value_t), MPI_INFO_NULL, MPI_COMM_WORLD, &data, &dataWin);
-            MPI_Win_allocate_shared(numData * sizeof(int), sizeof(int), MPI_INFO_NULL, MPI_COMM_WORLD, &clustering, &clusteringWin);
-            MPI_Win_allocate_shared(numClusters * sizeof(int), sizeof(int), MPI_INFO_NULL, MPI_COMM_WORLD, &clusterCount, &clusterCountWin);
-            MPI_Win_allocate_shared(numClusters * numFeatures * sizeof(value_t), sizeof(value_t), MPI_INFO_NULL, MPI_COMM_WORLD, &clusterCoord, &clusterCoordWin);
-            generateDataset(numData, numFeatures, numClusters, data);
+            value_t* data = generateDataset_MPI(numData, numFeatures, numClusters);
+            if(rank == 0)
+                kmeans.initMPIMembers(numData, numFeatures, data);
+            else
+                kmeans.initMPIMembers(numData, numFeatures);
         }
+        // Run with MPI windows
         else
-        {
-            // Shared Mem for data, clustering, cluster count, cluster coord
-            MPI_Win_allocate_shared(0, sizeof(value_t), MPI_INFO_NULL, MPI_COMM_WORLD, &data, &dataWin);
-            MPI_Win_allocate_shared(0, sizeof(int), MPI_INFO_NULL, MPI_COMM_WORLD, &clustering, &clusteringWin);
-            MPI_Win_allocate_shared(0, sizeof(int), MPI_INFO_NULL, MPI_COMM_WORLD, &clusterCount, &clusterCountWin);
-            MPI_Win_allocate_shared(0, sizeof(value_t), MPI_INFO_NULL, MPI_COMM_WORLD, &clusterCoord, &clusterCoordWin);
+        {     
+            MPI_Win dataWin, clusteringWin, clusterCountWin, clusterCoordWin;
+            value_t* data, clusterCoord;
+            int* clustering, clusterCount;
+            if (rank == 0)
+            {
+                // Shared Mem for data, clustering, cluster count, cluster coord
+                MPI_Win_allocate_shared(numData * numFeatures * sizeof(value_t), sizeof(value_t), MPI_INFO_NULL, MPI_COMM_WORLD, &data, &dataWin);
+                MPI_Win_allocate_shared(numData * sizeof(int), sizeof(int), MPI_INFO_NULL, MPI_COMM_WORLD, &clustering, &clusteringWin);
+                MPI_Win_allocate_shared(numClusters * sizeof(int), sizeof(int), MPI_INFO_NULL, MPI_COMM_WORLD, &clusterCount, &clusterCountWin);
+                MPI_Win_allocate_shared(numClusters * numFeatures * sizeof(value_t), sizeof(value_t), MPI_INFO_NULL, MPI_COMM_WORLD, &clusterCoord, &clusterCoordWin);
+                data = generateDataset_MPI(numData, numFeatures, numClusters);
+            }
+            else
+            {
+                // Shared Mem for data, clustering, cluster count, cluster coord
+                MPI_Win_allocate_shared(0, sizeof(value_t), MPI_INFO_NULL, MPI_COMM_WORLD, &data, &dataWin);
+                MPI_Win_allocate_shared(0, sizeof(int), MPI_INFO_NULL, MPI_COMM_WORLD, &clustering, &clusteringWin);
+                MPI_Win_allocate_shared(0, sizeof(int), MPI_INFO_NULL, MPI_COMM_WORLD, &clusterCount, &clusterCountWin);
+                MPI_Win_allocate_shared(0, sizeof(value_t), MPI_INFO_NULL, MPI_COMM_WORLD, &clusterCoord, &clusterCoordWin);
+            }
+
+            MPI_Win_fence(MPI_MODE_NOPRECEDE, dataWin);
+            MPI_Win_fence(MPI_MODE_NOPRECEDE, clusteringWin);
+            MPI_Win_fence(MPI_MODE_NOPRECEDE, clusterCountWin);
+            MPI_Win_fence(MPI_MODE_NOPRECEDE, clusterCoordWin);
+
+            kmeans.setMPIWindows(dataWin, clusteringWin, clusterCountWin, clusterCoordWin);
+
+            auto start = std::chrono::high_resolution_clock::now();
+            kmeans.fit_MPI_win(numData, numFeatures, Kmeans::distanceL2);
+            auto stop = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+
+            if(rank == 0)
+            {
+                std::cout << "Total time: " << duration.count() << std::endl;
+            }
+
+            MPI_Win_free(&dataWin);
+            MPI_Win_free(&clusteringWin);
+            MPI_Win_free(&clusterCountWin);
+            MPI_Win_free(&clusterCoordWin);
         }
-
-        MPI_Win_fence(MPI_MODE_NOPRECEDE, dataWin);
-        MPI_Win_fence(MPI_MODE_NOPRECEDE, clusteringWin);
-        MPI_Win_fence(MPI_MODE_NOPRECEDE, clusterCountWin);
-        MPI_Win_fence(MPI_MODE_NOPRECEDE, clusterCoordWin);
-
-        kmeans.setMPIWindows(dataWin, clusteringWin, clusterCountWin, clusterCoordWin);
-
-        auto start = std::chrono::high_resolution_clock::now();
-        kmeans.fit_MPI(numData, numFeatures, Kmeans::distanceL2);
-        auto stop = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-
-        if(rank == 0)
-        {
-            std::cout << "Total time: " << duration.count() << std::endl;
-        }
-
-        MPI_Win_free(&dataWin);
-        MPI_Win_free(&clusteringWin);
-        MPI_Win_free(&clusterCountWin);
-        MPI_Win_free(&clusterCoordWin);
+        
         MPI_Finalize();
-
+        
     }
     else
     {

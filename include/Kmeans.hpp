@@ -13,17 +13,38 @@ private:
     int numThreads;              // the number of threads to use
     int numClusters;             // the number of clusters to cluster to data into
     int numRestarts;             // the number of times Kmeans should try to cluster the data
+
     value_t bestError;           // the error in the best clustering
     clusters_t clusters;         // the cluster centers
     clusters_t bestClusters;     // the best cluster centers
     clustering_t clustering;     // the cluster assignments for each data point
     clustering_t bestClustering; // the best cluster assignments
     coreset_t coreset;           // the coreset to run clustering on if specified to do so
+
     MPI_Win dataWin;
     MPI_Win clusteringWin;
     MPI_Win clusterCoordWin;
     MPI_Win clusterCountWin;
 
+    int startIdx_MPI;
+    int endIdx_MPI;
+    dataset_t data_MPI;
+    clustering_t clustering_MPI;
+    std::vector<int> clusterCount_MPI;
+    datapoint_t clusterCoord_MPI;
+    std::vector<int> vDisps_MPI;
+    std::vector<int> vLens_MPI;
+
+
+    /**
+     * @brief  Converts a c-array of datapoints into the dataset_t object
+     * @note   
+     * @param  data: Pointer to the data array
+     * @param  size: number of datapoints
+     * @param  numFeatures: Number of features per datapoing
+     * @retval 
+     */
+    dataset_t arrayToDataset(value_t* data, int size, int numFeatures);
 
     /**
      * @brief  Uses MPI window dataWin to retireve a chunk of the dataset
@@ -121,6 +142,8 @@ private:
      * @param func - The distance function to use.
      * @return value_t - The square of the minimum distance.
      */
+    value_t nearest_MPI_win(datapoint_t &point, int pointIdx, value_t (*func)(datapoint_t &, datapoint_t &), int clusterCount);
+
     value_t nearest_MPI(datapoint_t &point, int pointIdx, value_t (*func)(datapoint_t &, datapoint_t &), int clusterCount);
 
     /**
@@ -145,6 +168,8 @@ private:
      * @param data - MPI shared data window.
      * @param func - The distance function to use.
      */
+    void kPlusPlus_MPI_win(int numData, int numFeatures, value_t (*func)(datapoint_t &, datapoint_t &));
+
     void kPlusPlus_MPI(int numData, int numFeatures, value_t (*func)(datapoint_t &, datapoint_t &));
 
     /**
@@ -160,6 +185,17 @@ private:
     void createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(datapoint_t &, datapoint_t &));
 
 public:
+
+    /**
+     * @brief  Initializes all the member variables used for scatter/gather MPI
+     * @note   
+     * @param  numData: Number of datapoints
+     * @param  numFeatures: Features per datapoint
+     * @param  data: c-array with all data
+     * @retval None
+     */
+    void initMPIMembers(int numData, int numFeatures, value_t* data=NULL);
+
     /**
      * @brief Construct a new Kmeans object.
      *
@@ -200,6 +236,8 @@ public:
      * @param data - The data to be clustered.
      * @param func - The distance function to use.
      */
+    void fit_MPI_win(int numData, int numFeatures, value_t (*func)(datapoint_t &, datapoint_t &));
+
     void fit_MPI(int numData, int numFeatures, value_t (*func)(datapoint_t &, datapoint_t &));
 
     /**
