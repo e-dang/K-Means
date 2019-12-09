@@ -19,6 +19,8 @@ private:
     clusters_t bestClusters;     // the best cluster centers
     clustering_t clustering;     // the cluster assignments for each data point
     clustering_t bestClustering; // the best cluster assignments
+    std::vector<int> bestClusterCount;
+    dataset_t bestClusterCoord;
     coreset_t coreset;           // the coreset to run clustering on if specified to do so
 
     MPI_Win dataWin;
@@ -30,8 +32,9 @@ private:
     int endIdx_MPI;
     dataset_t data_MPI;
     clustering_t clustering_MPI;
+    clustering_t clusteringChunk_MPI;
     std::vector<int> clusterCount_MPI;
-    datapoint_t clusterCoord_MPI;
+    dataset_t clusterCoord_MPI;
     std::vector<int> vDisps_MPI;
     std::vector<int> vLens_MPI;
 
@@ -170,7 +173,7 @@ private:
      */
     void kPlusPlus_MPI_win(int numData, int numFeatures, value_t (*func)(datapoint_t &, datapoint_t &));
 
-    void kPlusPlus_MPI(int numData, int numFeatures, value_t (*func)(datapoint_t &, datapoint_t &));
+    void kPlusPlus_MPI(int numData, int numFeatures, value_t *data, value_t (*func)(datapoint_t &, datapoint_t &));
 
     /**
      * @brief Create the coreset used for representative kmeans clustering on the whole dataset. The coreset is stored
@@ -238,7 +241,7 @@ public:
      */
     void fit_MPI_win(int numData, int numFeatures, value_t (*func)(datapoint_t &, datapoint_t &));
 
-    void fit_MPI(int numData, int numFeatures, value_t (*func)(datapoint_t &, datapoint_t &));
+    void fit_MPI(int numData, int numFeatures, value_t *data, value_t (*func)(datapoint_t &, datapoint_t &));
 
     /**
      * @brief Get the numClusters object.

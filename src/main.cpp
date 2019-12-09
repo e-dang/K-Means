@@ -114,8 +114,8 @@ value_t* generateDataset_MPI(int numData, int numFeatures, int numClusters)
 
 int main(int argc, char* argv[])
 {
-    int numData = 1000;
-    int numFeatures = 25;
+    int numData = 10000;
+    int numFeatures = 250;
     int numClusters = 5;
     int numRestarts = 10;
     dataset_t data;
@@ -138,9 +138,17 @@ int main(int argc, char* argv[])
         {
             value_t* data = generateDataset_MPI(numData, numFeatures, numClusters);
             if(rank == 0)
-                kmeans.initMPIMembers(numData, numFeatures, data);
+            {
+                auto start = std::chrono::high_resolution_clock::now();
+                kmeans.fit_MPI(numData, numFeatures, data, Kmeans::distanceL2);
+                auto stop = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+                std::cout << "Total time: " << duration.count() << std::endl;
+            }
             else
-                kmeans.initMPIMembers(numData, numFeatures);
+            {
+                kmeans.fit_MPI(numData, numFeatures, NULL, Kmeans::distanceL2);
+            }
         }
         // Run with MPI windows
         else
