@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
     int numRestarts = 10;
     dataset_t data;
 
-    bool MPI = true;
+    bool MPI = false;
     if (MPI)
     {
         // Runs MPI implementation of K++
@@ -176,14 +176,31 @@ int main(int argc, char* argv[])
     }
     else
     {
+        data = generateDataset(numData, numFeatures, numClusters);
+
         // cluster data
-        Kmeans kmeans(numClusters, 1);
-        auto start = std::chrono::high_resolution_clock::now();
+        Kmeans kmeans(numClusters, 1, 4);
+        // auto start = std::chrono::high_resolution_clock::now();
         // kmeans.fit(data, Kmeans::distanceL2); // kmeans++
-        // kmeans.fit(data, numClusters / 3, Kmeans::distanceL2); // scalableKmeans
-        auto stop = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-        std::cout << "Total time: " << duration.count() << std::endl;
+        // // kmeans.fit(data, numClusters / 3, Kmeans::distanceL2); // scalableKmeans
+        // auto stop = std::chrono::high_resolution_clock::now();
+        // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+        // std::cout << "Full Dataset Error: " << kmeans.getError() << std::endl;
+        // std::cout << "Full Dataset Total time: " << duration.count() << std::endl;
+
+        int coreset_size = 500;
+        auto start_coreset_creation = std::chrono::high_resolution_clock::now();
+        kmeans.createCoreSet(data, coreset_size, Kmeans::distanceL2);
+        auto stop_coreset_creation = std::chrono::high_resolution_clock::now();
+        auto duration_coreset_creation = std::chrono::duration_cast<std::chrono::microseconds>(stop_coreset_creation - start_coreset_creation);
+        std::cout << "Coreset creation time: " << duration_coreset_creation.count() << std::endl;
+
+        auto start_coreset_fitting = std::chrono::high_resolution_clock::now();
+        kmeans.fit_coreset(Kmeans::distanceL2);
+        auto stop_coreset_fitting = std::chrono::high_resolution_clock::now();
+        auto duration_coreset_fitting = std::chrono::duration_cast<std::chrono::microseconds>(stop_coreset_fitting - start_coreset_fitting);
+        std::cout << "Coreset fitting error: " << kmeans.getError() << std::endl;
+        std::cout << "Coreset fitting time: " << duration_coreset_fitting.count() << std::endl;
 
         // std::cout << "Cluster Centers:" << std::endl;
         // for (auto &center : kmeans.getClusters())

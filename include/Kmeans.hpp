@@ -147,18 +147,6 @@ private:
      */
     void kPlusPlus_MPI(int numData, int numFeatures, value_t (*func)(datapoint_t &, datapoint_t &));
 
-    /**
-     * @brief Create the coreset used for representative kmeans clustering on the whole dataset. The coreset is stored
-     *        in the private member variable coreset.
-     *
-     * @param data - The data to be clustered.
-     * @param sampleSize - The number of datapoints to include in the coreset.
-     * @param func - The distance function to use.
-     */
-
-    
-    void createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(datapoint_t &, datapoint_t &));
-
 public:
     /**
      * @brief Construct a new Kmeans object.
@@ -292,4 +280,15 @@ public:
     static value_t distanceL2(datapoint_t &p1, datapoint_t &p2);
 
     void setMPIWindows(MPI_Win dataWin, MPI_Win clusteringWin, MPI_Win clusterCoordWin, MPI_Win clusterCountWin);
+
+    /**
+     * @brief Create the coreset used for representative kmeans clustering on the whole dataset. The coreset is stored
+     *        in the private member variable coreset.
+     *
+     * @param data - The data to be clustered.
+     * @param sampleSize - The number of datapoints to include in the coreset.
+     * @param func - The distance function to use.
+     */
+    
+    void createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(datapoint_t &, datapoint_t &));
 };
