@@ -8,7 +8,7 @@ project(Kmeans)
 set(CMAKE_CXX_COMPILER "mpic++")
 
 # flags
-SET(CMAKE_CXX_FLAGS "-O3 -std=c++11 -Wall -Wpedantic -fopenmp")
+SET(CMAKE_CXX_FLAGS "-std=c++11 -Wall -Wpedantic -fopenmp")
 
 # include
 include_directories(./include)
