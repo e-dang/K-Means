@@ -214,7 +214,7 @@ int main(int argc, char* argv[])
         // std::cout << "Full Dataset Error: " << kmeans.getError() << std::endl;
         // std::cout << "Full Dataset Total time: " << duration.count() << std::endl;
 
-        int coreset_size = 500;
+        int coreset_size = 5000;
         auto start_coreset_creation = std::chrono::high_resolution_clock::now();
         kmeans.createCoreSet(data, coreset_size, Kmeans::distanceL2);
         auto stop_coreset_creation = std::chrono::high_resolution_clock::now();
