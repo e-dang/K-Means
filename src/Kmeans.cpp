@@ -164,6 +164,82 @@ void Kmeans::fit(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t &))
     }
 }
 
+void Kmeans::fit_coreset(value_t (*func)(datapoint_t &, datapoint_t &))
+{
+    int changed;
+    int numData = coreset.data.size();
+    int numFeatures = coreset.data[0].size();
+    value_t currError;
+
+    for (int run = 0; run < numRestarts; run++)
+    {
+        bestClusters = clusters_t();
+        bestClustering = clustering_t(numData, -1);
+        clusters = clusters_t();
+        clustering = clustering_t(numData, -1);
+        // initialize clusters with k++ algorithm
+        kPlusPlus(coreset.data, func); 
+        do
+        {
+            // reinitialize clusters
+            for (int i = 0; i < numClusters; i++)
+            {
+                clusters[i] = {0, datapoint_t(numFeatures, 0.)};
+            }
+
+            // calc the weighted sum of each feature for all points belonging to a cluster
+            std::vector<value_t> cluster_weights(clusters.size(), 0.0);
+            for (int i = 0; i < numData; i++)
+            {
+                for (int j = 0; j < numFeatures; j++)
+                {
+                    clusters[clustering[i]].coords[j] += coreset.weights[i] * coreset.data[i][j];
+                }
+                clusters[clustering[i]].count++;
+                cluster_weights.at(clustering[i]) += coreset.weights[i];
+            }
+
+            // divide the sum of the points by the total cluster weight to obtain average
+            for (int i = 0; i < numClusters; i++)
+            {
+                for (int j = 0; j < numFeatures; j++)
+                {
+                    clusters[i].coords[j] /= cluster_weights[i];
+                }
+            }
+
+            // reassign points to cluster
+            changed = 0;
+#pragma omp parallel for schedule(static), reduction(+ \
+                                                                   : changed)
+            for (int i = 0; i < numData; i++)
+            {
+                int before = clustering[i];
+                nearest(coreset.data[i], i, func);
+                if (before != clustering[i])
+                {
+                    changed++;
+                }
+            }
+        } while (changed > (numData >> 10)); // do until 99.9% of data doesnt change
+
+        // get total sum of distances from each point to their cluster center
+        currError = 0;
+        for (int i = 0; i < numData; i++)
+        {
+            currError += std::pow(func(coreset.data[i], clusters[clustering[i]].coords), 2);
+        }
+
+        // if this round produced lowest error, keep clustering
+        if (currError < bestError)
+        {
+            bestError = currError;
+            bestClustering = clustering;
+            bestClusters = clusters;
+        }
+    }
+}
+
 void Kmeans::fit_MPI_win(int numData, int numFeatures, value_t (*func)(datapoint_t &, datapoint_t &))
 {
     int rank, numProcs;
@@ -921,20 +997,21 @@ void Kmeans::smartClusterUpdate(datapoint_t &point, int &pointIdx, int &clusterI
 
 void Kmeans::createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(datapoint_t &, datapoint_t &))
 {
-    coreset.data.reserve(sampleSize);
-    coreset.weights.reserve(sampleSize);
 
     RNGType rng(time(NULL));
     boost::uniform_real<> floatRange(0, 1);
     boost::variate_generator<RNGType, boost::uniform_real<>> floatDistr(rng, floatRange);
 
     // calculate the mean of the data
-    datapoint_t mean(0, data[0].size());
-    for (auto &datapoint : data)
+    datapoint_t mean(data[0].size(), 0);
+    auto mean_data = mean.data();
+
+// #pragma omp parallel for shared(data), schedule(static), reduction(+ : mean_data[: data[0].size()])
+    for (int nth_datapoint = 0; nth_datapoint < data.size(); nth_datapoint++)
     {
-        for (int i = 0; i < datapoint.size(); i++)
+        for (int i = 0; i < data[0].size(); i++)
         {
-            mean[i] += datapoint[i];
+            mean_data[i] += data[nth_datapoint][i];
         }
     }
 
@@ -945,8 +1022,8 @@ void Kmeans::createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(dat
 
     // calculate distances between the mean and all datapoints
     double distanceSum = 0;
-    std::vector<value_t> distances;
-    distances.reserve(data.size());
+    std::vector<value_t> distances(data.size(), 0);
+// #pragma omp parallel for shared(data, distances), schedule(static), reduction(+ : distanceSum) 
     for (int i = 0; i < data.size(); i++)
     {
         distances[i] = func(mean, data[i]);
@@ -954,10 +1031,10 @@ void Kmeans::createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(dat
     }
 
     // calculate the distribution used to choose the datapoints to create the coreset
-    value_t partOne = 0.5 * (1 / data.size()); // first portion of distribution calculation that is constant
-    double sum = 0;
-    std::vector<value_t> distribution;
-    distribution.reserve(data.size());
+    value_t partOne = 0.5 * (1.0 / (float)data.size()); // first portion of distribution calculation that is constant
+    double sum = 0.0;
+    std::vector<value_t> distribution(data.size(),0);
+// #pragma omp parallel for shared(distribution, distances), schedule(static), reduction(+ : sum) 
     for (int i = 0; i < data.size(); i++)
     {
         distribution[i] = partOne + 0.5 * distances[i] / distanceSum;
@@ -965,8 +1042,8 @@ void Kmeans::createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(dat
     }
 
     // create pointers to each datapoint in data
-    std::vector<datapoint_t *> ptrData;
-    ptrData.reserve(data.size());
+    std::vector<datapoint_t *> ptrData(data.size());
+// #pragma omp parallel for shared(data, ptrData), schedule(static) // this section might have false sharing, which will degrade performance
     for (int i = 0; i < data.size(); i++)
     {
         ptrData[i] = &data[i];
@@ -981,8 +1058,8 @@ void Kmeans::createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(dat
         {
             if ((randNum -= distribution[j]) <= 0)
             {
-                coreset.data[i] = *ptrData[j];
-                coreset.weights[i] = 1 / (sampleSize * distribution[j]);
+                coreset.data.push_back(*ptrData[j]);
+                coreset.weights.push_back(1 / (sampleSize * distribution[j]));
                 sum -= distribution[j];
                 ptrData.erase(ptrData.begin() + j);
                 distribution.erase(distribution.begin() + j);
