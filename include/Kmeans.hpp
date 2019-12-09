@@ -203,6 +203,14 @@ public:
     void fit_MPI(int numData, int numFeatures, value_t (*func)(datapoint_t &, datapoint_t &));
 
     /**
+     * @brief Function that performs the clustering on coresets using lloyd's algorithm with Kmeans ++ initialization.
+     *
+     * @param data - The data to be clustered.
+     * @param func - The distance function to use.
+     */
+    void fit_coreset(value_t (*func)(datapoint_t &, datapoint_t &));
+
+    /**
      * @brief Get the numClusters object.
      *
      * @return int
