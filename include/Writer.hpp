@@ -6,8 +6,8 @@
 class IWriter
 {
 public:
-    virtual void writeClusters(std::string filepath);
-    virtual void writeClustering(std::string filepath);
+    virtual void writeClusters(std::string filepath) = 0;
+    virtual void writeClustering(std::string filepath) = 0;
 };
 
 class DataSetWriter : public IWriter
@@ -32,7 +32,7 @@ private:
 
 public:
     ClusterWriter(clusters_t clusters, clustering_t clustering);
-    ~ClusterWriter();
+    ~ClusterWriter(){};
 
     void writeClusters(std::string filepath) override;
     void writeClustering(std::string filepath) override;
