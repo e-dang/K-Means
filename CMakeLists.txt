@@ -17,6 +17,6 @@ include_directories(./include)
 # target
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
-    add_executable(kmeans ./src/main.cpp ./src/Kmeans.cpp ./src/SerialKmeans.cpp ./src/Reader.cpp ./src/Writer.cpp)
+    add_executable(kmeans ./src/main.cpp ./src/Kmeans.cpp ./src/SerialKmeans.cpp ./src/OMPKmeans.cpp ./src/Reader.cpp ./src/Writer.cpp)
     target_link_libraries(kmeans ${Boost_LIBRARIES})
 endif()
