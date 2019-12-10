@@ -3,13 +3,37 @@
 #include <string>
 #include "Definitions.hpp"
 
-class Writer
+class IWriter
+{
+public:
+    virtual void writeClusters(std::string filepath);
+    virtual void writeClustering(std::string filepath);
+};
+
+class DataSetWriter : public IWriter
 {
 private:
-public:
-    Writer(){};
-    ~Writer(){};
+    dataset_t clusters;
+    clustering_t clustering;
 
-    void writeClusters(clusters_t clusters, std::string filepath);
-    void writeClustering(clustering_t clustering, std::string filepath);
+public:
+    DataSetWriter(dataset_t clusters, clustering_t clustering);
+    ~DataSetWriter(){};
+
+    void writeClusters(std::string filepath) override;
+    void writeClustering(std::string filepath) override;
+};
+
+class ClusterWriter : public IWriter
+{
+private:
+    clusters_t clusters;
+    clustering_t clustering;
+
+public:
+    ClusterWriter(clusters_t clusters, clustering_t clustering);
+    ~ClusterWriter();
+
+    void writeClusters(std::string filepath) override;
+    void writeClustering(std::string filepath) override;
 };

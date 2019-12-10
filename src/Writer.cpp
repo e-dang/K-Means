@@ -2,7 +2,41 @@
 
 #include <fstream>
 
-void Writer::writeClusters(clusters_t clusters, std::string filepath)
+DataSetWriter::DataSetWriter(dataset_t clusters, clustering_t clustering) : clusters(clusters), clustering(clustering)
+{
+}
+
+void DataSetWriter::writeClusters(std::string filepath)
+{
+    std::ofstream file(filepath, std::ios::binary);
+    if (!file.is_open())
+    {
+        throw std::runtime_error("Unable to open specified file");
+    }
+
+    int numFeatures = clusters.at(0).size();
+    for (int i = 0; i < clusters.size(); i++)
+    {
+        file.write(reinterpret_cast<char *>(&clusters.at(i)[0]), sizeof(value_t) * numFeatures);
+    }
+}
+
+void DataSetWriter::writeClustering(std::string filepath)
+{
+    std::ofstream file(filepath, std::ios::binary);
+    if (!file.is_open())
+    {
+        throw std::runtime_error("Unable to open specified file");
+    }
+
+    file.write(reinterpret_cast<char *>(&clustering.at(0)), sizeof(int) * clustering.size());
+}
+
+ClusterWriter::ClusterWriter(clusters_t clusters, clustering_t clustering) : clusters(clusters), clustering(clustering)
+{
+}
+
+void ClusterWriter::writeClusters(std::string filepath)
 {
     std::ofstream file(filepath, std::ios::binary);
     if (!file.is_open())
@@ -17,7 +51,7 @@ void Writer::writeClusters(clusters_t clusters, std::string filepath)
     }
 }
 
-void Writer::writeClustering(clustering_t clustering, std::string filepath)
+void ClusterWriter::writeClustering(std::string filepath)
 {
     std::ofstream file(filepath, std::ios::binary);
     if (!file.is_open())
