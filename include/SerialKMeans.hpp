@@ -49,6 +49,20 @@ public:
     void fit(dataset_t &data, int overSampling, value_t (*func)(datapoint_t &, datapoint_t &), int initIters = 3);
 
     /**
+     * @brief Get the numClusters object.
+     *
+     * @return int
+     */
+    int getNumClusters() { return numClusters; }
+
+    /**
+     * @brief Get the numRestarts object.
+     *
+     * @return int
+     */
+    int getNumRestarts() { return numRestarts; }
+
+    /**
      * @brief Get the bestClusters object.
      *
      * @return clusters_t
@@ -67,7 +81,7 @@ public:
      *
      * @return int
      */
-    value_t getError() { return bestError; };
+    double getError() { return bestError; };
 
     /**
      * @brief Set the numClusters object.
