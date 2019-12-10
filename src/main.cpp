@@ -60,9 +60,9 @@ dataset_t generateDataset(int numData, int numFeatures, int numClusters)
     return data;
 }
 
-value_t* generateDataset_MPI(int numData, int numFeatures, int numClusters)
+value_t *generateDataset_MPI(int numData, int numFeatures, int numClusters)
 {
-    value_t* data = new value_t[numData * numFeatures];
+    value_t *data = new value_t[numData * numFeatures];
     // init normal distributions for generating psuedo data
     RNGType rng(time(NULL));
     boost::normal_distribution<> nd0(0.0, 1.0);
@@ -88,23 +88,23 @@ value_t* generateDataset_MPI(int numData, int numFeatures, int numClusters)
                 if (i == 0)
                 {
 
-                    data[(j*numFeatures)+k] = normalDist0();
+                    data[(j * numFeatures) + k] = normalDist0();
                 }
                 else if (i == 1)
                 {
-                    data[(j*numFeatures)+k] = normalDist10();
+                    data[(j * numFeatures) + k] = normalDist10();
                 }
                 else if (i == 2)
                 {
-                    data[(j*numFeatures)+k] = normalDist100();
+                    data[(j * numFeatures) + k] = normalDist100();
                 }
                 else if (i == 3)
                 {
-                    data[(j*numFeatures)+k] = normalDist50();
+                    data[(j * numFeatures) + k] = normalDist50();
                 }
                 else
                 {
-                    data[(j*numFeatures)+k] = normalDist23();
+                    data[(j * numFeatures) + k] = normalDist23();
                 }
             }
         }
@@ -112,7 +112,7 @@ value_t* generateDataset_MPI(int numData, int numFeatures, int numClusters)
     return data;
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
     int numData = 10000;
     int numFeatures = 250;
@@ -124,7 +124,7 @@ int main(int argc, char* argv[])
     if (MPI)
     {
         bool MPI_windows = false;
-        
+
         // Runs MPI implementation of K++
         Kmeans kmeans(numClusters, 1);
         MPI_Init(&argc, &argv);
@@ -136,8 +136,8 @@ int main(int argc, char* argv[])
         // Run with scatter/gather MPI
         if (MPI_windows == false)
         {
-            value_t* data = generateDataset_MPI(numData, numFeatures, numClusters);
-            if(rank == 0)
+            value_t *data = generateDataset_MPI(numData, numFeatures, numClusters);
+            if (rank == 0)
             {
                 auto start = std::chrono::high_resolution_clock::now();
                 kmeans.fit_MPI(numData, numFeatures, data, Kmeans::distanceL2);
@@ -152,10 +152,10 @@ int main(int argc, char* argv[])
         }
         // Run with MPI windows
         else
-        {     
+        {
             MPI_Win dataWin, clusteringWin, clusterCountWin, clusterCoordWin;
-            value_t* data, clusterCoord;
-            int* clustering, clusterCount;
+            value_t *data, clusterCoord;
+            int *clustering, clusterCount;
             if (rank == 0)
             {
                 // Shared Mem for data, clustering, cluster count, cluster coord
@@ -186,7 +186,7 @@ int main(int argc, char* argv[])
             auto stop = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 
-            if(rank == 0)
+            if (rank == 0)
             {
                 std::cout << "Total time: " << duration.count() << std::endl;
             }
@@ -196,9 +196,8 @@ int main(int argc, char* argv[])
             MPI_Win_free(&clusterCountWin);
             MPI_Win_free(&clusterCoordWin);
         }
-        
+
         MPI_Finalize();
-        
     }
     else
     {
@@ -206,13 +205,13 @@ int main(int argc, char* argv[])
 
         // cluster data
         Kmeans kmeans(numClusters, 1, 4);
-        // auto start = std::chrono::high_resolution_clock::now();
-        // kmeans.fit(data, Kmeans::distanceL2); // kmeans++
-        // // kmeans.fit(data, numClusters / 3, Kmeans::distanceL2); // scalableKmeans
-        // auto stop = std::chrono::high_resolution_clock::now();
-        // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-        // std::cout << "Full Dataset Error: " << kmeans.getError() << std::endl;
-        // std::cout << "Full Dataset Total time: " << duration.count() << std::endl;
+        auto start = std::chrono::high_resolution_clock::now();
+        kmeans.fit(data, Kmeans::distanceL2); // kmeans++
+        // kmeans.fit(data, numClusters / 3, Kmeans::distanceL2); // scalableKmeans
+        auto stop = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+        std::cout << "Full Dataset Error: " << kmeans.getError() << std::endl;
+        std::cout << "Full Dataset Total time: " << duration.count() << std::endl;
 
         int coreset_size = 5000;
         auto start_coreset_creation = std::chrono::high_resolution_clock::now();
