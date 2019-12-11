@@ -38,12 +38,18 @@ public:
 
     void fit(int numData, int numFeatures, value_t *data, value_t (*func)(datapoint_t &, datapoint_t &));
 
+    void fit(int numData, int numFeatures, value_t *data, int overSampling,
+             value_t (*func)(datapoint_t &, datapoint_t &), int initIters = 5);
+
     /**
      * @brief Get the numClusters object.
      *
      * @return int
      */
-    int getNumClusters() { return numClusters; }
+    int getNumClusters()
+    {
+        return numClusters;
+    }
 
     /**
      * @brief Get the numRestarts object.
@@ -102,9 +108,29 @@ private:
      */
     void initMPIMembers(int numData, int numFeatures, value_t *data = NULL);
 
-    void kPlusPlus(int numData, int numFeatures, value_t *data, value_t (*func)(datapoint_t &, datapoint_t &), boost::variate_generator<RNGType, boost::uniform_int<>> intDistr, boost::variate_generator<RNGType, boost::uniform_real<>> floatDistr);
+    void kPlusPlus(int numData, int numFeatures, value_t *data, value_t (*func)(datapoint_t &, datapoint_t &),
+                   boost::variate_generator<RNGType, boost::uniform_int<>> intDistr,
+                   boost::variate_generator<RNGType, boost::uniform_real<>> floatDistr);
+
+    /**
+     * @brief An implementation of the Kmeans Parallel initialization algorithm using MPI.
+     *
+     * @param data - The data that is being clustered
+     * @param overSampling - The expected amount of clusters to sample in each iteration
+     * @param func - The distance function to use
+     * @param initIters - The number of iterations of cluster sampling to do
+     * @return std::vector<value_t>
+     */
+    std::vector<value_t> scaleableKmeans(int &numData, int &numFeatures, value_t *data, int &overSampling,
+                                         value_t (*func)(datapoint_t &, datapoint_t &),
+                                         boost::variate_generator<RNGType, boost::uniform_int<>> intDistr,
+                                         boost::variate_generator<RNGType, boost::uniform_real<>> floatDistr,
+                                         int initIters);
 
     value_t nearest(datapoint_t &point, int pointIdx, value_t (*func)(datapoint_t &, datapoint_t &), int clusterCount);
+
+    void smartClusterUpdate(datapoint_t &point, int &pointIdx, int &prevNumClusters, int &clusterCount, std::vector<value_t> &distances,
+                            value_t (*func)(datapoint_t &, datapoint_t &));
 
     /**
      * @brief  Converts a c-array of datapoints into the dataset_t object
@@ -115,4 +141,6 @@ private:
      * @retval
      */
     dataset_t arrayToDataset(value_t *data, int size, int numFeatures);
+
+    void bcastClusters(int &clusterCount);
 };
