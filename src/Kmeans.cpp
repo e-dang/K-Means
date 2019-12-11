@@ -167,7 +167,9 @@ void Kmeans::fit_coreset(value_t (*func)(datapoint_t &, datapoint_t &))
 {
     int changed;
     int numData = coreset.data.size();
+    std::cout << "num data: " << numData << std::endl;
     int numFeatures = coreset.data[0].size();
+    std::cout << "numFeatures " <<numFeatures << std::endl;
     value_t currError;
 
     for (int run = 0; run < numRestarts; run++)
@@ -226,6 +228,7 @@ void Kmeans::fit_coreset(value_t (*func)(datapoint_t &, datapoint_t &))
         currError = 0;
         for (int i = 0; i < numData; i++)
         {
+            // std::cout << currError << std::endl;
             currError += std::pow(func(coreset.data[i], clusters[clustering[i]].coords), 2);
         }
 
@@ -1057,6 +1060,263 @@ void Kmeans::createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(dat
                 distribution.erase(distribution.begin() + j);
             }
         }
+    }
+}
+
+void Kmeans::createCoreSet_MPI(int numData, int numFeatures, value_t *data, int sampleSize, value_t (*func)(datapoint_t &, datapoint_t &)){
+    int rank, numProcs;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+
+    // scatter the data across all processes
+    initMPIMembers(numData, numFeatures, data);
+
+    RNGType rng(time(NULL));
+    boost::uniform_int<> intRange(0, data_MPI.size());
+    boost::uniform_real<> floatRange(0, 1);
+    boost::variate_generator<RNGType, boost::uniform_int<>> intDistr(rng, intRange);
+    boost::variate_generator<RNGType, boost::uniform_real<>> floatDistr(rng, floatRange);
+    
+    // compute the mean, sum, and sqd sum of the data local to each machine
+    datapoint_t local_mean(data_MPI[0].size(), 0);
+    datapoint_t local_sum(data_MPI[0].size(), 0);
+    datapoint_t local_sqd_sum(data_MPI[0].size(), 0);
+
+    auto local_mean_data = local_mean.data();
+    auto local_sum_data = local_sum.data();
+    auto local_sqd_sum_data = local_sqd_sum.data();
+
+    for (int nth_datapoint = 0; nth_datapoint < data_MPI.size(); nth_datapoint++)
+    {
+        for (int mth_feature = 0; mth_feature < data_MPI[0].size(); mth_feature++)
+        {
+            local_mean_data[mth_feature] += data_MPI[nth_datapoint][mth_feature];
+            local_sum_data[mth_feature] +=  data_MPI[nth_datapoint][mth_feature];
+            local_sqd_sum_data[mth_feature] += std::pow(data_MPI[nth_datapoint][mth_feature], 2);
+        }
+    }
+
+    for (int i = 0; i < local_mean.size(); i++)
+    {
+        local_mean[i] /= data_MPI.size();
+    }
+    int local_cardinality = data_MPI.size();
+
+    // gather the local sums, squared sums, and means onto central machine
+    float *mean = NULL;
+    float *sum = NULL;
+    float *sqd_sum = NULL;
+    int *local_cardinalities = NULL;
+    if (rank == 0){
+        mean = (float*)malloc(numProcs*data_MPI[0].size()*sizeof(float));
+        sum = (float*)malloc(numProcs*data_MPI[0].size()*sizeof(float));
+        sqd_sum =(float*) malloc(numProcs*data_MPI[0].size()*sizeof(float));
+        local_cardinalities = (int*)malloc(numProcs*sizeof(int));
+    }
+
+    MPI_Gather(local_mean.data(), data_MPI[0].size(), MPI_FLOAT, mean, data_MPI[0].size(), MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Gather(local_sum.data(), data_MPI[0].size(), MPI_FLOAT, sum, data_MPI[0].size(), MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Gather(local_sqd_sum.data(), data_MPI[0].size(), MPI_FLOAT, sqd_sum, data_MPI[0].size(), MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Gather(&local_cardinality, 1, MPI_INT, local_cardinalities, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+
+    // root machine will compute the following:
+    std::vector<value_t> global_mean(data_MPI[0].size(),0);
+    std::vector<value_t> quant_errs(numProcs, 0);
+    std::vector<int> uniform_sample_counts(numProcs,0); // number of points to be sampled uniformly on the ith machine
+    std::vector<int> phi_sample_counts(numProcs,0); // number of points to be sampled based on quant error on the ith machine
+    std::vector<int> samples_per_proc(numProcs, 0); // Elements represent number of data points to be sampled per machine. Index corresponds to rank of the proccess. 
+    std::vector<int> samples_per_proc_disp(numProcs, 0);
+    std::vector<int> data_per_proc(numProcs, 0); // Elements represent the amount of data (number of floating point numbers) to sample on each machine (element-wise sum of the above two vectors)*dataset dimensionality
+    std::vector<int> data_per_proc_disp(numProcs, 0);
+    int dataset_cardinality = 0;
+    float total_quant_err = 0.0;
+
+    if (rank == 0){
+        // compute the global mean from the gathered mean data
+        for (int nth_proc = 0; nth_proc <numProcs; nth_proc++){
+            for (int mth_feature = 0; mth_feature < data_MPI[0].size(); mth_feature++){
+                global_mean[mth_feature] += mean[nth_proc*mth_feature];
+            }
+        }
+        for (int mth_feature = 0; mth_feature < data_MPI[0].size(); mth_feature++){
+            global_mean[mth_feature] /= (float)numProcs;
+        }
+
+        // compute the total cardinality of the dataset -- might be unecessary but doing this to make this section of code robust to chagne in the way we get a dataset
+        for (int nth_proc = 0; nth_proc < numProcs; nth_proc++){
+            dataset_cardinality += local_cardinalities[nth_proc];
+            // std::cout << "local_cardinalities: " << local_cardinalities[nth_proc] << std::endl;
+        }
+        // std::cout << "dataset cardinality: "<< dataset_cardinality << std::endl;
+
+        // compute the local quantization error for each machine and the total quantization error
+        for (int nth_proc = 0; nth_proc < numProcs; nth_proc++){
+            value_t ith_quant_err;
+            for (int mth_feature = 0; mth_feature < data_MPI[0].size(); mth_feature++){
+                ith_quant_err += sqd_sum[nth_proc*mth_feature] - 2*global_mean[mth_feature]*sum[nth_proc*mth_feature] + dataset_cardinality*global_mean[mth_feature];
+            }
+            quant_errs[nth_proc] = ith_quant_err;
+            // std::cout<< "ith_quant_err: " << ith_quant_err << std::endl;
+            total_quant_err += ith_quant_err;
+        }
+        // std::cout << "total_quant_err: " << total_quant_err << std::endl;
+
+        // compute the number of points to sample from each machine
+        double randNum;
+        for (int nth_sample = 0; nth_sample < sampleSize; nth_sample ++){
+            randNum = floatDistr();
+            if (randNum > .5){
+                randNum = floatDistr()*dataset_cardinality;
+                int cumsum = 0;
+                for (int nth_proc = 0; nth_proc < numProcs; nth_proc++){
+                    cumsum += local_cardinalities[nth_proc];
+                    if (cumsum >= randNum) {
+                        uniform_sample_counts[nth_proc] += 1;
+                        samples_per_proc[nth_proc] += 1;
+                        data_per_proc[nth_proc] += data_MPI[0].size();
+                        break;
+                    }
+                }
+            }
+            else {
+                randNum = floatDistr()*total_quant_err;
+                float cumsum = 0;
+                for (int nth_proc = 0; nth_proc < numProcs; nth_proc++){
+                    cumsum += quant_errs[nth_proc];
+                    if (cumsum >= randNum) {
+                        phi_sample_counts[nth_proc] += 1;
+                        samples_per_proc[nth_proc] += 1;
+                        data_per_proc[nth_proc] += data_MPI[0].size();
+                        break;
+                    }
+                }
+            }
+        }
+
+        // calculate the displacement of the coreset data indices in the soon-to-be aggregated coreset array
+        // std::cout << "SAMPLES PER PROC PHI: " << phi_sample_counts[0] << " "<< phi_sample_counts[1] << std::endl;
+        // std::cout << "SAMPLES PER PROC UNIFORM: " << uniform_sample_counts[0] << " "<< uniform_sample_counts[1] << std::endl;
+        // std::cout << "SAMPLES PER PROC: " << samples_per_proc[0] << std::endl;
+        // std::cout << "SAMPLES PER PROC: " << samples_per_proc[1] << std::endl;
+        for (int nth_proc = 1; nth_proc < numProcs; nth_proc++){
+            data_per_proc_disp[nth_proc] = data_per_proc[nth_proc] + data_per_proc_disp[nth_proc-1];
+            samples_per_proc_disp[nth_proc] = samples_per_proc[nth_proc] + samples_per_proc_disp[nth_proc-1];
+        }
+    }   
+    // need barrier here?
+    MPI_Barrier(MPI_COMM_WORLD);
+    // broadcast the global mean, total quantization error, sampling counts and local quantization errors
+    MPI_Bcast(global_mean.data(), data_MPI[0].size(), MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&total_quant_err, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&dataset_cardinality, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(quant_errs.data(), numProcs, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(phi_sample_counts.data(), numProcs, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(uniform_sample_counts.data(), numProcs, MPI_INT, 0, MPI_COMM_WORLD);
+
+    // calculate the distribution used to choose the datapoints to create the coreset
+    // std::cout << "process number: " << rank <<" has this size "<< data_MPI.size() << std::endl;
+    value_t partOne = 0.5 * (1.0 / dataset_cardinality); // first portion of distribution calculation that is constant
+    std::vector<value_t> distribution(data_MPI.size(),0);
+    
+    float s = 0;
+    for (int i = 0; i < data_MPI.size(); i++)
+    {
+        distribution[i] = partOne + .5*func(data_MPI[i], global_mean)/total_quant_err;
+        s += distribution[i];
+    }
+    std::cout << s << std::endl;
+
+    // create pointers to each datapoint in data
+    std::vector<datapoint_t *> ptrData(data_MPI.size());
+    for (int i = 0; i < data_MPI.size(); i++)
+    {
+        ptrData[i] = &data_MPI[i];
+    }
+    // std::cout << "helloooooo" << std::endl;
+    // generate the coreset by first sampling the appropriate number of points for a given machine from the uniform distribution
+    int randNum;
+    double phiDist = total_quant_err; 
+    double uniformDist = data_MPI.size() -1; 
+    int nth_uniform_sample;
+    for (nth_uniform_sample = 0; nth_uniform_sample < uniform_sample_counts[rank]; nth_uniform_sample++){
+        randNum = (int) std::round(floatDistr()*(uniformDist - nth_uniform_sample)); // subtract the contribution of the previously sampled point from the uniform dist
+        // if (randNum > distribution.size()){
+            // std::cout << "RandNum: " << randNum << " Size: " << distribution.size() << std::endl;
+        // }
+        coreset.data.push_back(*ptrData[randNum]);
+        coreset.weights.push_back((float)1.0 / (sampleSize * distribution[randNum]));
+        phiDist -= 2*(distribution[randNum] - partOne); // subtract contribution of the sampled point from the phi distrubition
+        ptrData.erase(ptrData.begin() + randNum);
+        distribution.erase(distribution.begin() + randNum);
+    }
+    // std::cout <<rank << "hello8  " << std::endl;
+    double randPhi;
+    for (int i = 0; i < phi_sample_counts[rank]; i++)
+    {
+        randPhi = floatDistr() * phiDist;
+        for (int j = 0; j < ptrData.size(); j++)
+        {
+            if ((randPhi -= 2*(distribution[j]-partOne)) <= 0)
+            {
+                coreset.data.push_back(*ptrData[j]);
+                coreset.weights.push_back((float)1.0 / (sampleSize * distribution[j]));
+                phiDist -= 2*(distribution[j] - partOne);
+                ptrData.erase(ptrData.begin() + j);
+                distribution.erase(distribution.begin() + j);
+            }
+        }
+    }
+    // std::cout<< rank << "hello9" << std::endl;
+    
+    // flatten the 2d vector of coreset data
+    // float* flattenedCoresetData = (float*) malloc(sampleSize*data_MPI[0].size()*sizeof(float));
+    int local_coreset_cardinality = coreset.data.size();
+    std::vector<value_t> flattenedCoresetData(local_coreset_cardinality*data_MPI[0].size());
+    // std::cout <<rank<<"flattened array size: "<< local_coreset_cardinality*data_MPI[0].size() << std::endl;
+
+    for (int i = 0; i < local_coreset_cardinality; i++){
+            // std::cout <<"i: "<< i << " dim: " << dim << std::endl;
+        flattenedCoresetData.insert(flattenedCoresetData.end(), coreset.data[i].begin(), coreset.data[i].end());
+    }
+    // std::cout <<rank << "hello10" << std::endl;
+
+    //gather the coresets back onto the root machine
+    value_t* coreset_temp = NULL;
+    value_t* weights_temp = NULL;
+
+    if (rank == 0) {
+        coreset_temp = (value_t*)malloc(sampleSize*data_MPI[0].size()*sizeof(float));
+        weights_temp = (value_t*)malloc(sampleSize*sizeof(float));
+    }
+    // std::cout <<rank << "hello10" << std::endl;
+
+    int data_send_count = data_MPI[0].size()*local_coreset_cardinality;
+    // std::cout <<rank <<"data send count: "<< data_send_count << std::endl;
+    // std::cout <<rank <<"recv buffer size: "<< sampleSize*data_MPI[0].size() << std::endl;
+    // std::cout <<rank <<"elements reserved for data from rank 1: "<< data_per_proc[1] << std::endl;
+
+
+    MPI_Gatherv(flattenedCoresetData.data(), data_send_count, MPI_FLOAT, coreset_temp, data_per_proc.data(), data_per_proc_disp.data(), MPI_FLOAT, 0, MPI_COMM_WORLD);
+    // std::cout <<rank << "hello11" << std::endl;
+
+    MPI_Gatherv(coreset.weights.data(), local_coreset_cardinality, MPI_FLOAT, weights_temp, samples_per_proc.data(), samples_per_proc_disp.data(), MPI_FLOAT, 0, MPI_COMM_WORLD);
+    // std::cout <<rank << "hello12" << std::endl;
+
+    if (rank == 0){
+        // organize the flattened coresets_temp and weights_temp arrays into a coresets_t struct
+        std::vector<datapoint_t> coreset_data;
+        for (int i = 0; i < sampleSize; i ++){
+            datapoint_t datapoint_temp(coreset_temp + i*data_MPI[0].size(), coreset_temp+ (i+1)*data_MPI[0].size());
+            coreset_data.push_back(datapoint_temp);
+        }
+        coreset.data = coreset_data;
+
+        std::vector<float> w(weights_temp, weights_temp+sampleSize);
+        coreset.weights = w;
+        // for (int i = 0; i < sampleSize; i++){
+        //     std::cout << coreset.weights[i] << std::endl;
+        // }
     }
 }
 

@@ -332,4 +332,15 @@ public:
      */
     
     void createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(datapoint_t &, datapoint_t &));
+
+    /**
+     * @brief Using MPI, create the coreset used for representative kmeans clustering on the whole dataset. The coreset is stored
+     *        in the private member variable coreset.
+     *
+     * @param data - The data to be clustered.
+     * @param sampleSize - The number of datapoints to include in the coreset.
+     * @param func - The distance function to use.
+     */
+    
+    void createCoreSet_MPI(int numData, int numFeatures, value_t *data, int sampleSize, value_t (*func)(datapoint_t &, datapoint_t &));
 };
