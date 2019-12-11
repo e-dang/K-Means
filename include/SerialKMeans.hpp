@@ -27,7 +27,8 @@ public:
      *
      * @param numClusters - The number of clusters.
      * @param numRestarts - The number of times to repeat the Kmeans calculation before returning an answer.
-     * @param intDistr - A random integer distribution with range between (0, numData)
+     * @param intDistr - A random integer distribution with range between [0, numData)
+     * @param floatDistr - A random float distribution with range between [0, 1)
      */
     SerialKmeans(int numClusters, int numRestarts, boost::variate_generator<RNGType, boost::uniform_int<>> intDistr,
                  boost::variate_generator<RNGType, boost::uniform_real<>> floatDistr);

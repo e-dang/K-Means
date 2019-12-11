@@ -1,6 +1,10 @@
 #pragma once
 
 #include "Definitions.hpp"
+#include "boost/random.hpp"
+#include "boost/generator_iterator.hpp"
+
+typedef boost::mt19937 RNGType;
 
 class OMPKmeans
 {
@@ -12,6 +16,8 @@ private:
     int numThreads;  // the number of threads to use
     int numClusters; // the number of clusters to cluster to data into
     int numRestarts; // the number of times Kmeans should try to cluster the data
+    boost::variate_generator<RNGType, boost::uniform_int<>> intDistr;
+    boost::variate_generator<RNGType, boost::uniform_real<>> floatDistr;
 
     double bestError;            // the error in the best clustering
     clusters_t clusters;         // the cluster centers
@@ -25,9 +31,12 @@ public:
      *
      * @param numClusters - The number of clusters.
      * @param numRestarts - The number of times to repeat the Kmeans calculation before returning an answer.
+     * @param intDistr - A random integer distribution with range between [0, numData)
+     * @param floatDistr - A random float distribution with range between [0, 1)
      * @param numThreads - The number of threads to use. Defaults to 8.
      */
-    OMPKmeans(int numClusters, int numRestarts, int numThreads = 8);
+    OMPKmeans(int numClusters, int numRestarts, boost::variate_generator<RNGType, boost::uniform_int<>> intDistr,
+              boost::variate_generator<RNGType, boost::uniform_real<>> floatDistr, int numThreads = 8);
 
     /**
      * @brief Destroy the Kmeans object.
