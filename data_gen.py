@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from array import array
 import struct
 import numpy as np
+import matplotlib.cm as cm
 
 
 def generate_data(num_data, num_features, num_clusters, cluster_std, box, data_fp, labels_fp):
@@ -21,7 +22,7 @@ def generate_data(num_data, num_features, num_clusters, cluster_std, box, data_f
         label_array.tofile(file)
 
 
-def read_data(filepath, num_data, num_features):
+def read_data(filepath, num_data, num_features, data_format='f'):
     vals = [[] for _ in range(num_data)]
     with open(filepath, 'rb') as file:
         data = file.read(4)
@@ -30,17 +31,31 @@ def read_data(filepath, num_data, num_features):
             ind = i // num_features
             # if ind == 10:
             #     break
-            vals[ind].append(struct.unpack('f', data)[0])
+            vals[ind].append(struct.unpack(data_format, data)[0])
             data = file.read(4)
             i += 1
 
     return np.concatenate([np.array(i) for i in vals]).reshape((-1, num_features))
 
 
+def read_clustering(filepath):
+    vals = []
+    with open(filepath, 'rb') as file:
+        data = file.read(4)
+        while data:
+            vals.append(struct.unpack('i', data)[0])
+            data = file.read(4)
+
+    return vals
+
+
 def plot_data(data, clusters, clustering):
     # print(data)
-    plt.scatter(data[:, 0], data[:, 1], c='b')
-    plt.scatter(clusters[:, 0], clusters[:, 1], c='r')
+    # print(clustering)
+    colors = cm.jet(np.linspace(0, 1, len(set(clustering))))
+    new_colors = [colors[i] for i in clustering]
+    plt.scatter(data[:, 0], data[:, 1], c=new_colors)
+    plt.scatter(clusters[:, 0], clusters[:, 1], c='black')
     plt.show()
 
 
@@ -53,8 +68,14 @@ BOX = (-1000, 1000)
 #               f'test_{NUM_DATA}_{NUM_FEATURES}.txt', f'test_labels_{NUM_DATA}_{NUM_FEATURES}.txt')
 
 data = read_data('test_10000_2.txt', 10000, 2)
-# clusters = read_data('clusters_scale.txt', 10000, 2)
-# clustering = read_data('clustering_scale.txt', 10000, 1)
-clusters = read_data('clusters.txt', 10000, 2)
-clustering = read_data('clustering.txt', 10000, 1)
+clusters = read_data('clusters_serial_scale.txt', 10000, 2)
+clustering = read_clustering('clustering_serial_scale.txt')
+# clusters = read_data('clusters_serial_kpp.txt', 10000, 2)
+# clustering = read_clustering('clustering_serial_kpp.txt')
 plot_data(data, clusters, clustering)
+
+s = set()
+for x in clustering:
+    s.add(x)
+
+print(len(s))
