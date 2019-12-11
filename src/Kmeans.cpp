@@ -1088,17 +1088,21 @@ void Kmeans::createCoreSet_MPI(int numData, int numFeatures, value_t *data, int 
 
     for (int nth_datapoint = 0; nth_datapoint < data_MPI.size(); nth_datapoint++)
     {
+        // std::cout << rank << " rank's datapoint: "; 
         for (int mth_feature = 0; mth_feature < data_MPI[0].size(); mth_feature++)
         {
             local_mean_data[mth_feature] += data_MPI[nth_datapoint][mth_feature];
             local_sum_data[mth_feature] +=  data_MPI[nth_datapoint][mth_feature];
             local_sqd_sum_data[mth_feature] += std::pow(data_MPI[nth_datapoint][mth_feature], 2);
+            // std::cout<< data_MPI[nth_datapoint][mth_feature] << "\t";
         }
     }
+    std::cout << local_sum[0] << "\t" << local_sqd_sum[0] <<std::endl;
 
     for (int i = 0; i < local_mean.size(); i++)
     {
         local_mean[i] /= data_MPI.size();
+        // std::cout << local_mean[i] << std::endl;
     }
     int local_cardinality = data_MPI.size();
 
@@ -1134,13 +1138,18 @@ void Kmeans::createCoreSet_MPI(int numData, int numFeatures, value_t *data, int 
 
     if (rank == 0){
         // compute the global mean from the gathered mean data
+        std::vector<datapoint_t> local_means;
         for (int nth_proc = 0; nth_proc <numProcs; nth_proc++){
             for (int mth_feature = 0; mth_feature < data_MPI[0].size(); mth_feature++){
-                global_mean[mth_feature] += mean[nth_proc*mth_feature];
+                global_mean[mth_feature] += mean[(nth_proc*data_MPI[0].size()) + mth_feature];
+                // std::cout << mean[(nth_proc*data_MPI[0].size()) + mth_feature] << std::endl;
             }
+            std::vector<value_t> loc_mean(mean[nth_proc*data_MPI[0].size()], mean[nth_proc*data_MPI[0].size() + data_MPI[0].size()]);
+            local_means.push_back(loc_mean);
         }
         for (int mth_feature = 0; mth_feature < data_MPI[0].size(); mth_feature++){
             global_mean[mth_feature] /= (float)numProcs;
+            std::cout << global_mean[mth_feature] << std::endl;
         }
 
         // compute the total cardinality of the dataset -- might be unecessary but doing this to make this section of code robust to chagne in the way we get a dataset
@@ -1148,19 +1157,20 @@ void Kmeans::createCoreSet_MPI(int numData, int numFeatures, value_t *data, int 
             dataset_cardinality += local_cardinalities[nth_proc];
             // std::cout << "local_cardinalities: " << local_cardinalities[nth_proc] << std::endl;
         }
-        // std::cout << "dataset cardinality: "<< dataset_cardinality << std::endl;
+        std::cout << "dataset cardinality: "<< dataset_cardinality << std::endl;
 
         // compute the local quantization error for each machine and the total quantization error
         for (int nth_proc = 0; nth_proc < numProcs; nth_proc++){
             value_t ith_quant_err;
-            for (int mth_feature = 0; mth_feature < data_MPI[0].size(); mth_feature++){
-                ith_quant_err += sqd_sum[nth_proc*mth_feature] - 2*global_mean[mth_feature]*sum[nth_proc*mth_feature] + dataset_cardinality*global_mean[mth_feature];
-            }
+            // for (int mth_feature = 0; mth_feature < data_MPI[0].size(); mth_feature++){
+            //     ith_quant_err += sqd_sum[(nth_proc*data_MPI[0].size())+mth_feature] - 2*global_mean[mth_feature]*sum[(nth_proc*data_MPI[0].size())+mth_feature] + local_cardinalities[nth_proc]*std::pow(global_mean[mth_feature],2);
+            // }
+            ith_quant_err = std::pow(func(global_mean, local_means[nth_proc]),2);
             quant_errs[nth_proc] = ith_quant_err;
-            // std::cout<< "ith_quant_err: " << ith_quant_err << std::endl;
+            std::cout<< "ith_quant_err: " << ith_quant_err << std::endl;
             total_quant_err += ith_quant_err;
         }
-        // std::cout << "total_quant_err: " << total_quant_err << std::endl;
+        std::cout << "total_quant_err: " << total_quant_err << std::endl;
 
         // compute the number of points to sample from each machine
         double randNum;
@@ -1195,13 +1205,13 @@ void Kmeans::createCoreSet_MPI(int numData, int numFeatures, value_t *data, int 
         }
 
         // calculate the displacement of the coreset data indices in the soon-to-be aggregated coreset array
-        // std::cout << "SAMPLES PER PROC PHI: " << phi_sample_counts[0] << " "<< phi_sample_counts[1] << std::endl;
-        // std::cout << "SAMPLES PER PROC UNIFORM: " << uniform_sample_counts[0] << " "<< uniform_sample_counts[1] << std::endl;
-        // std::cout << "SAMPLES PER PROC: " << samples_per_proc[0] << std::endl;
-        // std::cout << "SAMPLES PER PROC: " << samples_per_proc[1] << std::endl;
+        std::cout << "SAMPLES PER PROC PHI: " << phi_sample_counts[0] << " "<< phi_sample_counts[1] << std::endl;
+        std::cout << "SAMPLES PER PROC UNIFORM: " << uniform_sample_counts[0] << " "<< uniform_sample_counts[1] << std::endl;
+        std::cout << "SAMPLES PER PROC: " << samples_per_proc[0] << std::endl;
+        std::cout << "SAMPLES PER PROC: " << samples_per_proc[1] << std::endl;
         for (int nth_proc = 1; nth_proc < numProcs; nth_proc++){
-            data_per_proc_disp[nth_proc] = data_per_proc[nth_proc] + data_per_proc_disp[nth_proc-1];
-            samples_per_proc_disp[nth_proc] = samples_per_proc[nth_proc] + samples_per_proc_disp[nth_proc-1];
+            data_per_proc_disp[nth_proc] = data_per_proc[nth_proc-1] + data_per_proc_disp[nth_proc];
+            samples_per_proc_disp[nth_proc] = samples_per_proc[nth_proc-1] + samples_per_proc_disp[nth_proc];
         }
     }   
     // need barrier here?
@@ -1218,11 +1228,14 @@ void Kmeans::createCoreSet_MPI(int numData, int numFeatures, value_t *data, int 
     // std::cout << "process number: " << rank <<" has this size "<< data_MPI.size() << std::endl;
     value_t partOne = 0.5 * (1.0 / dataset_cardinality); // first portion of distribution calculation that is constant
     std::vector<value_t> distribution(data_MPI.size(),0);
-    
+    std::vector<value_t> sqd_distances(data_MPI.size(),0);
     float s = 0;
     for (int i = 0; i < data_MPI.size(); i++)
     {
-        distribution[i] = partOne + .5*func(data_MPI[i], global_mean)/total_quant_err;
+        sqd_distances[i] = std::pow(func(data_MPI[i], global_mean), 2);
+        distribution[i] = partOne + .5*sqd_distances[i]/(dataset_cardinality*total_quant_err);
+        // std::cout << "asdf" << func(data_MPI[i], global_mean) << std::endl;
+        // std::cout << distribution[i] << std::endl;
         s += distribution[i];
     }
     std::cout << s << std::endl;
@@ -1239,45 +1252,71 @@ void Kmeans::createCoreSet_MPI(int numData, int numFeatures, value_t *data, int 
     double phiDist = total_quant_err; 
     double uniformDist = data_MPI.size() -1; 
     int nth_uniform_sample;
+    std::vector<datapoint_t> c(uniform_sample_counts[rank] + phi_sample_counts[rank]);
+    std::vector<value_t> w(uniform_sample_counts[rank] + phi_sample_counts[rank], 0);
     for (nth_uniform_sample = 0; nth_uniform_sample < uniform_sample_counts[rank]; nth_uniform_sample++){
         randNum = (int) std::round(floatDistr()*(uniformDist - nth_uniform_sample)); // subtract the contribution of the previously sampled point from the uniform dist
         // if (randNum > distribution.size()){
             // std::cout << "RandNum: " << randNum << " Size: " << distribution.size() << std::endl;
         // }
-        coreset.data.push_back(*ptrData[randNum]);
-        coreset.weights.push_back((float)1.0 / (sampleSize * distribution[randNum]));
-        phiDist -= 2*(distribution[randNum] - partOne); // subtract contribution of the sampled point from the phi distrubition
+        c[nth_uniform_sample] = *ptrData[randNum];
+        w[nth_uniform_sample] = (float)1.0 / (sampleSize * distribution[randNum]);
+        // std::cout << sampleSize * distribution[randNum] << std::endl;
+        // std::cout <<nth_uniform_sample<< " "<< w[nth_uniform_sample] << std::endl;
+        phiDist -= sqd_distances[nth_uniform_sample]; // subtract contribution of the sampled point from the phi distrubition
         ptrData.erase(ptrData.begin() + randNum);
         distribution.erase(distribution.begin() + randNum);
     }
     // std::cout <<rank << "hello8  " << std::endl;
     double randPhi;
-    for (int i = 0; i < phi_sample_counts[rank]; i++)
+    for (int i = uniform_sample_counts[rank]; i < uniform_sample_counts[rank] + phi_sample_counts[rank]; i++)
     {
         randPhi = floatDistr() * phiDist;
         for (int j = 0; j < ptrData.size(); j++)
         {
-            if ((randPhi -= 2*(distribution[j]-partOne)) <= 0)
+            if ((randPhi -= sqd_distances[i]) <= 0)
             {
-                coreset.data.push_back(*ptrData[j]);
-                coreset.weights.push_back((float)1.0 / (sampleSize * distribution[j]));
-                phiDist -= 2*(distribution[j] - partOne);
+                c[i] = *ptrData[j];
+                w[i] = (float)1.0 / (sampleSize * distribution[j]);
+                // std::cout << i << " "<< w[i] << std::endl;
+                // for (int j = 0; j < data_MPI[0].size(); j++){
+                //     std::cout<< c[i][j] << "\t";
+                // }
+                // std::cout << std::endl;
+                phiDist -= sqd_distances[i];
                 ptrData.erase(ptrData.begin() + j);
                 distribution.erase(distribution.begin() + j);
+                break;
             }
         }
     }
-    // std::cout<< rank << "hello9" << std::endl;
-    
+    std::cout<< rank<< "coreset cardinality: " << c.size() << std::endl;
+    // for (int i = 0; i < c.size(); i++){
+    //     for (int j = 0; j < data_MPI[0].size(); j++){
+    //         std::cout << c[i][j] << "\t";
+    //     }
+    //     std::cout << std::endl;
+    // }
+    // for (int i = 0; i < w.size(); i++){
+    //     std::cout << rank << " " << w[i] << std::endl;
+    // }
     // flatten the 2d vector of coreset data
     // float* flattenedCoresetData = (float*) malloc(sampleSize*data_MPI[0].size()*sizeof(float));
-    int local_coreset_cardinality = coreset.data.size();
+    int local_coreset_cardinality = c.size();
     std::vector<value_t> flattenedCoresetData(local_coreset_cardinality*data_MPI[0].size());
-    // std::cout <<rank<<"flattened array size: "<< local_coreset_cardinality*data_MPI[0].size() << std::endl;
+    std::cout <<rank<<"flattened array size: "<< local_coreset_cardinality*data_MPI[0].size() << std::endl;
 
     for (int i = 0; i < local_coreset_cardinality; i++){
             // std::cout <<"i: "<< i << " dim: " << dim << std::endl;
-        flattenedCoresetData.insert(flattenedCoresetData.end(), coreset.data[i].begin(), coreset.data[i].end());
+        for (int j = 0; j < data_MPI[0].size(); j++){
+            // std::cout << i*data_MPI.size() + j << std::endl;
+            flattenedCoresetData[i*data_MPI[0].size() + j] = c[i][j];
+
+        // for (int j = 0; j < data_MPI[0].size(); j++){
+        //         std::cout<< flattenedCoresetData[i*data_MPI[0].size() + j] << "\t";
+        // }
+        // std::cout << std::endl;
+        }
     }
     // std::cout <<rank << "hello10" << std::endl;
 
@@ -1292,16 +1331,19 @@ void Kmeans::createCoreSet_MPI(int numData, int numFeatures, value_t *data, int 
     // std::cout <<rank << "hello10" << std::endl;
 
     int data_send_count = data_MPI[0].size()*local_coreset_cardinality;
-    // std::cout <<rank <<"data send count: "<< data_send_count << std::endl;
-    // std::cout <<rank <<"recv buffer size: "<< sampleSize*data_MPI[0].size() << std::endl;
-    // std::cout <<rank <<"elements reserved for data from rank 1: "<< data_per_proc[1] << std::endl;
+    std::cout <<rank <<"data send count: "<< data_send_count << std::endl;
+    std::cout <<rank <<"recv buffer size: "<< sampleSize*data_MPI[0].size() << std::endl;
+    std::cout <<rank <<"elements reserved for data from rank 0: "<< data_per_proc[0] << std::endl;
+    std::cout <<rank <<"elements reserved for data from rank 1: "<< data_per_proc[1] << std::endl;
+    std::cout <<rank <<"displacement for data from rank 0: "<< data_per_proc_disp[0] << std::endl;
+    std::cout <<rank <<"displacement for data from rank 1: "<< data_per_proc_disp[1] << std::endl;
 
 
     MPI_Gatherv(flattenedCoresetData.data(), data_send_count, MPI_FLOAT, coreset_temp, data_per_proc.data(), data_per_proc_disp.data(), MPI_FLOAT, 0, MPI_COMM_WORLD);
-    // std::cout <<rank << "hello11" << std::endl;
+    std::cout <<rank << "hello11" << std::endl;
 
-    MPI_Gatherv(coreset.weights.data(), local_coreset_cardinality, MPI_FLOAT, weights_temp, samples_per_proc.data(), samples_per_proc_disp.data(), MPI_FLOAT, 0, MPI_COMM_WORLD);
-    // std::cout <<rank << "hello12" << std::endl;
+    MPI_Gatherv(w.data(), local_coreset_cardinality, MPI_FLOAT, weights_temp, samples_per_proc.data(), samples_per_proc_disp.data(), MPI_FLOAT, 0, MPI_COMM_WORLD);
+    std::cout <<rank << "hello12" << std::endl;
 
     if (rank == 0){
         // organize the flattened coresets_temp and weights_temp arrays into a coresets_t struct
@@ -1309,13 +1351,17 @@ void Kmeans::createCoreSet_MPI(int numData, int numFeatures, value_t *data, int 
         for (int i = 0; i < sampleSize; i ++){
             datapoint_t datapoint_temp(coreset_temp + i*data_MPI[0].size(), coreset_temp+ (i+1)*data_MPI[0].size());
             coreset_data.push_back(datapoint_temp);
+            // for (int j = 0; j < data_MPI[0].size(); j++){
+            //     std::cout<< coreset_temp[i*data_MPI[0].size() + j] << "\t";
+            // }
+            // std::cout << std::endl;
         }
         coreset.data = coreset_data;
 
         std::vector<float> w(weights_temp, weights_temp+sampleSize);
         coreset.weights = w;
         // for (int i = 0; i < sampleSize; i++){
-        //     std::cout << coreset.weights[i] << std::endl;
+        //     std::cout << weights_temp[i] << std::endl;
         // }
     }
 }
