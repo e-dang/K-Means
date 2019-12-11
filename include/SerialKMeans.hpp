@@ -1,5 +1,10 @@
 #pragma once
+
 #include "Definitions.hpp"
+#include "boost/random.hpp"
+#include "boost/generator_iterator.hpp"
+
+typedef boost::mt19937 RNGType;
 
 class SerialKmeans
 {
@@ -7,6 +12,8 @@ private:
     int numClusters;
     int numRestarts;
     int numThreads;
+    boost::variate_generator<RNGType, boost::uniform_int<>> intDistr;
+    boost::variate_generator<RNGType, boost::uniform_real<>> floatDistr;
 
     double bestError;
     clusters_t clusters;
@@ -20,8 +27,10 @@ public:
      *
      * @param numClusters - The number of clusters.
      * @param numRestarts - The number of times to repeat the Kmeans calculation before returning an answer.
+     * @param intDistr - A random integer distribution with range between (0, numData)
      */
-    SerialKmeans(int numClusters, int numRestarts);
+    SerialKmeans(int numClusters, int numRestarts, boost::variate_generator<RNGType, boost::uniform_int<>> intDistr,
+                 boost::variate_generator<RNGType, boost::uniform_real<>> floatDistr);
 
     /**
      * @brief Destroy the Kmeans object.
@@ -121,7 +130,7 @@ private:
      * @return std::vector<value_t>
      */
     std::vector<value_t> scaleableKmeans(dataset_t &data, int &overSampling,
-                                         value_t (*func)(datapoint_t &, datapoint_t &), int initIters = 3);
+                                         value_t (*func)(datapoint_t &, datapoint_t &), int initIters = 5);
 
     /**
      * @brief Function for finding the closest cluster center to a datapoint and assigning that data point to that

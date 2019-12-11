@@ -1,13 +1,16 @@
 #include "SerialKMeans.hpp"
-#include "boost/random.hpp"
-#include "boost/generator_iterator.hpp"
 #include <math.h>
 
 typedef boost::mt19937 RNGType;
 
-SerialKmeans::SerialKmeans(int numClusters, int numRestarts) : numClusters(numClusters), numRestarts(numRestarts)
+SerialKmeans::SerialKmeans(int numClusters, int numRestarts,
+                           boost::variate_generator<RNGType, boost::uniform_int<>> intDistr,
+                           boost::variate_generator<RNGType, boost::uniform_real<>> floatDistr) : numClusters(numClusters),
+                                                                                                  numRestarts(numRestarts),
+                                                                                                  intDistr(intDistr),
+                                                                                                  floatDistr(floatDistr)
 {
-    bestError = DBL_MAX;
+    bestError = -1;
 }
 
 SerialKmeans::~SerialKmeans()
@@ -77,7 +80,7 @@ void SerialKmeans::fit(dataset_t &data, value_t (*func)(datapoint_t &, datapoint
         }
 
         // if this round produced lowest error, keep clustering
-        if (currError < bestError)
+        if (currError < bestError || bestError < 0)
         {
             bestError = currError;
             bestClustering = clustering;
@@ -88,7 +91,6 @@ void SerialKmeans::fit(dataset_t &data, value_t (*func)(datapoint_t &, datapoint
 
 void SerialKmeans::fit(dataset_t &data, int overSampling, value_t (*func)(datapoint_t &, datapoint_t &), int initIters)
 {
-    bestError = -1;
     int changed;
     value_t currError;
     int numFeatures = data[0].size();
@@ -165,11 +167,6 @@ void SerialKmeans::fit(dataset_t &data, int overSampling, value_t (*func)(datapo
 
 void SerialKmeans::kPlusPlus(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t &))
 {
-    RNGType rng(time(NULL));
-    boost::uniform_int<> intRange(0, data.size());
-    boost::uniform_real<> floatRange(0, 1);
-    boost::variate_generator<RNGType, boost::uniform_int<>> intDistr(rng, intRange);
-    boost::variate_generator<RNGType, boost::uniform_real<>> floatDistr(rng, floatRange);
 
     value_t sum;
     std::vector<value_t> distances(data.size());
@@ -209,12 +206,6 @@ void SerialKmeans::kPlusPlus(dataset_t &data, value_t (*func)(datapoint_t &, dat
 
 std::vector<value_t> SerialKmeans::scaleableKmeans(dataset_t &data, int &overSampling, value_t (*func)(datapoint_t &, datapoint_t &), int initIters)
 {
-    RNGType rng(time(NULL));
-    boost::uniform_int<> intRange(0, data.size());
-    boost::uniform_real<> floatRange(0, 1);
-    boost::variate_generator<RNGType, boost::uniform_int<>> intDistr(rng, intRange);
-    boost::variate_generator<RNGType, boost::uniform_real<>> floatDistr(rng, floatRange);
-
     // initialize the closest distances array to large vals
     std::vector<value_t> closestDists(data.size(), INT_MAX);
 
@@ -329,7 +320,7 @@ value_t SerialKmeans::nearest(datapoint_t &point, int &pointIdx, value_t (*func)
 void SerialKmeans::smartClusterUpdate(datapoint_t &point, int &pointIdx, int &clusterIdx, std::vector<value_t> &distances,
                                       value_t (*func)(datapoint_t &, datapoint_t &))
 {
-    value_t tempDist, minDist = INT_MAX - 1;
+    value_t tempDist, minDist = INT_MAX;
     int minDistIdx = -1;
 
     // find the closest new cluster to the point
