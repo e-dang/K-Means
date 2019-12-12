@@ -125,8 +125,11 @@ int main(int argc, char *argv[])
     int numFeatures = 2;
     int numClusters = 30;
     int numRestarts = 10;
-    int oversampling = 5;
+    
     int trials = 1;
+    int initIters = 4;
+
+    float oversampling = numClusters / initIters;
 
     // Runs MPI implementation of Kmeans
     MPIKmeans kmeans(numClusters, numRestarts);
@@ -136,13 +139,13 @@ int main(int argc, char *argv[])
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
-    // value_t *data = generateDataset_MPI(numData, numFeatures, numClusters);
     CReader reader;
-    reader.read("../test_10000_2.txt", 10000, 2);
+    reader.read("../test_10000_2.txt", numData, numFeatures);
     value_t *data = reader.getData();
 
-    std::vector<float> kPPTimes;
-    std::vector<float> scaleTimes;
+    std::vector<int> kPPTimes;
+    std::vector<int> scaleTimes;
+ 
 
     for(int j=0; j < trials; j++)
     {
@@ -168,14 +171,14 @@ int main(int argc, char *argv[])
         if (rank == 0)
         {
             auto start = std::chrono::high_resolution_clock::now();
-            kmeans.fit(numData, numFeatures, data, Kmeans::distanceL2);
+            kmeans.fit(numData, numFeatures, data, oversampling, Kmeans::distanceL2, initIters);
             auto stop = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
             std::cout << "Total time scale: " << duration.count() << std::endl;
             scaleTimes.push_back(duration.count());
             DataSetWriter writer(kmeans.getClusters(), kmeans.getClustering());
             writer.writeClusters("../clusters_mpi_scale.txt");
-            writer.writeClustering("../clustering_scale.txt");
+            writer.writeClustering("../clustering_mpi_scale.txt");
         }
         else
         {
@@ -186,7 +189,8 @@ int main(int argc, char *argv[])
     if(rank == 0)
     {
         std::ofstream out_kpp_file;
-        out_kpp_file.open("../kpp_times.txt");
+        std::string file_name = "../kpp_times-" + std::to_string(numData) + ".txt";
+        out_kpp_file.open(file_name);
 
         for (auto time : kPPTimes)
         {
@@ -196,7 +200,8 @@ int main(int argc, char *argv[])
         out_kpp_file.close();
 
         std::ofstream out_scale_file;
-        out_scale_file.open("../scale_times.txt");
+        file_name = "../scale_times-" + std::to_string(numData) + ".txt";
+        out_scale_file.open(file_name);
 
         for (auto time : scaleTimes)
         {
