@@ -35,7 +35,7 @@ def read_data(filepath, num_data, num_features, data_format='f'):
             data = file.read(4)
             i += 1
     ret = np.concatenate([np.array(i) for i in vals]).reshape((-1, num_features))
-    return ret[~np.isnan(ret)].reshape((-1, 2))
+    return ret[~np.isnan(ret)].reshape((-1, num_features))
 
 
 def read_clustering(filepath):
@@ -52,34 +52,34 @@ def read_clustering(filepath):
 def plot_data(data, clusters, clustering):
     # print(data)
     # print(clustering)
-    colors = cm.jet(np.linspace(0, 1, len(set(clustering))))
-    new_colors = [colors[i] for i in clustering]
-    plt.scatter(data[:, 0], data[:, 1], c=new_colors)
+    # colors = cm.jet(np.linspace(0, 1, len(set(clustering))))
+    # new_colors = [colors[i] for i in clustering]
+    plt.scatter(data[:, 0], data[:, 1], c='red')
     plt.scatter(clusters[:, 0], clusters[:, 1], c='black')
 
     plt.show()
-    plt.savefig('test3.png')
+    plt.savefig( f'test_{NUM_DATA}_{NUM_FEATURES}.png')
 
 
-NUM_DATA = 10000
-NUM_FEATURES = 2
+NUM_DATA = 1000000
+NUM_FEATURES = 15
 NUM_CLUSTERS = 30
 CLUSTER_STD = 10
 BOX = (-1000, 1000)
-# generate_data(NUM_DATA, NUM_FEATURES, NUM_CLUSTERS, CLUSTER_STD, BOX,
-#               f'test_{NUM_DATA}_{NUM_FEATURES}.txt', f'test_labels_{NUM_DATA}_{NUM_FEATURES}.txt')
+generate_data(NUM_DATA, NUM_FEATURES, NUM_CLUSTERS, CLUSTER_STD, BOX,
+              f'test_{NUM_DATA}_{NUM_FEATURES}.txt', f'test_labels_{NUM_DATA}_{NUM_FEATURES}.txt')
 
-data = read_data('test_10000_2.txt', 10000, 2)
+# data = read_data( f'test_{NUM_DATA}_{NUM_FEATURES}.txt', NUM_DATA, NUM_FEATURES)
 
-clusters = read_data('clusters_serial_scale.txt', 10000, 2)
-clustering = read_clustering('clustering_serial_scale.txt')
-# clusters = read_data('clusters_serial_kpp.txt', 10000, 2)
-# clustering = read_clustering('clustering_serial_kpp.txt')
+# clusters = read_data('clusters_mpi_coresets.txt', NUM_DATA, NUM_FEATURES)
+# clustering = read_clustering('clustering_mpi_coresets.txt')
+# # clusters = read_data('clusters_serial_kpp.txt', 10000, 2)
+# # clustering = read_clustering('clustering_serial_kpp.txt')
 
-plot_data(data, clusters, clustering)
+# plot_data(data, clusters, clustering)
 
-s = set()
-for x in clustering:
-    s.add(x)
+# s = set()
+# for x in clustering:
+#     s.add(x)
 
-print(len(s))
+# print(len(s))
