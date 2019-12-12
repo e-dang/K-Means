@@ -1,4 +1,6 @@
 #include "Kmeans.hpp"
+#include "Reader.hpp"
+#include "Writer.hpp"
 #include "boost/random.hpp"
 #include "boost/generator_iterator.hpp"
 #include <mpi.h>
