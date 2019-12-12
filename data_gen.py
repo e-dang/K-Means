@@ -34,8 +34,8 @@ def read_data(filepath, num_data, num_features, data_format='f'):
             vals[ind].append(struct.unpack(data_format, data)[0])
             data = file.read(4)
             i += 1
-
-    return np.concatenate([np.array(i) for i in vals]).reshape((-1, num_features))
+    ret = np.concatenate([np.array(i) for i in vals]).reshape((-1, num_features))
+    return ret[~np.isnan(ret)].reshape((-1, 2))
 
 
 def read_clustering(filepath):
@@ -56,7 +56,9 @@ def plot_data(data, clusters, clustering):
     new_colors = [colors[i] for i in clustering]
     plt.scatter(data[:, 0], data[:, 1], c=new_colors)
     plt.scatter(clusters[:, 0], clusters[:, 1], c='black')
+
     plt.show()
+    plt.savefig('test3.png')
 
 
 NUM_DATA = 10000
@@ -68,10 +70,12 @@ BOX = (-1000, 1000)
 #               f'test_{NUM_DATA}_{NUM_FEATURES}.txt', f'test_labels_{NUM_DATA}_{NUM_FEATURES}.txt')
 
 data = read_data('test_10000_2.txt', 10000, 2)
+
 clusters = read_data('clusters_serial_scale.txt', 10000, 2)
 clustering = read_clustering('clustering_serial_scale.txt')
 # clusters = read_data('clusters_serial_kpp.txt', 10000, 2)
 # clustering = read_clustering('clustering_serial_kpp.txt')
+
 plot_data(data, clusters, clustering)
 
 s = set()
