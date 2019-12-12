@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
     int numClusters = 30;
     int numRestarts = 10;
     dataset_t data;
-    bool mpi = false;
+    bool mpi = true;
     // cluster data
     Kmeans kmeans(numClusters, 1, 4);
     // auto start = std::chrono::high_resolution_clock::now();

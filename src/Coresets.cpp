@@ -1,4 +1,4 @@
-#include "Kmeans.hpp"
+#include "Coresets.hpp"
 #include "Reader.hpp"
 #include "Writer.hpp"
 #include "boost/random.hpp"
