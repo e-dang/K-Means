@@ -20,6 +20,7 @@ int main(int argc, char *argv[])
     int numFeatures = 2;
     int numClusters = 30;
     int numRestarts = 10;
+    int coresetSize = 5000;
     
     int trials = 1;
     int initIters = 4;
@@ -85,7 +86,7 @@ int main(int argc, char *argv[])
 
         // mpi generate and fit coreset
         auto make_coreset_start = std::chrono::high_resolution_clock::now();
-        coreset.createCoreSet_MPI(numData, numFeatures, data, coreset_size, Coresets::distanceL2);
+        coreset.createCoreSet_MPI(numData, numFeatures, data, coresetSize, Coresets::distanceL2);
         auto make_coreset_stop = std::chrono::high_resolution_clock::now();
         auto make_coreset_duration = std::chrono::duration_cast<std::chrono::microseconds>(make_coreset_stop - make_coreset_start);
         std::cout << "Total time coreset mpi: " << make_coreset_duration.count() << std::endl;
@@ -98,7 +99,7 @@ int main(int argc, char *argv[])
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
             std::cout << "Total time coreset mpi: " << duration.count() << std::endl;
             coresetFitTimes.push_back(duration.count());
-            DataSetWriter writer(coreset.getClusters(), coreset.getClustering());
+            ClusterWriter writer(coreset.getClusters(), coreset.getClustering());
             writer.writeClusters("../clusters_mpi_coresets.txt");
             writer.writeClustering("../clustering_mpi_coresets.txt");
         }
@@ -140,7 +141,7 @@ int main(int argc, char *argv[])
         out_coreset_create_mpi_file.close();
 
         std::ofstream out_coreset_fit_mpi_file;
-        std::string file_name = "../coreset_fit_mpi_times-" + std::to_string(numData) + ".txt";
+        file_name = "../coreset_fit_mpi_times-" + std::to_string(numData) + ".txt";
         out_coreset_fit_mpi_file.open(file_name);
 
         for (auto time : coresetFitTimes)
