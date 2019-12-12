@@ -9,6 +9,7 @@ set(CMAKE_CXX_COMPILER "mpic++")
 
 # flags
 SET(CMAKE_CXX_FLAGS "-std=c++11 -Wall -Wpedantic -fopenmp")
+find_package(Boost 1.71.0 COMPONENTS random math)
 
 # include
 include_directories(./include)
