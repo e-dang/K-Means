@@ -129,9 +129,9 @@ void Coresets::fit_coreset(value_t (*func)(datapoint_t &, datapoint_t &))
             {
                 for (int j = 0; j < numFeatures; j++)
                 {
-                    if (cluster_weights[i] < 0.000001){
-                        std::cout << cluster_weights[i] << std::endl;
-                    }
+                    // if (cluster_weights[i] < 0.000001){
+                        // std::cout << cluster_weights[i] << std::endl;
+                    // }
                     clusters[i].coords[j] /= cluster_weights[i];
                 }
             }
@@ -306,7 +306,7 @@ void Coresets::createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(d
                 coreset.data[i] = *(ptrData[j]);
                 // coreset.data[i] = datapoint_t(ptrData[j], ptrData[j] + 2);
                 // for (int k = 0; k < coreset.data[i].size(); k++){
-                //     std::cout <<  coreset.data[i][k];
+                    // std::cout <<  coreset.data[i][k];
                 // }
                 // std::cout << std::endl;
                 // std::copy(coreset.data[i], ptrData[j], ptrData[j] + numFeatures);
@@ -418,7 +418,7 @@ void Coresets::createCoreSet_MPI(int numData, int numFeatures, value_t *data, in
             dataset_cardinality += local_cardinalities[nth_proc];
             // std::cout << "local_cardinalities: " << local_cardinalities[nth_proc] << std::endl;
         }
-        // std::cout << "dataset cardinality: "<< dataset_cardinality << std::endl;
+        // std::cout << rank << " - dataset cardinality: "<< dataset_cardinality << std::endl;
 
         // compute the local quantization error for each machine and the total quantization error
         for (int nth_proc = 0; nth_proc < numProcs; nth_proc++){
@@ -487,7 +487,7 @@ void Coresets::createCoreSet_MPI(int numData, int numFeatures, value_t *data, in
     MPI_Bcast(quant_errs.data(), numProcs, MPI_FLOAT, 0, MPI_COMM_WORLD);
     MPI_Bcast(phi_sample_counts.data(), numProcs, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(uniform_sample_counts.data(), numProcs, MPI_INT, 0, MPI_COMM_WORLD);
-
+    MPI_Barrier(MPI_COMM_WORLD);
     // calculate the distribution used to choose the datapoints to create the coreset
     // std::cout << "process number: " << rank <<" has this size "<< data_MPI.size() << std::endl;
     value_t partOne = 0.5 * (1.0 / dataset_cardinality); // first portion of distribution calculation that is constant
@@ -510,12 +510,15 @@ void Coresets::createCoreSet_MPI(int numData, int numFeatures, value_t *data, in
     {
         ptrData[i] = &data_MPI[i];
     }
-    // std::cout << "helloooooo" << std::endl;
+    // std::cout << rank << "helloooooo" << std::endl;
     // generate the coreset by first sampling the appropriate number of points for a given machine from the uniform distribution
     int randNum;
     double phiDist = total_quant_err; 
     double uniformDist = data_MPI.size() -1; 
     int nth_uniform_sample;
+    int sampledCountUni = 0;
+    int sampledCountPhi = 0;
+    int blankPointCount = 0;
     std::vector<datapoint_t> c(uniform_sample_counts[rank] + phi_sample_counts[rank]);
     std::vector<value_t> w(uniform_sample_counts[rank] + phi_sample_counts[rank], 0);
     for (nth_uniform_sample = 0; nth_uniform_sample < uniform_sample_counts[rank]; nth_uniform_sample++){
@@ -523,13 +526,17 @@ void Coresets::createCoreSet_MPI(int numData, int numFeatures, value_t *data, in
         // if (randNum > distribution.size()){
             // std::cout << "RandNum: " << randNum << " Size: " << distribution.size() << std::endl;
         // }
+        sampledCountUni ++;
         c[nth_uniform_sample] = *ptrData[randNum];
+        if (c[nth_uniform_sample].size() == 0){
+            blankPointCount ++;
+        }
         w[nth_uniform_sample] = (double) (1.0 / (sampleSize * distribution[randNum]));
         // std::cout << sampleSize * distribution[randNum] << std::endl;
         // std::cout <<nth_uniform_sample<< " "<< w[nth_uniform_sample] << std::endl;
-        if (w[nth_uniform_sample] < .000001){
-            std::cout << w[nth_uniform_sample] << std::endl;
-        }
+        // if (w[nth_uniform_sample] < .000001){
+        //     std::cout << w[nth_uniform_sample] << std::endl;
+        // }
         phiDist -= sqd_distances[nth_uniform_sample]; // subtract contribution of the sampled point from the phi distrubition
         ptrData.erase(ptrData.begin() + randNum);
         distribution.erase(distribution.begin() + randNum);
@@ -539,56 +546,72 @@ void Coresets::createCoreSet_MPI(int numData, int numFeatures, value_t *data, in
     for (int i = uniform_sample_counts[rank]; i < uniform_sample_counts[rank] + phi_sample_counts[rank]; i++)
     {
         randPhi = floatDistr() * phiDist;
+
+        // float sigma = 0;
+        // for (int k = 0; k < sqd_distances.size(); k++){
+        //     sigma += sqd_distances[k];
+        // }
+
+        // if (phiDist > sigma){
+            // std::cout <<rank << " wtf: "<<phiDist << " " << sigma;
+        // }
+
         for (int j = 0; j < ptrData.size(); j++)
         {
-            if ((randPhi -= sqd_distances[i]) <= 0)
+
+            if ((randPhi -= sqd_distances[j]) <= 0)
             {
+                sampledCountPhi++;
                 c[i] = *ptrData[j];
-                w[i] = (double) (1.0 / (sampleSize * distribution[j]));
-                if (w[i] < .000001){
-                    std::cout << w[i] << std::endl;
+                if (c[i].size() == 0){
+                    blankPointCount ++;
                 }
+                w[i] = (double) (1.0 / (sampleSize * distribution[j]));
+                // if (w[i] < .000001){
+                    // std::cout << w[i] << std::endl;
+                // }
                 // std::cout << i << " "<< w[i] << std::endl;
                 // for (int j = 0; j < data_MPI[0].size(); j++){
-                //     std::cout<< c[i][j] << "\t";
+                    // std::cout<< c[i][j] << "\t";
                 // }
                 // std::cout << std::endl;
-                phiDist -= sqd_distances[i];
+                phiDist -= sqd_distances[j];
                 ptrData.erase(ptrData.begin() + j);
                 distribution.erase(distribution.begin() + j);
                 break;
             }
         }
     }
-    // std::cout<< rank<< "coreset cardinality: " << c.size() << std::endl;
+    // std::cout<< rank<< "coreset cardinality: " << c.size() << ", Sampled Counts: "<< sampledCountUni << " "<< sampledCountPhi<< ", Blank Count: " << blankPointCount<<  std::endl;
     // for (int i = 0; i < c.size(); i++){
     //     for (int j = 0; j < data_MPI[0].size(); j++){
-    //         std::cout << c[i][j] << "\t";
+            // std::cout << c[i][j] << "\t";
     //     }
-    //     std::cout << std::endl;
+        // std::cout << std::endl;
     // }
     // for (int i = 0; i < w.size(); i++){
-    //     std::cout << rank << " " << w[i] << std::endl;
+        // std::cout << rank << " " << w[i] << std::endl;
     // }
     // flatten the 2d vector of coreset data
     // float* flattenedCoresetData = (float*) malloc(sampleSize*data_MPI[0].size()*sizeof(float));
     int local_coreset_cardinality = c.size();
-    std::vector<value_t> flattenedCoresetData(local_coreset_cardinality*data_MPI[0].size());
-    // std::cout <<rank<<"flattened array size: "<< local_coreset_cardinality*data_MPI[0].size() << std::endl;
+    std::vector<value_t> flattenedCoresetData(local_coreset_cardinality*data_MPI[0].size(),0);
+    // std::cout <<rank<<" - flattened array size: "<< local_coreset_cardinality*data_MPI[0].size() << std::endl;
 
     for (int i = 0; i < local_coreset_cardinality; i++){
             // std::cout <<"i: "<< i << " dim: " << dim << std::endl;
+        // std::cout << rank << "- dim size " << c[i].size() << std::endl;
         for (int j = 0; j < data_MPI[0].size(); j++){
             // std::cout << i*data_MPI.size() + j << std::endl;
             flattenedCoresetData[i*data_MPI[0].size() + j] = c[i][j];
 
         // for (int j = 0; j < data_MPI[0].size(); j++){
-        //         std::cout<< flattenedCoresetData[i*data_MPI[0].size() + j] << "\t";
+                // std::cout<< flattenedCoresetData[i*data_MPI[0].size() + j] << "\t";
         // }
         // std::cout << std::endl;
         }
     }
-    // std::cout <<rank << "hello10" << std::endl;
+    // std::cout <<rank << " - hello10" << std::endl;
 
     //gather the coresets back onto the root machine
     value_t* coreset_temp = NULL;
@@ -622,7 +645,7 @@ void Coresets::createCoreSet_MPI(int numData, int numFeatures, value_t *data, in
             datapoint_t datapoint_temp(coreset_temp + i*data_MPI[0].size(), coreset_temp+ (i+1)*data_MPI[0].size());
             coreset_data.push_back(datapoint_temp);
             // for (int j = 0; j < data_MPI[0].size(); j++){
-            //     std::cout<< coreset_temp[i*data_MPI[0].size() + j] << "\t";
+                // std::cout<< coreset_temp[i*data_MPI[0].size() + j] << "\t";
             // }
             // std::cout << std::endl;
         }
@@ -631,7 +654,7 @@ void Coresets::createCoreSet_MPI(int numData, int numFeatures, value_t *data, in
         std::vector<float> w(weights_temp, weights_temp+sampleSize);
         coreset.weights = w;
         // for (int i = 0; i < sampleSize; i++){
-        //     std::cout << weights_temp[i] << std::endl;
+            // std::cout << weights_temp[i] << std::endl;
         // }
     }
 }
