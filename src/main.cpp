@@ -2,6 +2,8 @@
 #include <chrono>
 #include <mpi.h>
 #include "Kmeans.hpp"
+#include "Reader.hpp"
+#include "Writer.hpp"
 #include "boost/random.hpp"
 #include "boost/math/distributions/normal.hpp"
 #include "time.h"
@@ -114,9 +116,9 @@ value_t *generateDataset_MPI(int numData, int numFeatures, int numClusters)
 
 int main(int argc, char *argv[])
 {
-    int numData = 30000;
-    int numFeatures = 250;
-    int numClusters = 5;
+    int numData = 10000;
+    int numFeatures = 2;
+    int numClusters = 30;
     int numRestarts = 10;
     dataset_t data;
 
@@ -231,7 +233,11 @@ int main(int argc, char *argv[])
 
         // MPI Coreset creation + fitting
         MPI_Init(&argc, &argv);
-        value_t *data = generateDataset_MPI(numData, numFeatures, numClusters);
+        // value_t *data = generateDataset_MPI(numData, numFeatures, numClusters);
+        CReader reader;
+        reader.read("../test_10000_2.txt", 10000, 2);
+        value_t *data = reader.getData();
+
         auto start_coreset_creation = std::chrono::high_resolution_clock::now();
         int rank, numProcs;
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
