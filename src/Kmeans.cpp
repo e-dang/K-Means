@@ -1023,7 +1023,7 @@ void Kmeans::createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(dat
 #pragma omp parallel for shared(data, distances), schedule(static), reduction(+ : distanceSum) 
     for (int i = 0; i < data.size(); i++)
     {
-        distances[i] = func(mean, data[i]);
+        distances[i] = std::pow(func(mean, data[i]), 2);
         distanceSum += distances[i];
     }
 
@@ -1035,12 +1035,14 @@ void Kmeans::createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(dat
     for (int i = 0; i < data.size(); i++)
     {
         distribution[i] = partOne + 0.5 * distances[i] / distanceSum;
+        // std::cout << distribution[i] << "\t";
         sum += distribution[i];
     }
-
+    // std::cout << std::endl;
+    // std::cout << "hereherehere"<< sum << std::endl;
     // create pointers to each datapoint in data
     std::vector<datapoint_t *> ptrData(data.size());
-#pragma omp parallel for shared(data, ptrData), schedule(static) // this section might have false sharing, which will degrade performance
+// #pragma omp parallel for shared(data, ptrData), schedule(static) // this section might have false sharing, which will degrade performance
     for (int i = 0; i < data.size(); i++)
     {
         ptrData[i] = &data[i];
@@ -1059,8 +1061,17 @@ void Kmeans::createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(dat
         {
             if ((randNum -= distribution[j]) <= 0)
             {
-                coreset.data[i] = *ptrData[j];
-                coreset.weights[i] = 1 / (sampleSize * distribution[j]);
+                coreset.data[i] = *(ptrData[j]);
+                // coreset.data[i] = datapoint_t(ptrData[j], ptrData[j] + 2);
+                // for (int k = 0; k < coreset.data[i].size(); k++){
+                //     std::cout <<  coreset.data[i][k];
+                // }
+                // std::cout << std::endl;
+                // std::copy(coreset.data[i], ptrData[j], ptrData[j] + numFeatures);
+                coreset.weights[i] = (double) (1.0 / (sampleSize * distribution[j]));
+
+                // std::cout << coreset.weights[i] << std::endl;
+
                 sum -= distribution[j];
                 ptrData.erase(ptrData.begin() + j);
                 distribution.erase(distribution.begin() + j);

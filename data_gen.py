@@ -42,7 +42,7 @@ def plot_data(data, clusters, clustering):
     plt.scatter(data[:, 0], data[:, 1], c='b')
     plt.scatter(clusters[:, 0], clusters[:, 1], c='r')
     plt.show()
-    plt.savefig('test2.png')
+    plt.savefig('test3.png')
 
 
 NUM_DATA = 10000
@@ -56,6 +56,6 @@ BOX = (-1000, 1000)
 data = read_data('test_10000_2.txt', 10000, 2)
 # clusters = read_data('clusters_scale.txt', 10000, 2)
 # clustering = read_data('clustering_scale.txt', 10000, 1)
-clusters = read_data('clusters_coreset_mpi.txt', 10000, 2)
-clustering = read_data('clustering_coreset_mpi.txt', 10000, 1)
+clusters = read_data('clusters_coreset_omp.txt', 10000, 2)
+clustering = read_data('clustering_coreset_omp.txt', 10000, 1)
 plot_data(data, clusters, clustering)

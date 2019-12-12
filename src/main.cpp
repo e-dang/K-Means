@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        data = generateDataset(numData, numFeatures, numClusters);
+        // data = generateDataset(numData, numFeatures, numClusters);
 
         // cluster data
         Kmeans kmeans(numClusters, 1, 4);
@@ -215,53 +215,59 @@ int main(int argc, char *argv[])
         // std::cout << "Full Dataset Error: " << kmeans.getError() << std::endl;
         // std::cout << "Full Dataset Total time: " << duration.count() << std::endl;
         
-        int coreset_size = 5000;
+        int coreset_size = 10000;
 
         // OMP coreset creation + fitting
-        // auto start_coreset_creation = std::chrono::high_resolution_clock::now();
-        // kmeans.createCoreSet(data, coreset_size, Kmeans::distanceL2);
-        // auto stop_coreset_creation = std::chrono::high_resolution_clock::now();
-        // auto duration_coreset_creation = std::chrono::duration_cast<std::chrono::microseconds>(stop_coreset_creation - start_coreset_creation);
-        // std::cout << "Coreset creation time omp: " << duration_coreset_creation.count() << std::endl;
-        
-        // auto start_coreset_fitting = std::chrono::high_resolution_clock::now();
-        // kmeans.fit_coreset(Kmeans::distanceL2);
-        // auto stop_coreset_fitting = std::chrono::high_resolution_clock::now();
-        // auto duration_coreset_fitting = std::chrono::duration_cast<std::chrono::microseconds>(stop_coreset_fitting - start_coreset_fitting);
-        // std::cout << "Coreset fitting error omp: " << kmeans.getError() << std::endl;
-        // std::cout << "Coreset fitting time omp: " << duration_coreset_fitting.count() << std::endl;
-
-        // MPI Coreset creation + fitting
-        MPI_Init(&argc, &argv);
-        // value_t *data = generateDataset_MPI(numData, numFeatures, numClusters);
-        CReader reader;
+        DataSetReader reader;
         reader.read("../test_10000_2.txt", 10000, 2);
-        value_t *data = reader.getData();
-
+        dataset_t data = reader.getData();
         auto start_coreset_creation = std::chrono::high_resolution_clock::now();
-        int rank, numProcs;
-        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        kmeans.createCoreSet_MPI(numData, numFeatures, data, coreset_size, Kmeans::distanceL2);
-        MPI_Finalize();
+        kmeans.createCoreSet(data, coreset_size, Kmeans::distanceL2);
         auto stop_coreset_creation = std::chrono::high_resolution_clock::now();
         auto duration_coreset_creation = std::chrono::duration_cast<std::chrono::microseconds>(stop_coreset_creation - start_coreset_creation);
-        std::cout << "Coreset creation time: " << duration_coreset_creation.count() << std::endl;
+        std::cout << "Coreset creation time omp: " << duration_coreset_creation.count() << std::endl;
+        
+        auto start_coreset_fitting = std::chrono::high_resolution_clock::now();
+        kmeans.fit_coreset(Kmeans::distanceL2);
+        auto stop_coreset_fitting = std::chrono::high_resolution_clock::now();
+        auto duration_coreset_fitting = std::chrono::duration_cast<std::chrono::microseconds>(stop_coreset_fitting - start_coreset_fitting);
+        std::cout << "Coreset fitting error omp: " << kmeans.getError() << std::endl;
+        std::cout << "Coreset fitting time omp: " << duration_coreset_fitting.count() << std::endl;
+        ClusterWriter writer(kmeans.getClusters(), kmeans.getClustering());
+        writer.writeClusters("../clusters_coreset_omp.txt");
+        writer.writeClustering("../clustering_coreset_omp.txt");
 
-        if (rank == 0){
-            auto start_coreset_fitting = std::chrono::high_resolution_clock::now();
-            kmeans.fit_coreset(Kmeans::distanceL2);
-            auto stop_coreset_fitting = std::chrono::high_resolution_clock::now();
-            auto duration_coreset_fitting = std::chrono::duration_cast<std::chrono::microseconds>(stop_coreset_fitting - start_coreset_fitting);
-            std::cout << "Coreset fitting error: " << kmeans.getError() << std::endl;
-            std::cout << "Coreset fitting time: " << duration_coreset_fitting.count() << std::endl;
+        // MPI Coreset creation + fitting
+        // MPI_Init(&argc, &argv);
+        // // value_t *data = generateDataset_MPI(numData, numFeatures, numClusters);
+        // CReader reader;
+        // reader.read("../test_10000_2.txt", 10000, 2);
+        // value_t *data = reader.getData();
 
-            std::cout << "num clusters" << kmeans.getClusters().size() << std::endl;    
-            ClusterWriter writer(kmeans.getClusters(), kmeans.getClustering());
-            // writer.writeClusters("../clusters_omp_kpp.txt");
-            // writer.writeClustering("../clustering_omp_kpp.txt");
-            writer.writeClusters("../clusters_coreset_mpi.txt");
-            writer.writeClustering("../clustering_corset_mpi.txt");
-        }
+        // auto start_coreset_creation = std::chrono::high_resolution_clock::now();
+        // int rank, numProcs;
+        // MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        // kmeans.createCoreSet_MPI(numData, numFeatures, data, coreset_size, Kmeans::distanceL2);
+        // MPI_Finalize();
+        // auto stop_coreset_creation = std::chrono::high_resolution_clock::now();
+        // auto duration_coreset_creation = std::chrono::duration_cast<std::chrono::microseconds>(stop_coreset_creation - start_coreset_creation);
+        // std::cout << "Coreset creation time: " << duration_coreset_creation.count() << std::endl;
+
+        // if (rank == 0){
+        //     auto start_coreset_fitting = std::chrono::high_resolution_clock::now();
+        //     kmeans.fit_coreset(Kmeans::distanceL2);
+        //     auto stop_coreset_fitting = std::chrono::high_resolution_clock::now();
+        //     auto duration_coreset_fitting = std::chrono::duration_cast<std::chrono::microseconds>(stop_coreset_fitting - start_coreset_fitting);
+        //     std::cout << "Coreset fitting error: " << kmeans.getError() << std::endl;
+        //     std::cout << "Coreset fitting time: " << duration_coreset_fitting.count() << std::endl;
+
+        //     std::cout << "num clusters" << kmeans.getClusters().size() << std::endl;    
+        //     ClusterWriter writer(kmeans.getClusters(), kmeans.getClustering());
+        //     // writer.writeClusters("../clusters_omp_kpp.txt");
+        //     // writer.writeClustering("../clustering_omp_kpp.txt");
+        //     writer.writeClusters("../clusters_coreset_mpi.txt");
+        //     writer.writeClustering("../clustering_coreset_mpi.txt");
+        // }
 
 
         // std::cout << "Cluster Centers:" << std::endl;
