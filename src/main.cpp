@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
         // std::cout << "Full Dataset Error: " << kmeans.getError() << std::endl;
         // std::cout << "Full Dataset Total time: " << duration.count() << std::endl;
         
-        int coreset_size = 10000;
+        int coreset_size = 5000;
 
         // OMP coreset creation + fitting
         DataSetReader reader;
