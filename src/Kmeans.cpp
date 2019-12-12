@@ -174,8 +174,6 @@ void Kmeans::fit_coreset(value_t (*func)(datapoint_t &, datapoint_t &))
 
     for (int run = 0; run < numRestarts; run++)
     {
-        bestClusters = clusters_t();
-        bestClustering = clustering_t(numData, -1);
         clusters = clusters_t();
         clustering = clustering_t(numData, -1);
         // initialize clusters with k++ algorithm
@@ -206,6 +204,9 @@ void Kmeans::fit_coreset(value_t (*func)(datapoint_t &, datapoint_t &))
             {
                 for (int j = 0; j < numFeatures; j++)
                 {
+                    if (cluster_weights[i] < 0.000001){
+                        std::cout << cluster_weights[i] << std::endl;
+                    }
                     clusters[i].coords[j] /= cluster_weights[i];
                 }
             }
@@ -1270,9 +1271,12 @@ void Kmeans::createCoreSet_MPI(int numData, int numFeatures, value_t *data, int 
             // std::cout << "RandNum: " << randNum << " Size: " << distribution.size() << std::endl;
         // }
         c[nth_uniform_sample] = *ptrData[randNum];
-        w[nth_uniform_sample] = (float)1.0 / (sampleSize * distribution[randNum]);
+        w[nth_uniform_sample] = (double) (1.0 / (sampleSize * distribution[randNum]));
         // std::cout << sampleSize * distribution[randNum] << std::endl;
         // std::cout <<nth_uniform_sample<< " "<< w[nth_uniform_sample] << std::endl;
+        if (w[nth_uniform_sample] < .000001){
+            std::cout << w[nth_uniform_sample] << std::endl;
+        }
         phiDist -= sqd_distances[nth_uniform_sample]; // subtract contribution of the sampled point from the phi distrubition
         ptrData.erase(ptrData.begin() + randNum);
         distribution.erase(distribution.begin() + randNum);
@@ -1287,7 +1291,10 @@ void Kmeans::createCoreSet_MPI(int numData, int numFeatures, value_t *data, int 
             if ((randPhi -= sqd_distances[i]) <= 0)
             {
                 c[i] = *ptrData[j];
-                w[i] = (float)1.0 / (sampleSize * distribution[j]);
+                w[i] = (double) (1.0 / (sampleSize * distribution[j]));
+                if (w[i] < .000001){
+                    std::cout << w[i] << std::endl;
+                }
                 // std::cout << i << " "<< w[i] << std::endl;
                 // for (int j = 0; j < data_MPI[0].size(); j++){
                 //     std::cout<< c[i][j] << "\t";

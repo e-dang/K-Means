@@ -254,7 +254,16 @@ int main(int argc, char *argv[])
             auto duration_coreset_fitting = std::chrono::duration_cast<std::chrono::microseconds>(stop_coreset_fitting - start_coreset_fitting);
             std::cout << "Coreset fitting error: " << kmeans.getError() << std::endl;
             std::cout << "Coreset fitting time: " << duration_coreset_fitting.count() << std::endl;
+
+            std::cout << "num clusters" << kmeans.getClusters().size() << std::endl;    
+            ClusterWriter writer(kmeans.getClusters(), kmeans.getClustering());
+            // writer.writeClusters("../clusters_omp_kpp.txt");
+            // writer.writeClustering("../clustering_omp_kpp.txt");
+            writer.writeClusters("../clusters_coreset_mpi.txt");
+            writer.writeClustering("../clustering_corset_mpi.txt");
         }
+
+
         // std::cout << "Cluster Centers:" << std::endl;
         // for (auto &center : kmeans.getClusters())
         // {

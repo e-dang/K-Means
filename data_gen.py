@@ -33,15 +33,16 @@ def read_data(filepath, num_data, num_features):
             vals[ind].append(struct.unpack('f', data)[0])
             data = file.read(4)
             i += 1
-
-    return np.concatenate([np.array(i) for i in vals]).reshape((-1, num_features))
+    ret = np.concatenate([np.array(i) for i in vals]).reshape((-1, num_features))
+    return ret[~np.isnan(ret)].reshape((-1, 2))
 
 
 def plot_data(data, clusters, clustering):
-    # print(data)
+    print(clusters)
     plt.scatter(data[:, 0], data[:, 1], c='b')
     plt.scatter(clusters[:, 0], clusters[:, 1], c='r')
     plt.show()
+    plt.savefig('test2.png')
 
 
 NUM_DATA = 10000
@@ -55,6 +56,6 @@ BOX = (-1000, 1000)
 data = read_data('test_10000_2.txt', 10000, 2)
 # clusters = read_data('clusters_scale.txt', 10000, 2)
 # clustering = read_data('clustering_scale.txt', 10000, 1)
-clusters = read_data('clusters.txt', 10000, 2)
-clustering = read_data('clustering.txt', 10000, 1)
+clusters = read_data('clusters_coreset_mpi.txt', 10000, 2)
+clustering = read_data('clustering_coreset_mpi.txt', 10000, 1)
 plot_data(data, clusters, clustering)
