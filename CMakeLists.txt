@@ -16,4 +16,4 @@ include_directories("/usr/local/include" "/usr/local/opt/llvm/include")
 link_directories("/usr/local/lib" "/usr/local/opt/llvm/lib")
 
 # target
-add_executable(kmeans ./src/main.cpp ./src/Kmeans.cpp ./src/Reader.cpp ./src/Writer.cpp)
+add_executable(kmeans ./src/main.cpp ./src/Coresets.cpp ./src/Reader.cpp ./src/Writer.cpp)
