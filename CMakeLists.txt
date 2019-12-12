@@ -18,6 +18,6 @@ link_directories("/usr/local/lib" "/usr/local/opt/llvm/lib")
 # target
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
-    add_executable(kmeans ./src/main.cpp ./src/Kmeans.cpp ./src/SerialKmeans.cpp ./src/OMPKmeans.cpp  ./src/MPIKmeans.cpp ./src/Reader.cpp ./src/Writer.cpp)
+    add_executable(kmeans ./src/main_MPI.cpp ./src/Kmeans.cpp ./src/SerialKmeans.cpp ./src/OMPKmeans.cpp  ./src/MPIKmeans.cpp ./src/Reader.cpp ./src/Writer.cpp)
     target_link_libraries(kmeans ${Boost_LIBRARIES})
 endif()
