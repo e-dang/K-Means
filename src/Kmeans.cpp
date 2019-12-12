@@ -1150,9 +1150,10 @@ void Kmeans::createCoreSet_MPI(int numData, int numFeatures, value_t *data, int 
                 global_mean[mth_feature] += mean[(nth_proc*data_MPI[0].size()) + mth_feature];
                 // std::cout << mean[(nth_proc*data_MPI[0].size()) + mth_feature] << std::endl;
             }
-            std::vector<value_t> loc_mean(mean[nth_proc*data_MPI[0].size()], mean[nth_proc*data_MPI[0].size() + data_MPI[0].size()]);
+            std::vector<value_t> loc_mean(&mean[nth_proc*data_MPI[0].size()], &mean[nth_proc*data_MPI[0].size() + data_MPI[0].size()]);
             local_means.push_back(loc_mean);
         }
+        // std::cout << "here" << std::endl;
         for (int mth_feature = 0; mth_feature < data_MPI[0].size(); mth_feature++){
             global_mean[mth_feature] /= (float)numProcs;
             // std::cout << global_mean[mth_feature] << std::endl;
@@ -1171,7 +1172,10 @@ void Kmeans::createCoreSet_MPI(int numData, int numFeatures, value_t *data, int 
             // for (int mth_feature = 0; mth_feature < data_MPI[0].size(); mth_feature++){
             //     ith_quant_err += sqd_sum[(nth_proc*data_MPI[0].size())+mth_feature] - 2*global_mean[mth_feature]*sum[(nth_proc*data_MPI[0].size())+mth_feature] + local_cardinalities[nth_proc]*std::pow(global_mean[mth_feature],2);
             // }
+            // std::cout << "here2"<<local_means.size()<< std::endl; 
+
             ith_quant_err = std::pow(func(global_mean, local_means[nth_proc]),2);
+            // std::cout << "here3"<< std::endl; 
             quant_errs[nth_proc] = ith_quant_err;
             // std::cout<< "ith_quant_err: " << ith_quant_err << std::endl;
             total_quant_err += ith_quant_err;
