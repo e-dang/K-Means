@@ -36,4 +36,5 @@ public:
 
     void writeClusters(std::string filepath) override;
     void writeClustering(std::string filepath) override;
+    void writeTimes(std::vector<float> time, std::string);
 };

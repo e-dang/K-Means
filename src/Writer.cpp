@@ -61,3 +61,20 @@ void ClusterWriter::writeClustering(std::string filepath)
 
     file.write(reinterpret_cast<char *>(&clustering.at(0)), sizeof(int) * clustering.size());
 }
+
+void ClusterWriter::writeTimes(std::vector<float> times, std::string filepath)
+{
+
+    std::ofstream file(filepath);
+    if (!file.is_open())
+    {
+        throw std::runtime_error("Unable to open specified file");
+    }
+
+    for (auto &val : times)
+    {
+
+        file.write(reinterpret_cast<char *>(&val), sizeof(float));
+        file << std::endl;
+    }
+}
