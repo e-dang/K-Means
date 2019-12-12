@@ -3,7 +3,7 @@
 #include "Definitions.hpp"
 #include <mpi.h>
 
-class Kmeans
+class Coresets
 {
 private:
     /**
@@ -134,13 +134,13 @@ public:
      * @param numRestarts - The number of times to repeat the Kmeans calculation before returning an answer.
      * @param numThreads - The number of threads to use. Defaults to 8.
      */
-    Kmeans(int numClusters, int numRestarts, int numThreads = 8);
+    Coresets(int numClusters, int numRestarts, int numThreads = 8);
 
     /**
      * @brief Destroy the Kmeans object.
      *
      */
-    ~Kmeans();
+    ~Coresets();
 
     /**
      * @brief Function that performs the clustering on coresets using lloyd's algorithm with Kmeans ++ initialization.

@@ -10,7 +10,7 @@
 
 typedef boost::mt19937 RNGType;
 
-Kmeans::Kmeans(int numClusters, int numRestarts, int numThreads) : numClusters(numClusters), numRestarts(numRestarts),
+Coresets::Coresets(int numClusters, int numRestarts, int numThreads) : numClusters(numClusters), numRestarts(numRestarts),
                                                                    numThreads(numThreads)
 {
 
@@ -18,11 +18,11 @@ Kmeans::Kmeans(int numClusters, int numRestarts, int numThreads) : numClusters(n
     setNumThreads(numThreads);
 }
 
-Kmeans::~Kmeans()
+Coresets::~Coresets()
 {
 }
 
-void Kmeans::initMPIMembers(int numData, int numFeatures, value_t *data)
+void Coresets::initMPIMembers(int numData, int numFeatures, value_t *data)
 {
     int rank, numProcs;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -90,7 +90,7 @@ void Kmeans::initMPIMembers(int numData, int numFeatures, value_t *data)
     data_MPI = arrayToDataset(tempData, size, numFeatures);
 }
 
-void Kmeans::fit_coreset(value_t (*func)(datapoint_t &, datapoint_t &))
+void Coresets::fit_coreset(value_t (*func)(datapoint_t &, datapoint_t &))
 {
     int changed;
     int numData = coreset.data.size();
@@ -169,7 +169,7 @@ void Kmeans::fit_coreset(value_t (*func)(datapoint_t &, datapoint_t &))
     }
 }
 
-void Kmeans::kPlusPlus(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t &))
+void Coresets::kPlusPlus(dataset_t &data, value_t (*func)(datapoint_t &, datapoint_t &))
 {
     RNGType rng(time(NULL));
     boost::uniform_int<> intRange(0, data.size());
@@ -216,7 +216,7 @@ void Kmeans::kPlusPlus(dataset_t &data, value_t (*func)(datapoint_t &, datapoint
     }
 }
 
-value_t Kmeans::nearest(datapoint_t &point, int &pointIdx, value_t (*func)(datapoint_t &, datapoint_t &))
+value_t Coresets::nearest(datapoint_t &point, int &pointIdx, value_t (*func)(datapoint_t &, datapoint_t &))
 {
     value_t tempDist, minDist = INT_MAX - 1;
 
@@ -234,7 +234,7 @@ value_t Kmeans::nearest(datapoint_t &point, int &pointIdx, value_t (*func)(datap
     return minDist;
 }
 
-void Kmeans::createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(datapoint_t &, datapoint_t &))
+void Coresets::createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(datapoint_t &, datapoint_t &))
 {
 
     RNGType rng(time(NULL));
@@ -323,7 +323,7 @@ void Kmeans::createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(dat
     }
 }
 
-void Kmeans::createCoreSet_MPI(int numData, int numFeatures, value_t *data, int sampleSize, value_t (*func)(datapoint_t &, datapoint_t &)){
+void Coresets::createCoreSet_MPI(int numData, int numFeatures, value_t *data, int sampleSize, value_t (*func)(datapoint_t &, datapoint_t &)){
     int rank, numProcs;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
@@ -636,7 +636,7 @@ void Kmeans::createCoreSet_MPI(int numData, int numFeatures, value_t *data, int 
     }
 }
 
-dataset_t Kmeans::arrayToDataset(value_t *data, int size, int numFeatures)
+dataset_t Coresets::arrayToDataset(value_t *data, int size, int numFeatures)
 {
 
     dataset_t dataVec = dataset_t(size, datapoint_t(numFeatures));
@@ -651,7 +651,7 @@ dataset_t Kmeans::arrayToDataset(value_t *data, int size, int numFeatures)
     return dataVec;
 }
 
-datapoint_t Kmeans::getClusterCoord(int idx, int numFeatures)
+datapoint_t Coresets::getClusterCoord(int idx, int numFeatures)
 {
     value_t coord[numFeatures];
     MPI_Get(coord, numFeatures, MPI_FLOAT, 0, idx * numFeatures, numFeatures, MPI_FLOAT, clusterCoordWin);
@@ -664,50 +664,50 @@ datapoint_t Kmeans::getClusterCoord(int idx, int numFeatures)
     }
     return coordVec;
 }
-int Kmeans::getClusterCount(int idx)
+int Coresets::getClusterCount(int idx)
 {
     int count;
     MPI_Get(&count, 1, MPI_INT, 0, idx, 1, MPI_INT, clusterCoordWin);
     return count;
 }
 
-int Kmeans::getClustering(int idx)
+int Coresets::getClustering(int idx)
 {
     int count;
     MPI_Get(&count, 1, MPI_INT, 0, idx, 1, MPI_INT, clusteringWin);
     return count;
 }
 
-void Kmeans::setClusterCount(int idx, int *count)
+void Coresets::setClusterCount(int idx, int *count)
 {
     MPI_Put(count, 1, MPI_INT, 0, idx, 1, MPI_INT, clusterCountWin);
 }
 
-void Kmeans::setClusterCoord(int idx, int numFeatures, datapoint_t *coord)
+void Coresets::setClusterCoord(int idx, int numFeatures, datapoint_t *coord)
 {
     MPI_Put(coord, coord->size(), MPI_FLOAT, 0, idx * numFeatures, coord->size(), MPI_FLOAT, clusterCoordWin);
 }
 
-bool Kmeans::setNumClusters(int numClusters)
+bool Coresets::setNumClusters(int numClusters)
 {
     this->numClusters = numClusters;
     return true;
 }
 
-bool Kmeans::setNumRestarts(int numRestarts)
+bool Coresets::setNumRestarts(int numRestarts)
 {
     this->numRestarts = numRestarts;
     return true;
 }
 
-bool Kmeans::setNumThreads(int numThreads)
+bool Coresets::setNumThreads(int numThreads)
 {
     this->numThreads = numThreads;
     omp_set_num_threads(this->numThreads);
     return true;
 }
 
-value_t Kmeans::distanceL2(datapoint_t &p1, datapoint_t &p2)
+value_t Coresets::distanceL2(datapoint_t &p1, datapoint_t &p2)
 {
     value_t sum = 0;
     for (int i = 0; i < p1.size(); i++)

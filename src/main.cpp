@@ -121,12 +121,12 @@ int main(int argc, char *argv[])
     int numClusters = 30;
     int numRestarts = 10;
     dataset_t data;
-    bool mpi = true;
+    bool mpi = false;
     // cluster data
-    Kmeans kmeans(numClusters, 1, 4);
+    Coresets kmeans(numClusters, 1, 4);
     // auto start = std::chrono::high_resolution_clock::now();
-    // kmeans.fit(data, Kmeans::distanceL2); // kmeans++
-    // // kmeans.fit(data, numClusters / 3, Kmeans::distanceL2); // scalableKmeans
+    // kmeans.fit(data, Coresets::distanceL2); // kmeans++
+    // // kmeans.fit(data, numClusters / 3, Coresets::distanceL2); // scalableKmeans
     // auto stop = std::chrono::high_resolution_clock::now();
     // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
     // std::cout << "Full Dataset Error: " << kmeans.getError() << std::endl;
@@ -140,13 +140,13 @@ int main(int argc, char *argv[])
         reader.read("../test_10000_2.txt", 10000, 2);
         dataset_t data = reader.getData();
         auto start_coreset_creation = std::chrono::high_resolution_clock::now();
-        kmeans.createCoreSet(data, coreset_size, Kmeans::distanceL2);
+        kmeans.createCoreSet(data, coreset_size, Coresets::distanceL2);
         auto stop_coreset_creation = std::chrono::high_resolution_clock::now();
         auto duration_coreset_creation = std::chrono::duration_cast<std::chrono::microseconds>(stop_coreset_creation - start_coreset_creation);
         std::cout << "Coreset creation time omp: " << duration_coreset_creation.count() << std::endl;
         
         auto start_coreset_fitting = std::chrono::high_resolution_clock::now();
-        kmeans.fit_coreset(Kmeans::distanceL2);
+        kmeans.fit_coreset(Coresets::distanceL2);
         auto stop_coreset_fitting = std::chrono::high_resolution_clock::now();
         auto duration_coreset_fitting = std::chrono::duration_cast<std::chrono::microseconds>(stop_coreset_fitting - start_coreset_fitting);
         std::cout << "Coreset fitting error omp: " << kmeans.getError() << std::endl;
@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
         auto start_coreset_creation = std::chrono::high_resolution_clock::now();
         int rank, numProcs;
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-        kmeans.createCoreSet_MPI(numData, numFeatures, data, coreset_size, Kmeans::distanceL2);
+        kmeans.createCoreSet_MPI(numData, numFeatures, data, coreset_size, Coresets::distanceL2);
         MPI_Finalize();
         auto stop_coreset_creation = std::chrono::high_resolution_clock::now();
         auto duration_coreset_creation = std::chrono::duration_cast<std::chrono::microseconds>(stop_coreset_creation - start_coreset_creation);
@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
 
         if (rank == 0){
             auto start_coreset_fitting = std::chrono::high_resolution_clock::now();
-            kmeans.fit_coreset(Kmeans::distanceL2);
+            kmeans.fit_coreset(Coresets::distanceL2);
             auto stop_coreset_fitting = std::chrono::high_resolution_clock::now();
             auto duration_coreset_fitting = std::chrono::duration_cast<std::chrono::microseconds>(stop_coreset_fitting - start_coreset_fitting);
             std::cout << "Coreset fitting error: " << kmeans.getError() << std::endl;
