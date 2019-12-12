@@ -1000,7 +1000,7 @@ void Kmeans::createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(dat
     datapoint_t mean(data[0].size(), 0);
     auto mean_data = mean.data();
 
-// #pragma omp parallel for shared(data), schedule(static), reduction(+ : mean_data[: data[0].size()])
+#pragma omp parallel for shared(data), schedule(static), reduction(+ : mean_data[: data[0].size()])
     for (int nth_datapoint = 0; nth_datapoint < data.size(); nth_datapoint++)
     {
         for (int i = 0; i < data[0].size(); i++)
@@ -1017,7 +1017,7 @@ void Kmeans::createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(dat
     // calculate distances between the mean and all datapoints
     double distanceSum = 0;
     std::vector<value_t> distances(data.size(), 0);
-// #pragma omp parallel for shared(data, distances), schedule(static), reduction(+ : distanceSum) 
+#pragma omp parallel for shared(data, distances), schedule(static), reduction(+ : distanceSum) 
     for (int i = 0; i < data.size(); i++)
     {
         distances[i] = func(mean, data[i]);
@@ -1028,7 +1028,7 @@ void Kmeans::createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(dat
     value_t partOne = 0.5 * (1.0 / (float)data.size()); // first portion of distribution calculation that is constant
     double sum = 0.0;
     std::vector<value_t> distribution(data.size(),0);
-// #pragma omp parallel for shared(distribution, distances), schedule(static), reduction(+ : sum) 
+#pragma omp parallel for shared(distribution, distances), schedule(static), reduction(+ : sum) 
     for (int i = 0; i < data.size(); i++)
     {
         distribution[i] = partOne + 0.5 * distances[i] / distanceSum;
@@ -1037,7 +1037,7 @@ void Kmeans::createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(dat
 
     // create pointers to each datapoint in data
     std::vector<datapoint_t *> ptrData(data.size());
-// #pragma omp parallel for shared(data, ptrData), schedule(static) // this section might have false sharing, which will degrade performance
+#pragma omp parallel for shared(data, ptrData), schedule(static) // this section might have false sharing, which will degrade performance
     for (int i = 0; i < data.size(); i++)
     {
         ptrData[i] = &data[i];
