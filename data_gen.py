@@ -21,6 +21,8 @@ def generate_data(num_data, num_features, num_clusters, cluster_std, box, data_f
         label_array = array('l', labels)
         label_array.tofile(file)
 
+    return data
+
 
 def read_data(filepath, num_data, num_features, data_format='f'):
     vals = [[] for _ in range(num_data)]
@@ -51,6 +53,7 @@ def read_clustering(filepath):
 
 def plot_data(data, clusters, clustering):
     # print(data)
+    # print(clusters)
     # print(clustering)
     colors = cm.jet(np.linspace(0, 1, len(set(clustering))))
     new_colors = [colors[i] for i in clustering]
@@ -59,23 +62,22 @@ def plot_data(data, clusters, clustering):
     plt.show()
 
 
-NUM_DATA = 10000
+NUM_DATA = 100000
 NUM_FEATURES = 2
 NUM_CLUSTERS = 30
-CLUSTER_STD = 10
-BOX = (-1000, 1000)
-# generate_data(NUM_DATA, NUM_FEATURES, NUM_CLUSTERS, CLUSTER_STD, BOX,
-#               f'test_{NUM_DATA}_{NUM_FEATURES}.txt', f'test_labels_{NUM_DATA}_{NUM_FEATURES}.txt')
+CLUSTER_STD = 1
+BOX = (-100, 100)
+# data = generate_data(NUM_DATA, NUM_FEATURES, NUM_CLUSTERS, CLUSTER_STD, BOX,
+#  f'test_{NUM_DATA}_{NUM_FEATURES}.txt', f'data_labels_{NUM_DATA}_{NUM_FEATURES}.txt')
 
-data = read_data('test_10000_2.txt', 10000, 2)
-clusters = read_data('clusters_serial_scale.txt', 10000, 2)
-clustering = read_clustering('clustering_serial_scale.txt')
-# clusters = read_data('clusters_serial_kpp.txt', 10000, 2)
-# clustering = read_clustering('clustering_serial_kpp.txt')
+
+data = read_data('test_100000_2.txt', 100000, 2)
+clusters = read_data('clusters_omp_kpp_100000_2_8.txt', 100000, 2)
+clustering = read_clustering('clustering_omp_kpp_100000_2_8.txt')
+# clusters = read_data('clusters_omp_kpp_100000_2.txt', 100000, 2)
+# clustering = read_clustering('clustering_omp_kpp_100000_2.txt')
+# clusters = read_data('clusters_mpi_scaleable.txt', 10000, 2)
+# clustering = read_clustering('clustering_mpi_scaleable.txt')
+# clusters = read_data('clusters_coreset_kpp.txt', 10000, 2)
+# clustering = read_clustering('clustering_coreset_mpi.txt')
 plot_data(data, clusters, clustering)
-
-s = set()
-for x in clustering:
-    s.add(x)
-
-print(len(s))
