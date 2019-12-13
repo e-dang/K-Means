@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
     int numRestarts = 10;
     dataset_t data;
 
-    bool MPI = true;
+    bool MPI = false;
     if (MPI)
     {
         bool MPI_windows = false;
@@ -144,13 +144,13 @@ int main(int argc, char *argv[])
         {
             // value_t *data = generateDataset_MPI(numData, numFeatures, numClusters);
             CReader reader;
-            reader.read("../test_10000_2.txt", 10000, 2);
+            reader.read("../data_1000000_2.txt", numData, numFeatures);
             value_t *data = reader.getData();
             if (rank == 0)
             {
                 auto start = std::chrono::high_resolution_clock::now();
-                // kmeans.fit(numData, numFeatures, data, Kmeans::distanceL2);
-                kmeans.fit(numData, numFeatures, data, numClusters, Kmeans::distanceL2);
+                kmeans.fit(numData, numFeatures, data, Kmeans::distanceL2);
+                // kmeans.fit(numData, numFeatures, data, numClusters, Kmeans::distanceL2);
                 // std::cout << "HERE2" << std::endl;
                 auto stop = std::chrono::high_resolution_clock::now();
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
@@ -170,7 +170,8 @@ int main(int argc, char *argv[])
             }
             else
             {
-                kmeans.fit(numData, numFeatures, NULL, numClusters, Kmeans::distanceL2);
+                kmeans.fit(numData, numFeatures, NULL, Kmeans::distanceL2);
+                // kmeans.fit(numData, numFeatures, NULL, numClusters, Kmeans::distanceL2);
             }
         }
         // Run with MPI windows
@@ -236,29 +237,29 @@ int main(int argc, char *argv[])
         boost::variate_generator<RNGType, boost::uniform_real<>> floatDistr(rng, floatRange);
 
         // Kmeans kmeans(30, 30);
-        // SerialKmeans kmeans(30, 30, intDistr, floatDistr);
-        OMPKmeans kmeans(30, 30, intDistr, floatDistr);
+        SerialKmeans kmeans(30, 30, intDistr, floatDistr);
+        // OMPKmeans kmeans(30, 30, intDistr, floatDistr);
         auto start = std::chrono::high_resolution_clock::now();
         // kmeans.fit(data, Kmeans::distanceL2); // kmeans++
         kmeans.fit(data, 30, Kmeans::distanceL2); // scalableKmeans
         auto stop = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
         std::cout << "Total time: " << duration.count() << std::endl;
-        ClusterWriter writer(kmeans.getClusters(), kmeans.getClustering());
+        // ClusterWriter writer(kmeans.getClusters(), kmeans.getClustering());
         // writer.writeClusters("../clusters_omp_kpp.txt");
         // writer.writeClustering("../clustering_omp_kpp.txt");
-        writer.writeClusters("../clusters_omp_scale.txt");
-        writer.writeClustering("../clustering_omp_scale.txt");
+        // writer.writeClusters("../clusters_omp_scale.txt");
+        // writer.writeClustering("../clustering_omp_scale.txt");
 
-        // std::cout << "Cluster Centers:" << std::endl;
-        // for (auto &center : kmeans.getClusters())
-        // {
-        //     for (auto &coord : center.coords)
-        //     {
-        //         std::cout << coord << " ";
-        //     }
-        //     std::cout << std::endl;
-        // }
+        std::cout << "Cluster Centers:" << std::endl;
+        for (auto &center : kmeans.getClusters())
+        {
+            for (auto &coord : center.coords)
+            {
+                std::cout << coord << " ";
+            }
+            std::cout << std::endl;
+        }
 
         // std::cout << "Clustering:" << std::endl;
         // for (auto &assignment : kmeans.getClustering())

@@ -10,9 +10,9 @@ private:
      * @brief Private member variables
      *
      */
-    int numThreads;              // the number of threads to use
-    int numClusters;             // the number of clusters to cluster to data into
-    int numRestarts;             // the number of times Kmeans should try to cluster the data
+    int numThreads;  // the number of threads to use
+    int numClusters; // the number of clusters to cluster to data into
+    int numRestarts; // the number of times Kmeans should try to cluster the data
 
     value_t bestError;           // the error in the best clustering
     clusters_t clusters;         // the cluster centers
@@ -21,7 +21,7 @@ private:
     clustering_t bestClustering; // the best cluster assignments
     std::vector<int> bestClusterCount;
     dataset_t bestClusterCoord;
-    coreset_t coreset;           // the coreset to run clustering on if specified to do so
+    coreset_t coreset; // the coreset to run clustering on if specified to do so
 
     MPI_Win dataWin;
     MPI_Win clusteringWin;
@@ -38,20 +38,19 @@ private:
     std::vector<int> vDisps_MPI;
     std::vector<int> vLens_MPI;
 
-
     /**
      * @brief  Converts a c-array of datapoints into the dataset_t object
-     * @note   
+     * @note
      * @param  data: Pointer to the data array
      * @param  size: number of datapoints
      * @param  numFeatures: Number of features per datapoing
-     * @retval 
+     * @retval
      */
-    dataset_t arrayToDataset(value_t* data, int size, int numFeatures);
+    dataset_t arrayToDataset(value_t *data, int size, int numFeatures);
 
     /**
      * @brief  Uses MPI window dataWin to retireve a chunk of the dataset
-     * @note   
+     * @note
      * @param  start: Start datapoint index
      * @param  end: End datapoint inbex
      * @param  numFeatures: Number of features in each datapoint
@@ -61,7 +60,7 @@ private:
 
     /**
      * @brief  Uses MPI window clusterCoordWin to retrieve coordinates of a datapoint
-     * @note   
+     * @note
      * @param  idx: Index of the datapoint
      * @param  numFeatures: Number of features in each datapoint
      * @retval A datapoint_t correspointing the index given
@@ -70,7 +69,7 @@ private:
 
     /**
      * @brief  Uses MPI window clusterCountWin to retrieve the count for the specified cluster
-     * @note   
+     * @note
      * @param  idx: Index of cluster
      * @retval count int
      */
@@ -78,7 +77,7 @@ private:
 
     /**
      * @brief  Uses MPI window clusteringWin to retrieve cluster assigned to datapoint
-     * @note   
+     * @note
      * @param  idx: Index of datapoint
      * @retval cluster number
      */
@@ -86,24 +85,23 @@ private:
 
     /**
      * @brief  Sets datapoint coordinates in clusterCoordWin
-     * @note   
+     * @note
      * @param  idx: index of cluster
      * @param  numFeatures: number of features in coordinates
      * @param  coord: datapoint_t corresponding to the coordinates to be set
      * @retval None
      */
-    void setClusterCoord(int idx, int numFeatures, datapoint_t* coord);
+    void setClusterCoord(int idx, int numFeatures, datapoint_t *coord);
 
     /**
      * @brief  Sets cluster count in clusterCountWin
-     * @note   
+     * @note
      * @param  idx: index of cluster
      * @param  count: count to set
      * @retval None
      */
-    void setClusterCount(int idx, int* count);
+    void setClusterCount(int idx, int *count);
 
-    
     /**
      * @brief An implementation of the Kmeans++ algorithm for initializing cluster centers. Does this by trying to
      *        maximize the distance between cluster centers.
@@ -124,6 +122,18 @@ private:
      */
     std::vector<value_t> scaleableKmeans(dataset_t &data, int &overSampling,
                                          value_t (*func)(datapoint_t &, datapoint_t &), int initIters = 3);
+
+    /**
+     * @brief An implementation of the Kmeans Parallel initialization algorithm using MPI.
+     *
+     * @param data - The data that is being clustered
+     * @param overSampling - The expected amount of clusters to sample in each iteration
+     * @param func - The distance function to use
+     * @param initIters - The number of iterations of cluster sampling to do
+     * @return std::vector<value_t>
+     */
+    std::vector<value_t> scaleableKmeans_MPI(dataset_t &data, int &overSampling,
+                                             value_t (*func)(datapoint_t &, datapoint_t &), int initIters = 3);
 
     /**
      * @brief Function for finding the closest cluster center to a datapoint and assigning that data point to that
@@ -184,20 +194,18 @@ private:
      * @param func - The distance function to use.
      */
 
-    
     void createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(datapoint_t &, datapoint_t &));
 
 public:
-
     /**
      * @brief  Initializes all the member variables used for scatter/gather MPI
-     * @note   
+     * @note
      * @param  numData: Number of datapoints
      * @param  numFeatures: Features per datapoint
      * @param  data: c-array with all data
      * @retval None
      */
-    void initMPIMembers(int numData, int numFeatures, value_t* data=NULL);
+    void initMPIMembers(int numData, int numFeatures, value_t *data = NULL);
 
     /**
      * @brief Construct a new Kmeans object.
@@ -273,6 +281,8 @@ public:
      * @return clustersPtr_t
      */
     clusters_t getClusters() { return bestClusters; }
+
+    dataset_t getBestClusterCoords() { return bestClusterCoord; }
 
     /**
      * @brief Get the bestError.

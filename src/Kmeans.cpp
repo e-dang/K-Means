@@ -548,6 +548,12 @@ void Kmeans::kPlusPlus_MPI(int numData, int numFeatures, value_t *data, value_t 
     }
     std::vector<value_t> local_distances(data_MPI.size());
 
+    MPI_Bcast(clusterCount_MPI.data(), clusterCount_MPI.size(), MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&clusterCount, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    for (int i = 0; i < clusterCoord_MPI.size(); i++)
+    {
+        MPI_Bcast(clusterCoord_MPI[i].data(), clusterCoord_MPI[i].size(), MPI_FLOAT, 0, MPI_COMM_WORLD);
+    }
     for (int clustIdx = 1; clustIdx < numClusters; clustIdx++)
     {
         // find distance between each data point and nearest cluster
@@ -583,11 +589,12 @@ void Kmeans::kPlusPlus_MPI(int numData, int numFeatures, value_t *data, value_t 
                 }
             }
         }
-    }
-    MPI_Bcast(clusterCount_MPI.data(), clusterCount_MPI.size(), MPI_INT, 0, MPI_COMM_WORLD);
-    for (int i = 0; i < clusterCoord_MPI.size(); i++)
-    {
-        MPI_Bcast(clusterCoord_MPI[i].data(), clusterCoord_MPI[i].size(), MPI_FLOAT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(clusterCount_MPI.data(), clusterCount_MPI.size(), MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(&clusterCount, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        for (int i = 0; i < clusterCoord_MPI.size(); i++)
+        {
+            MPI_Bcast(clusterCoord_MPI[i].data(), clusterCoord_MPI[i].size(), MPI_FLOAT, 0, MPI_COMM_WORLD);
+        }
     }
 
     for (int i = 0; i < data_MPI.size(); i++)
@@ -703,7 +710,7 @@ value_t Kmeans::nearest_MPI(datapoint_t &point, int pointIdx, value_t (*func)(da
 
 void Kmeans::fit(dataset_t &data, int overSampling, value_t (*func)(datapoint_t &, datapoint_t &), int initIters)
 {
-
+    bestError = -1;
     int changed;
     value_t currError;
     int numFeatures = data[0].size();
@@ -771,7 +778,7 @@ void Kmeans::fit(dataset_t &data, int overSampling, value_t (*func)(datapoint_t 
         }
 
         // if this round produced lowest error, keep clustering
-        if (currError < bestError)
+        if (currError < bestError || bestError < 0)
         {
             bestError = currError;
             bestClustering = clustering;
@@ -858,7 +865,7 @@ std::vector<value_t> Kmeans::scaleableKmeans(dataset_t &data, int &overSampling,
                 clusters.erase(clusters.begin() + j);
                 weights.erase(weights.begin() + j);
 
-#pragma omp parallel for shared(data, selectedClusterings), schedule(static)
+#pragma omp parallel for shared(data, selectedClusterings, selectedClusters), schedule(static)
                 for (int k = 0; k < data.size(); k++)
                 {
                     if (clustering[k] == j)
@@ -877,10 +884,10 @@ std::vector<value_t> Kmeans::scaleableKmeans(dataset_t &data, int &overSampling,
 #pragma omp parallel for shared(data, closestDists), schedule(static)
     for (int i = 0; i < data.size(); i++)
     {
-        if (clustering[i] == -1)
-        {
-            closestDists[i] = nearest(data[i], i, func);
-        }
+        // if (clustering[i] == -1)
+        // {
+        closestDists[i] = nearest(data[i], i, func);
+        // }
     }
 
     return closestDists;
