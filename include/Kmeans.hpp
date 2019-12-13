@@ -185,6 +185,7 @@ private:
 
     void kPlusPlus_MPI(int numData, int numFeatures, value_t *data, value_t (*func)(datapoint_t &, datapoint_t &));
 
+<<<<<<< HEAD
     /**
      * @brief Create the coreset used for representative kmeans clustering on the whole dataset. The coreset is stored
      *        in the private member variable coreset.
@@ -196,6 +197,8 @@ private:
 
     void createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(datapoint_t &, datapoint_t &));
 
+=======
+>>>>>>> f39c8b6a99e51748a69b6c8711954aebe9b833c2
 public:
     /**
      * @brief  Initializes all the member variables used for scatter/gather MPI
@@ -250,6 +253,14 @@ public:
     void fit_MPI_win(int numData, int numFeatures, value_t (*func)(datapoint_t &, datapoint_t &));
 
     void fit_MPI(int numData, int numFeatures, value_t *data, value_t (*func)(datapoint_t &, datapoint_t &));
+
+    /**
+     * @brief Function that performs the clustering on coresets using lloyd's algorithm with Kmeans ++ initialization.
+     *
+     * @param data - The data to be clustered.
+     * @param func - The distance function to use.
+     */
+    void fit_coreset(value_t (*func)(datapoint_t &, datapoint_t &));
 
     /**
      * @brief Get the numClusters object.
@@ -335,4 +346,26 @@ public:
     static value_t distanceL2(datapoint_t &p1, datapoint_t &p2);
 
     void setMPIWindows(MPI_Win dataWin, MPI_Win clusteringWin, MPI_Win clusterCoordWin, MPI_Win clusterCountWin);
+
+    /**
+     * @brief Create the coreset used for representative kmeans clustering on the whole dataset. The coreset is stored
+     *        in the private member variable coreset.
+     *
+     * @param data - The data to be clustered.
+     * @param sampleSize - The number of datapoints to include in the coreset.
+     * @param func - The distance function to use.
+     */
+    
+    void createCoreSet(dataset_t &data, int &sampleSize, value_t (*func)(datapoint_t &, datapoint_t &));
+
+    /**
+     * @brief Using MPI, create the coreset used for representative kmeans clustering on the whole dataset. The coreset is stored
+     *        in the private member variable coreset.
+     *
+     * @param data - The data to be clustered.
+     * @param sampleSize - The number of datapoints to include in the coreset.
+     * @param func - The distance function to use.
+     */
+    
+    void createCoreSet_MPI(int numData, int numFeatures, value_t *data, int sampleSize, value_t (*func)(datapoint_t &, datapoint_t &));
 };

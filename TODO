@@ -1,5 +1,7 @@
 - implement openMPI parallelization for both kmeans++ and scalableKmeans
     trevor - kmeans++
     Eric - scalableKmeans
-- can someone explain why we need to square the distances? Seems to me like they should just work...
+    Will - omp coresets, weighted kmeans, mpi coresets (based on paper)
+- can someone explain why we need to square the distances? Seems to me like they should just work... this is my guess -> regular distance: sqrt((dx)^2 + (dy)^2), squared distance: (dx)^2 + (dy)^2 (one less operation), assuming a euclidean distance function
 - implement algorithm from https://las.inf.ethz.ch/files/bachem18scalable.pdf with both openMP and openMPI parallelization
+- Weighted K means can be applied to Lloyd's algorithm -- when calculating new cluster centers, just scale each point by its weight, sum together the scaled points, and divide by the total weight of the points in the cluster (equivalent to finding the center of mass). K means ++ does not factor in the weights based on the lightweight coresets paper, which implements K means ++ without considering weights in their test runs

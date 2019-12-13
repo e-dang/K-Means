@@ -36,8 +36,8 @@ def read_data(filepath, num_data, num_features, data_format='f'):
             vals[ind].append(struct.unpack(data_format, data)[0])
             data = file.read(4)
             i += 1
-
-    return np.concatenate([np.array(i) for i in vals]).reshape((-1, num_features))
+    ret = np.concatenate([np.array(i) for i in vals]).reshape((-1, num_features))
+    return ret[~np.isnan(ret)].reshape((-1, 2))
 
 
 def read_clustering(filepath):
@@ -59,12 +59,15 @@ def plot_data(data, clusters, clustering):
     new_colors = [colors[i] for i in clustering]
     plt.scatter(data[:, 0], data[:, 1], c=new_colors)
     plt.scatter(clusters[:, 0], clusters[:, 1], c='black')
+
     plt.show()
+    plt.savefig('test3.png')
 
 
 NUM_DATA = 100000
 NUM_FEATURES = 2
 NUM_CLUSTERS = 30
+<<<<<<< HEAD
 CLUSTER_STD = 1
 BOX = (-100, 100)
 # data = generate_data(NUM_DATA, NUM_FEATURES, NUM_CLUSTERS, CLUSTER_STD, BOX,
@@ -80,4 +83,18 @@ clustering = read_clustering('clustering_omp_kpp_100000_2_8.txt')
 # clustering = read_clustering('clustering_mpi_scaleable.txt')
 # clusters = read_data('clusters_coreset_kpp.txt', 10000, 2)
 # clustering = read_clustering('clustering_coreset_mpi.txt')
+=======
+CLUSTER_STD = 10
+BOX = (-1000, 1000)
+# generate_data(NUM_DATA, NUM_FEATURES, NUM_CLUSTERS, CLUSTER_STD, BOX,
+#               f'test_{NUM_DATA}_{NUM_FEATURES}.txt', f'test_labels_{NUM_DATA}_{NUM_FEATURES}.txt')
+
+data = read_data('test_10000_2.txt', 10000, 2)
+
+clusters = read_data('clusters_serial_scale.txt', 10000, 2)
+clustering = read_clustering('clustering_serial_scale.txt')
+# clusters = read_data('clusters_serial_kpp.txt', 10000, 2)
+# clustering = read_clustering('clustering_serial_kpp.txt')
+
+>>>>>>> f39c8b6a99e51748a69b6c8711954aebe9b833c2
 plot_data(data, clusters, clustering)
