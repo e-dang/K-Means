@@ -130,8 +130,10 @@ private:
      * @param initIters - The number of iterations of cluster sampling to do
      * @return std::vector<value_t>
      */
-    std::vector<value_t> scaleableKmeans(dataset_t &data, int &overSampling,
-                                         value_t (*func)(datapoint_t &, datapoint_t &), int initIters = 5);
+    // std::vector<value_t> scaleableKmeans(dataset_t &data, int &overSampling,
+    //                                      value_t (*func)(datapoint_t &, datapoint_t &), int initIters = 5);
+    void scaleableKmeans(dataset_t &data, int &overSampling,
+                         value_t (*func)(datapoint_t &, datapoint_t &), int initIters = 5);
 
     /**
      * @brief Function for finding the closest cluster center to a datapoint and assigning that data point to that
@@ -156,6 +158,6 @@ private:
      * @param distances - The distance vector.
      * @param func - The distance function to use.
      */
-    void smartClusterUpdate(datapoint_t &point, int &pointIdx, int &clusterIdx, std::vector<value_t> &distances,
+    void smartClusterUpdate(datapoint_t &point, int &pointIdx, int clusterIdx, std::vector<value_t> &distances,
                             value_t (*func)(datapoint_t &, datapoint_t &));
 };

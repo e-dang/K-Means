@@ -144,8 +144,10 @@ private:
      * @param initIters - The number of iterations of cluster sampling to do
      * @return std::vector<value_t>
      */
-    std::vector<value_t> scaleableKmeans(dataset_t &data, int &overSampling,
-                                         value_t (*func)(datapoint_t &, datapoint_t &), int initIters = 3);
+    // std::vector<value_t> scaleableKmeans(dataset_t &data, int &overSampling,
+    //                                      value_t (*func)(datapoint_t &, datapoint_t &), int initIters = 3);
+    void scaleableKmeans(dataset_t &data, int &overSampling,
+                         value_t (*func)(datapoint_t &, datapoint_t &), int initIters = 3);
 
     /**
      * @brief Function for finding the closest cluster center to a datapoint and assigning that data point to that
