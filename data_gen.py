@@ -66,20 +66,20 @@ NUM_FEATURES = 15
 NUM_CLUSTERS = 30
 CLUSTER_STD = 10
 BOX = (-1000, 1000)
-generate_data(NUM_DATA, NUM_FEATURES, NUM_CLUSTERS, CLUSTER_STD, BOX,
-              f'test_{NUM_DATA}_{NUM_FEATURES}.txt', f'test_labels_{NUM_DATA}_{NUM_FEATURES}.txt')
+# generate_data(NUM_DATA, NUM_FEATURES, NUM_CLUSTERS, CLUSTER_STD, BOX,
+              # f'test_{NUM_DATA}_{NUM_FEATURES}.txt', f'test_labels_{NUM_DATA}_{NUM_FEATURES}.txt')
 
-# data = read_data( f'test_{NUM_DATA}_{NUM_FEATURES}.txt', NUM_DATA, NUM_FEATURES)
+data = read_data( f'test_{NUM_DATA}_{NUM_FEATURES}.txt', NUM_DATA, NUM_FEATURES)
 
-# clusters = read_data('clusters_mpi_coresets.txt', NUM_DATA, NUM_FEATURES)
-# clustering = read_clustering('clustering_mpi_coresets.txt')
-# # clusters = read_data('clusters_serial_kpp.txt', 10000, 2)
-# # clustering = read_clustering('clustering_serial_kpp.txt')
+clusters = read_data('clusters_mpi_coresets.txt', NUM_DATA, NUM_FEATURES)
+clustering = read_clustering('clustering_mpi_coresets.txt')
+# clusters = read_data('clusters_serial_kpp.txt', 10000, 2)
+# clustering = read_clustering('clustering_serial_kpp.txt')
 
-# plot_data(data, clusters, clustering)
+plot_data(data, clusters, clustering)
 
-# s = set()
-# for x in clustering:
-#     s.add(x)
+s = set()
+for x in clustering:
+    s.add(x)
 
-# print(len(s))
+print(len(s))
