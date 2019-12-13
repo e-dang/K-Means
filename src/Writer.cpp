@@ -62,7 +62,7 @@ void ClusterWriter::writeClustering(std::string filepath)
     file.write(reinterpret_cast<char *>(&clustering.at(0)), sizeof(int) * clustering.size());
 }
 
-void ClusterWriter::writeTimes(std::vector<float> times, std::string filepath)
+void ClusterWriter::writeTimes(std::vector<double> times, std::string filepath)
 {
 
     std::ofstream file(filepath);
@@ -74,7 +74,7 @@ void ClusterWriter::writeTimes(std::vector<float> times, std::string filepath)
     for (auto &val : times)
     {
 
-        file.write(reinterpret_cast<char *>(&val), sizeof(float));
+        file << val;
         file << std::endl;
     }
 }
