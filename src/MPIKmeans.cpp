@@ -41,7 +41,7 @@ void MPIKmeans::fit(int numData, int numFeatures, value_t *data, value_t (*func)
                 // reinitialize clusters
                 for (int i = 0; i < numClusters; i++)
                 {
-                    for (auto coord : clusterCoord_MPI)
+                    for (auto &coord : clusterCoord_MPI)
                     {
                         coord.assign(coord.size(), 0.);
                     }
@@ -128,17 +128,18 @@ void MPIKmeans::fit(int numData, int numFeatures, value_t *data, value_t (*func)
 
 void MPIKmeans::fit(int numData, int numFeatures, value_t *data, int overSampling, value_t (*func)(datapoint_t &, datapoint_t &), int initIters)
 {
-    RNGType rng(time(NULL));
-    boost::uniform_int<> intRange(0, numData);
-    boost::uniform_real<> floatRange(0, 1);
-    boost::variate_generator<RNGType, boost::uniform_int<>> intDistr(rng, intRange);
-    boost::variate_generator<RNGType, boost::uniform_real<>> floatDistr(rng, floatRange);
 
     int rank, numProcs;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
     initMPIMembers(numData, numFeatures, data);
+
+    RNGType rng(time(NULL));
+    boost::uniform_int<> intRange(0, data_MPI.size());
+    boost::uniform_real<> floatRange(0, 1);
+    boost::variate_generator<RNGType, boost::uniform_int<>> intDistr(rng, intRange);
+    boost::variate_generator<RNGType, boost::uniform_real<>> floatDistr(rng, floatRange);
 
     int changed;
     value_t currError;
@@ -147,21 +148,19 @@ void MPIKmeans::fit(int numData, int numFeatures, value_t *data, int overSamplin
     {
         // initialize clusters with k++ algorithm
         std::vector<value_t> closestDists = scaleableKmeans(numData, numFeatures, data, overSampling, func, intDistr, floatDistr, initIters);
-        std::cout << "HERE2" << std::endl;
+
         do
         {
-            MPI_Bcast(closestDists.data(), closestDists.size(), MPI_FLOAT, 0, MPI_COMM_WORLD);
             if (rank == 0)
             {
                 // reinitialize clusters
                 for (int i = 0; i < numClusters; i++)
                 {
-                    for (auto coord : clusterCoord_MPI)
+                    for (auto &coord : clusterCoord_MPI)
                     {
                         coord.assign(coord.size(), 0.);
                     }
                     clusterCount_MPI.assign(clusterCount_MPI.size(), 0);
-                    // clusters[i] = {0, datapoint_t(numFeatures, 0.)};
                 }
 
                 // calc sum of each feature for all points belonging to a cluster
@@ -170,10 +169,8 @@ void MPIKmeans::fit(int numData, int numFeatures, value_t *data, int overSamplin
                     for (int j = 0; j < numFeatures; j++)
                     {
                         clusterCoord_MPI[clustering_MPI[i]][j] += data[(i * numFeatures) + j];
-                        // clusters[clustering[i]].coords[j] +=  data[i][j];
                     }
                     clusterCount_MPI[clustering_MPI[i]]++;
-                    // clusters[clustering[i]].count++;
                 }
 
                 // divide sum by number of points belonging to the cluster to obtain average
@@ -182,7 +179,6 @@ void MPIKmeans::fit(int numData, int numFeatures, value_t *data, int overSamplin
                     for (int j = 0; j < numFeatures; j++)
                     {
                         clusterCoord_MPI[i][j] /= clusterCount_MPI[i];
-                        // clusters[i].coords[j] /= clusters[i].count;
                     }
                 }
             }
@@ -211,8 +207,6 @@ void MPIKmeans::fit(int numData, int numFeatures, value_t *data, int overSamplin
                 }
             }
 
-            MPI_Gatherv(closestDists.data(), vLens_MPI[rank], MPI_FLOAT, closestDists.data(),
-                        vLens_MPI.data(), vDisps_MPI.data(), MPI_FLOAT, 0, MPI_COMM_WORLD);
             // Aggregate changed
             MPI_Allreduce(&local_changed, &changed, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
         } while (changed > (numData >> 10)); // do until 99.9% of data doesnt change
@@ -229,7 +223,6 @@ void MPIKmeans::fit(int numData, int numFeatures, value_t *data, int overSamplin
         {
             int idx = i + startIdx_MPI;
             localError += std::pow(func(data_MPI[i], clusterCoord_MPI[clustering_MPI[idx]]), 2);
-            // localError += std::pow(func(data[i], clusters[clustering[i]].coords), 2);
         }
 
         MPI_Reduce(&localError, &currError, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -328,73 +321,97 @@ std::vector<value_t> MPIKmeans::scaleableKmeans(int &numData, int &numFeatures, 
 
     // initialize the closest distances array to large vals
     std::vector<value_t> closestDists(numData, INT_MAX);
-    std::vector<value_t> local_distances(data_MPI.size());
+    std::vector<value_t> local_distances(data_MPI.size(), INT_MAX);
+    std::vector<int> lengths(numProcs, 0);
+    std::vector<int> localCounts;
+    dataset_t localCoords;
 
-    // initialize first cluster randomly
-    if (rank == 0)
-    {
-        int randIdx = intDistr();
-        clusterCount_MPI[clusterCount] = 0;
-        clusterCoord_MPI[clusterCount] = datapoint_t(data + (randIdx * numFeatures), data + ((randIdx * numFeatures) + numFeatures));
-        clusterCount++;
-    }
-
-    bcastClusters(clusterCount);
+    int randIdx = intDistr();
+    localCounts.push_back(0);
+    localCoords.push_back(data_MPI[randIdx]);
+    clusterCount++;
 
     // select candidate clusters
-    value_t local_sum, sum = 0;
+    value_t local_sum; //, sum = 0;
     for (int i = 0; i < initIters; i++)
     {
         local_sum = 0;
-        MPI_Bcast(&clusterCount, 1, MPI_INT, 0, MPI_COMM_WORLD);
         for (int i = 0; i < data_MPI.size(); i++)
         {
-            smartClusterUpdate(data_MPI[i], i, prevNumClusters, clusterCount, local_distances, func);
-            sum += local_distances[i];
+            smartClusterUpdate(data_MPI[i], i, prevNumClusters, clusterCount, local_distances.data(), localCoords, func);
+            local_sum += local_distances[i];
         }
         prevNumClusters = clusterCount;
 
-        // Aggregate distances, distribute to all processes
-        MPI_Gatherv(local_distances.data(), vLens_MPI[rank], MPI_FLOAT, closestDists.data(),
-                    vLens_MPI.data(), vDisps_MPI.data(), MPI_FLOAT, 0, MPI_COMM_WORLD);
-        MPI_Gatherv(clusteringChunk_MPI.data(), vLens_MPI[rank], MPI_INT, clustering_MPI.data(),
-                    vLens_MPI.data(), vDisps_MPI.data(), MPI_INT, 0, MPI_COMM_WORLD);
-        // Reduce sum, distribute to all processes
-        MPI_Reduce(&local_sum, &sum, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
-
         // sample each datapoint individually to get an expectation of overSampling new clusters
-        if (rank == 0)
+        for (int j = 0; j < data_MPI.size(); j++)
         {
-
-            for (int j = 0; j < numData; j++)
+            if (floatDistr() < ((value_t)overSampling) * local_distances[j] / local_sum)
             {
-                if (floatDistr() < ((value_t)overSampling) * closestDists[j] / sum)
-                {
-                    clusterCount_MPI[clusterCount] = 0;
-                    clusterCoord_MPI[clusterCount] = datapoint_t(data + j * numFeatures, data + (j * numFeatures + 1));
-                    clustering_MPI[j] = clusterCount;
-                    clusterCount++;
-                }
+                localCounts.push_back(0);
+                localCoords.push_back(data_MPI[j]);
+                clusterCount++;
             }
         }
-        MPI_Scatterv(clustering_MPI.data(), vLens_MPI.data(), vDisps_MPI.data(), MPI_INT, clusteringChunk_MPI.data(),
-                     vLens_MPI[rank], MPI_INT, 0, MPI_COMM_WORLD);
-        bcastClusters(clusterCount);
     }
 
     // reassign points to last round of new clusters
-    MPI_Bcast(&clusterCount, 1, MPI_INT, 0, MPI_COMM_WORLD);
     for (int i = 0; i < data_MPI.size(); i++)
     {
-        smartClusterUpdate(data_MPI[i], i, prevNumClusters, clusterCount, local_distances, func);
+        smartClusterUpdate(data_MPI[i], i, prevNumClusters, clusterCount, local_distances.data(), localCoords, func);
     }
+
+    MPI_Allgather(&clusterCount, 1, MPI_INT, lengths.data(), 1, MPI_INT, MPI_COMM_WORLD);
+    int sum = 0;
+    for (auto &val : lengths)
+    {
+        sum += val;
+    }
+
+    if (rank == 0)
+    {
+        clusterCoord_MPI.resize(sum);
+        for (int i = 0; i < sum; i++)
+        {
+            clusterCoord_MPI[i].resize(numFeatures);
+        }
+        int start = lengths[0];
+
+        for (int i = 0; i < start; i++)
+        {
+            clusterCoord_MPI[i] = localCoords[i];
+        }
+
+        for (int i = 1; i < numProcs; i++)
+        {
+            for (int j = 0; j < lengths[i]; j++, start++)
+            {
+                assert(clusterCoord_MPI[start].size() == numFeatures);
+                MPI_Recv(clusterCoord_MPI[start].data(), numFeatures, MPI_FLOAT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            }
+        }
+    }
+    else
+    {
+        for (int i = 0; i < lengths[rank]; i++)
+        {
+
+            MPI_Send(localCoords[i].data(), numFeatures, MPI_FLOAT, 0, 0, MPI_COMM_WORLD);
+        }
+        clusterCoord_MPI.resize(numClusters);
+        for (int i = 0; i < numClusters; i++)
+        {
+            clusterCoord_MPI[i].resize(numFeatures);
+        }
+    }
+
     MPI_Gatherv(clusteringChunk_MPI.data(), vLens_MPI[rank], MPI_INT, clustering_MPI.data(),
                 vLens_MPI.data(), vDisps_MPI.data(), MPI_INT, 0, MPI_COMM_WORLD);
 
     // weight candidates based on how many points are in each cluster
     if (rank == 0)
     {
-        std::vector<int> weights(clusterCount, 0);
+        std::vector<int> weights(clusterCoord_MPI.size(), 0);
         for (int i = 0; i < numData; i++)
         {
             weights[clustering_MPI[i]]++;
@@ -410,7 +427,6 @@ std::vector<value_t> MPIKmeans::scaleableKmeans(int &numData, int &numFeatures, 
         // select numClusters clusters from candidates based on weights
         value_t randNum;
         dataset_t selectedClusterCoords = dataset_t();
-        std::vector<int> selectedClusterCounts = std::vector<int>();
         clustering_t selectedClusterings = clustering_t(numData, -1);
         for (int i = 0; i < numClusters; i++)
         {
@@ -422,8 +438,6 @@ std::vector<value_t> MPIKmeans::scaleableKmeans(int &numData, int &numFeatures, 
                     sum -= weights[j];
                     selectedClusterCoords.push_back(clusterCoord_MPI[j]);
                     clusterCoord_MPI.erase(clusterCoord_MPI.begin() + j);
-                    selectedClusterCounts.push_back(clusterCount_MPI[j]);
-                    clusterCount_MPI.erase(clusterCount_MPI.begin() + j);
                     weights.erase(weights.begin() + j);
 
                     for (int k = 0; k < numData; k++)
@@ -438,26 +452,25 @@ std::vector<value_t> MPIKmeans::scaleableKmeans(int &numData, int &numFeatures, 
             }
         }
         clusterCoord_MPI = selectedClusterCoords;
-        clusterCount_MPI = selectedClusterCounts;
         clustering_MPI = selectedClusterings;
         clusterCount = clusterCoord_MPI.size();
     }
 
-    bcastClusters(clusterCount);
+    for (int i = 0; i < clusterCoord_MPI.size(); i++)
+    {
+        MPI_Bcast(clusterCoord_MPI[i].data(), clusterCoord_MPI[i].size(), MPI_FLOAT, 0, MPI_COMM_WORLD);
+    }
     MPI_Scatterv(clustering_MPI.data(), vLens_MPI.data(), vDisps_MPI.data(), MPI_INT, clusteringChunk_MPI.data(),
                  vLens_MPI[rank], MPI_INT, 0, MPI_COMM_WORLD);
 
     // assign data points to nearest clusters
     for (int i = 0; i < data_MPI.size(); i++)
     {
-        // if (clustering[i] == -1)
-        // {
-        local_distances[i] = nearest(data_MPI[i], i, func, clusterCount);
-        // }
+        local_distances[i] = nearest(data_MPI[i], i, func, numClusters);
     }
 
-    MPI_Gatherv(local_distances.data(), vLens_MPI[rank], MPI_FLOAT, closestDists.data(),
-                vLens_MPI.data(), vDisps_MPI.data(), MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Allgatherv(local_distances.data(), vLens_MPI[rank], MPI_FLOAT, closestDists.data(),
+                   vLens_MPI.data(), vDisps_MPI.data(), MPI_FLOAT, MPI_COMM_WORLD);
     MPI_Allgatherv(clusteringChunk_MPI.data(), vLens_MPI[rank], MPI_INT, clustering_MPI.data(),
                    vLens_MPI.data(), vDisps_MPI.data(), MPI_INT, MPI_COMM_WORLD);
 
@@ -482,7 +495,7 @@ value_t MPIKmeans::nearest(datapoint_t &point, int pointIdx, value_t (*func)(dat
 }
 
 void MPIKmeans::smartClusterUpdate(datapoint_t &point, int &pointIdx, int &prevNumClusters, int &clusterCount,
-                                   std::vector<value_t> &distances, value_t (*func)(datapoint_t &, datapoint_t &))
+                                   value_t *distances, dataset_t &localCoords, value_t (*func)(datapoint_t &, datapoint_t &))
 {
     value_t tempDist, minDist = INT_MAX - 1;
     int minDistIdx = -1;
@@ -490,7 +503,7 @@ void MPIKmeans::smartClusterUpdate(datapoint_t &point, int &pointIdx, int &prevN
     // find the closest new cluster to the point
     for (int i = prevNumClusters; i < clusterCount; i++)
     {
-        tempDist = std::pow(func(point, clusterCoord_MPI[i]), 2);
+        tempDist = std::pow(func(point, localCoords[i]), 2);
         if (tempDist < minDist)
         {
             minDist = tempDist;

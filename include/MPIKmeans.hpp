@@ -129,8 +129,8 @@ private:
 
     value_t nearest(datapoint_t &point, int pointIdx, value_t (*func)(datapoint_t &, datapoint_t &), int clusterCount);
 
-    void smartClusterUpdate(datapoint_t &point, int &pointIdx, int &prevNumClusters, int &clusterCount, std::vector<value_t> &distances,
-                            value_t (*func)(datapoint_t &, datapoint_t &));
+    void smartClusterUpdate(datapoint_t &point, int &pointIdx, int &prevNumClusters, int &clusterCount, value_t *distances,
+                            dataset_t &localCoords, value_t (*func)(datapoint_t &, datapoint_t &));
 
     /**
      * @brief  Converts a c-array of datapoints into the dataset_t object
