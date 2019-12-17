@@ -6,9 +6,11 @@
 In the top level directory of the project, run the following commands:
 ```
 mkdir build
+mv run.sh build
 cd build
 cmake ..
 make
+qsub run.sh
 ```
 
 ### Executing with MPI

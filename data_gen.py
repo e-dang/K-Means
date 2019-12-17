@@ -65,36 +65,21 @@ NUM_FEATURES = 15
 NUM_CLUSTERS = 30
 CLUSTER_STD = 10
 BOX = (-1000, 1000)
-generate_data(NUM_DATA, NUM_FEATURES, NUM_CLUSTERS, CLUSTER_STD, BOX,
-              f'test_{NUM_DATA}_{NUM_FEATURES}.txt', f'test_labels_{NUM_DATA}_{NUM_FEATURES}.txt')
+# generate_data(NUM_DATA, NUM_FEATURES, NUM_CLUSTERS, CLUSTER_STD, BOX,
+              # f'test_{NUM_DATA}_{NUM_FEATURES}.txt', f'test_labels_{NUM_DATA}_{NUM_FEATURES}.txt')
 
-<<<<<<< HEAD
-data = read_data('test_10000_2.txt', 10000, 2)
-<<<<<<< HEAD
-clusters = read_data('clusters_serial_scale.txt', 10000, 2)
-clustering = read_clustering('clustering_serial_scale.txt')
+
+data = read_data( f'test_{NUM_DATA}_{NUM_FEATURES}.txt', NUM_DATA, NUM_FEATURES)
+
+clusters = read_data('clusters_mpi_coresets.txt', NUM_DATA, NUM_FEATURES)
+clustering = read_clustering('clustering_mpi_coresets.txt')
 # clusters = read_data('clusters_serial_kpp.txt', 10000, 2)
 # clustering = read_clustering('clustering_serial_kpp.txt')
-=======
-# clusters = read_data('clusters_scale.txt', 10000, 2)
-# clustering = read_data('clustering_scale.txt', 10000, 1)
-clusters = read_data('clusters_coreset_omp.txt', 10000, 2)
-clustering = read_data('clustering_coreset_omp.txt', 10000, 1)
->>>>>>> bd0d1bb04792351d85a06e62bb7b7da6545e0ea9
+
 plot_data(data, clusters, clustering)
-=======
-# data = read_data( f'test_{NUM_DATA}_{NUM_FEATURES}.txt', NUM_DATA, NUM_FEATURES)
 
-# clusters = read_data('clusters_mpi_coresets.txt', NUM_DATA, NUM_FEATURES)
-# clustering = read_clustering('clustering_mpi_coresets.txt')
-# # clusters = read_data('clusters_serial_kpp.txt', 10000, 2)
-# # clustering = read_clustering('clustering_serial_kpp.txt')
+s = set()
+for x in clustering:
+    s.add(x)
 
-# plot_data(data, clusters, clustering)
->>>>>>> 214e50c... changed a few aspects of the data gen script to load the 1M point dataset and plot only two colors
-
-# s = set()
-# for x in clustering:
-#     s.add(x)
-
-# print(len(s))
+print(len(s))
