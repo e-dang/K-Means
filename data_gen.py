@@ -56,6 +56,10 @@ def plot_data(data, clusters, clustering):
     # new_colors = [colors[i] for i in clustering]
     plt.scatter(data[:, 0], data[:, 1], c='red')
     plt.scatter(clusters[:, 0], clusters[:, 1], c='black')
+<<<<<<< HEAD
+=======
+
+>>>>>>> 7eaec77d2012b87063251f409e1f51e7d6a9faae
     plt.show()
     plt.savefig( f'test_{NUM_DATA}_{NUM_FEATURES}.png')
 
@@ -67,8 +71,7 @@ CLUSTER_STD = 10
 BOX = (-1000, 1000)
 # generate_data(NUM_DATA, NUM_FEATURES, NUM_CLUSTERS, CLUSTER_STD, BOX,
               # f'test_{NUM_DATA}_{NUM_FEATURES}.txt', f'test_labels_{NUM_DATA}_{NUM_FEATURES}.txt')
-
-
+                
 data = read_data( f'test_{NUM_DATA}_{NUM_FEATURES}.txt', NUM_DATA, NUM_FEATURES)
 
 clusters = read_data('clusters_mpi_coresets.txt', NUM_DATA, NUM_FEATURES)
