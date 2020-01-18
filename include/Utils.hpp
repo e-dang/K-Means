@@ -3,12 +3,6 @@
 #include "Definitions.hpp"
 #include "DistanceFunctors.hpp"
 
-struct ClosestCluster
-{
-    int clusterIdx;
-    value_t distance;
-};
-
 /**
  * @brief Helper function that find the closest cluster and corresponding distance for a given datapoint.
  *

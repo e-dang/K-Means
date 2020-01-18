@@ -86,6 +86,16 @@ struct ClusterData
     }
 };
 
+/**
+ * @brief A return structure that couples the distance between a point and its closest cluster and the index of that
+ *        cluster together.
+ */
+struct ClosestCluster
+{
+    int clusterIdx;
+    value_t distance;
+};
+
 typedef std::vector<value_t> datapoint_t;
 typedef std::vector<datapoint_t> dataset_t;
 typedef std::vector<int> clustering_t;
