@@ -50,8 +50,7 @@ int SerialLloyd::reassignPoints(std::vector<value_t> *distances, IDistanceFuncto
         int before = clustering->at(i);
 
         // find closest cluster for each datapoint and update cluster assignment
-        auto closestCluster = findClosestCluster(&*(matrix->at(i)), &clusters->data, clusters->numRows,
-                                                 matrix->numCols, distanceFunc);
+        auto closestCluster = findClosestCluster(&*matrix->at(i), clusters, distanceFunc);
         updateClustering(i, closestCluster.clusterIdx);
         distances->at(i) = std::pow(closestCluster.distance, 2);
 

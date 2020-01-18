@@ -28,14 +28,13 @@ void SerialKPlusPlus::initialize(IDistanceFunctor *distanceFunc, const float &se
         // find distance between each data point and nearest cluster, then update clustering assignments
         for (int j = 0; j < matrix->numRows; j++)
         {
-            auto closestCluster = findClosestCluster(&*(matrix->at(j)), &clusters->data, numExistingClusters,
-                                                     matrix->numCols, distanceFunc);
+            auto closestCluster = findClosestCluster(&*matrix->at(j), clusters, distanceFunc);
             updateClustering(j, closestCluster.clusterIdx);
             distances[j] = std::pow(closestCluster.distance, 2);
         }
 
         // select point to be next cluster center weighted by nearest distance squared
-        randIdx = weightedRandomSelection(matrix->numRows, &distances, floatDistr());
+        randIdx = weightedRandomSelection(&distances, floatDistr());
         std::copy(matrix->at(randIdx), matrix->at(randIdx) + matrix->numCols, std::back_inserter(clusters->data));
         updateClustering(randIdx, numExistingClusters);
         numExistingClusters++;
@@ -44,8 +43,7 @@ void SerialKPlusPlus::initialize(IDistanceFunctor *distanceFunc, const float &se
     // assign data points to nearest clusters
     for (int i = 0; i < matrix->numRows; i++)
     {
-        auto closestPoint = findClosestCluster(&*(matrix->at(i)), &clusters->data, numExistingClusters,
-                                               matrix->numCols, distanceFunc);
+        auto closestPoint = findClosestCluster(&*matrix->at(i), clusters, distanceFunc);
         updateClustering(i, closestPoint.clusterIdx);
     }
 }
