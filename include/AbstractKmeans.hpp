@@ -5,6 +5,12 @@
 #include "DistanceFunctors.hpp"
 #include <numeric>
 
+/**
+ * @brief Abstract class that defines the interface for using a Kmeans class, which wraps an initialization and
+ *        maximization algorithm together, along with a distance metric functor in order to cluster data. In addition
+ *        this class also defines the member variables, setters, getters, and helper functions that each Kmeans
+ *        concretion will need to function.
+ */
 class AbstractKmeans
 {
 protected:
@@ -32,9 +38,20 @@ public:
 
     /**
      * @brief Destroy the Abstract Kmeans object.
-     *
      */
     virtual ~AbstractKmeans(){};
+
+    /**
+     * @brief Overloaded interface for the top level function that initiates the clustering process, where the weights
+     *        of each datapoint is unspecified. This function should form a vector of uniform weights and pass it to
+     *        the fit() function that takes weights as parameter, but the specific implementation is left up to the
+     *        concretion of this class.
+     *
+     * @param matrix - The data to be clustered.
+     * @param numClusters - The number of clusters to cluster the data into.
+     * @param numRestarts - The number of times to repeat the clustering process.
+     */
+    virtual void fit(Matrix *matrix, int numClusters, int numRestarts) = 0;
 
     /**
      * @brief Interface for the top level function that initiates the clustering process.
@@ -42,9 +59,9 @@ public:
      * @param matrix - The data to be clustered.
      * @param numClusters - The number of clusters to cluster the data into.
      * @param numRestarts - The number of times to repeat the clustering process.
-     * @param weights - Optional parameter specifying the weights for each datapoint in the matrix.
+     * @param weights - The weights for each datapoint in the matrix.
      */
-    virtual void fit(Matrix *matrix, int numClusters, int numRestarts, std::vector<value_t> *weights = NULL) = 0;
+    virtual void fit(Matrix *matrix, int numClusters, int numRestarts, std::vector<value_t> *weights) = 0;
 
     /**
      * @brief Get the finalClusterData member variable.

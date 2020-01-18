@@ -21,17 +21,28 @@ public:
 
     /**
      * @brief Destroy the Kmeans object.
-     *
      */
-    ~Kmeans(){};
+    virtual ~Kmeans(){};
 
     /**
-     * @brief Top level function that initiates the clustering of the passed in data.
+     * @brief Overloaded top level function that initiates the clustering of the passed in data if weights are not
+     *        specified. Thus this function creates a set of default weights (all equal to 1) and calls the overloaded
+     *        fit() variant that takes weights.
+     *
+     * @param matrix - The data to be clustered.
+     * @param numClusters - The number of clusters to cluster the data into.
+     * @param numRestarts - The number of repeats to perform.
+     */
+    void fit(Matrix *matrix, int numClusters, int numRestarts) override;
+
+    /**
+     * @brief Overloaded top level function that initiates the clustering of the passed in data if weights are
+     *        specified.
      *
      * @param matrix - The data to be clustered.
      * @param numClusters - The number of clusters to cluster the data into.
      * @param numRestarts - The number of repeats to perform.
      * @param weights - The weights corresponding to each datapoint. Defaults to NULL.
      */
-    void fit(Matrix *matrix, int numClusters, int numRestarts, std::vector<value_t> *weights = NULL);
+    void fit(Matrix *matrix, int numClusters, int numRestarts, std::vector<value_t> *weights) override;
 };

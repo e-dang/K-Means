@@ -13,7 +13,7 @@ std::vector<value_t> SerialLloyd::maximize(IDistanceFunctor *distanceFunc)
         updateClusters();
         changed = reassignPoints(&distances, distanceFunc);
 
-    } while (changed > (matrix->numRows * 0.0001)); // do until 99.9% of data doesnt change
+    } while (changed > (matrix->numRows * MIN_PERCENT_CHANGED)); // do until 99.9% of data doesnt change
 
     return distances;
 }
@@ -23,21 +23,21 @@ void SerialLloyd::updateClusters()
     // reinitialize clusters
     std::fill(clusters->data.begin(), clusters->data.end(), 0);
 
-    // calc the sum of each feature for all points belonging to a cluster
+    // calc the weighted sum of each feature for all points belonging to a cluster
     for (int i = 0; i < matrix->numRows; i++)
     {
         for (int j = 0; j < matrix->numCols; j++)
         {
-            clusters->at(clustering->at(i), j) += matrix->at(i, j);
+            clusters->at(clustering->at(i), j) += weights->at(i) * matrix->at(i, j);
         }
     }
 
-    // average out the sum of each cluster based on the number of datapoints assigned to it
+    // average out the weighted sum of each cluster based on the number of datapoints assigned to it
     for (int i = 0; i < clusters->numRows; i++)
     {
         for (int j = 0; j < clusters->numCols; j++)
         {
-            clusters->data.at(i * clusters->numCols + j) /= clusterCounts->at(i);
+            clusters->data.at(i * clusters->numCols + j) /= clusterWeights->at(i);
         }
     }
 }

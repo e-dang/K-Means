@@ -10,7 +10,7 @@ typedef float value_t;
  */
 struct Matrix
 {
-    // public member variables
+    // Public member variables
     std::vector<value_t> data;
     int numRows; // this is the number of datapoints in the matrix
     int numCols; // this is the number of features of each datapoint in the matrix
@@ -46,10 +46,10 @@ struct Matrix
  */
 struct ClusterData
 {
-    // public member variables
-    std::vector<int> clustering;    // the cluster assignments of each datapoint
-    Matrix clusters;                // the cluster centers
-    std::vector<int> clusterCounts; // the number of datapoints assigned to each cluster center
+    // Public member variables
+    std::vector<int> clustering;         // the cluster assignments of each datapoint
+    Matrix clusters;                     // the cluster centers
+    std::vector<value_t> clusterWeights; // the sum of the weights of each datapoint assigned to a cluster
 
     /**
      * @brief Default constructor.
@@ -66,7 +66,7 @@ struct ClusterData
     ClusterData(const int &numData, const int &numFeatures, const int &numClusters)
     {
         clustering = std::vector<int>(numData, -1);
-        clusterCounts = std::vector<int>(numClusters, 0);
+        clusterWeights = std::vector<value_t>(numClusters, 0);
         clusters = {std::vector<value_t>(), numClusters, numFeatures};
         clusters.data.reserve(numClusters * numFeatures);
     }
@@ -80,7 +80,7 @@ struct ClusterData
     {
         this->clustering = std::move(other.clustering);
         this->clusters.data = std::move(other.clusters.data);
-        this->clusterCounts = std::move(other.clusterCounts);
+        this->clusterWeights = std::move(other.clusterWeights);
         this->clusters.numRows = other.clusters.numRows;
         this->clusters.numCols = other.clusters.numCols;
     }
@@ -92,6 +92,7 @@ struct ClusterData
  */
 struct ClosestCluster
 {
+    // Public member variables
     int clusterIdx;
     value_t distance;
 };

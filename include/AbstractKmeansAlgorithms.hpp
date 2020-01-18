@@ -3,15 +3,37 @@
 #include "Definitions.hpp"
 #include "DistanceFunctors.hpp"
 
+/**
+ * @brief Abstract class that all Kmeans algorithms, such as initializers and maximizers will derive from. This class
+ *        contains code that is used to set up each of these algorithms.
+ */
 class AbstractKmeansAlgorithm
 {
 protected:
-    // member variables
+    // Member variables
     Matrix *matrix;
     Matrix *clusters;
     std::vector<int> *clustering;
-    std::vector<int> *clusterCounts;
+    std::vector<value_t> *clusterWeights;
+    std::vector<value_t> *weights;
 
+public:
+    /**
+     * @brief Function that calls protected member functions setMatrix(), setClusterData(), and setWeights() with
+     *        the given arguments, in order to initialize protected member variables.
+     *
+     * @param matrix - The data to be clustered.
+     * @param clusterData - The struct where the clustering data is going to be stored for a given run.
+     * @param weights - The weights for individual datapoints.
+     */
+    void setUp(Matrix *matrix, ClusterData *clusterData, std::vector<value_t> *weights)
+    {
+        setMatrix(matrix);
+        setClusterData(clusterData);
+        setWeights(weights);
+    }
+
+protected:
     /**
      * @brief Set the matrix member variable.
      *
@@ -23,7 +45,7 @@ protected:
     }
 
     /**
-     * @brief Set the clusters, clustering, and clusterCounts member variables using an instance of ClusterData.
+     * @brief Set the clusters, clustering, and clusterWeights member variables using an instance of ClusterData.
      *
      * @param clusterData - A pointer to an instance of clusterData, where the clustering results will be stored.
      */
@@ -31,11 +53,21 @@ protected:
     {
         clustering = &clusterData->clustering;
         clusters = &clusterData->clusters;
-        clusterCounts = &clusterData->clusterCounts;
+        clusterWeights = &clusterData->clusterWeights;
     }
 
     /**
-     * @brief Helper function that updates the clustering assignments and cluster counts given the index of the
+     * @brief Set the weights member variable.
+     *
+     * @param weights - A pointer to the vector of weights for each datapoint.
+     */
+    void setWeights(std::vector<value_t> *weights)
+    {
+        this->weights = weights;
+    }
+
+    /**
+     * @brief Helper function that updates the clustering assignments and cluster weights given the index of the
      *        datapoint whose clustering assignment has been changed and the index of the new cluster it is assigned to.
      *
      * @param dataIdx - The index of the datapoint whose clustering assignment needs to be updated.
@@ -45,13 +77,18 @@ protected:
     {
         int &clusterAssignment = clustering->at(dataIdx);
 
-        if (clusterAssignment >= 0 && clusterCounts->at(clusterAssignment) > 0)
-            clusterCounts->at(clusterAssignment)--;
-        clusterCounts->at(clusterIdx)++;
+        // cluster assignments are initialized to -1, so ignore decrement if datapoint has yet to be assigned
+        if (clusterAssignment >= 0 && clusterWeights->at(clusterAssignment) > 0)
+            clusterWeights->at(clusterAssignment) -= weights->at(dataIdx);
+        clusterWeights->at(clusterIdx) += weights->at(dataIdx);
         clusterAssignment = clusterIdx;
     }
 };
 
+/**
+ * @brief Abstract class that defines the interface for Kmeans initialization algorithms, such as K++ or random
+ *        initialization.
+ */
 class AbstractKmeansInitializer : public AbstractKmeansAlgorithm
 {
 public:
@@ -63,27 +100,17 @@ public:
      * @param seed - The number to seed the RNG.
      */
     virtual void initialize(IDistanceFunctor *distanceFunc, const float &seed) = 0;
-
-    /**
-     * @brief Helper function that calls protected member functions setMatrix() and setClusterData() with the given
-     *        arguments. This should be called before intialize() is called.
-     *
-     * @param matrix - The data to be clustered.
-     * @param clusterData - The struct where the clustering data is going to be stored for a given run.
-     */
-    void setUp(Matrix *matrix, ClusterData *clusterData)
-    {
-        setMatrix(matrix);
-        setClusterData(clusterData);
-    }
 };
 
+/**
+ * @brief Abstract class that defines the interface for Kmeans maximization algorithms, such as Lloyd's algorithm.
+ */
 class AbstractKmeansMaximizer : public AbstractKmeansAlgorithm
 {
 protected:
-    // member variables
-    std::vector<value_t> *weights;
-
+    // Constants
+    const float MIN_PERCENT_CHANGED = 0.0001; // the % amount of data points allowed to changed before going to next
+                                              // iteration
 public:
     /**
      * @brief Interface that Kmeans maximization algorithms must follow for finding the best clustering given a set of
@@ -91,41 +118,7 @@ public:
      *
      * @param distanceFunc - A pointer to a class that calculates distances between points and is an implementation of
      *                       IDistanceFunctor.
-     * @return std::vector<value_t>
+     * @return std::vector<value_t> - A vector containing the square distances of each point to its nearest cluster.
      */
     virtual std::vector<value_t> maximize(IDistanceFunctor *distanceFunc) = 0;
-
-    /**
-     * @brief Helper function that calls protected member functions setMatrix(), setClusterData(), and setWeights() with
-     *         the given arguments. This should be called before intialize() is called.
-     *
-     * @param matrix - The data to be clustered.
-     * @param clusterData - The struct where the clustering data is going to be stored for a given run.
-     * @param weights - The weights for individual datapoints.
-     */
-    void setUp(Matrix *matrix, ClusterData *clusterData, std::vector<value_t> *weights)
-    {
-        setMatrix(matrix);
-        setClusterData(clusterData);
-        setWeights(weights, matrix->numRows);
-    }
-
-protected:
-    /**
-     * @brief Set the weights member variable. If the argument weights is NULL, then a vector of length numData is
-     *        created with all values equal to 1 and this vector is used as the weights for the data.
-     *
-     * @param weights - A pointer to the vector of weights for each datapoint.
-     * @param numData - The number of datapoints that are going to be clustered.
-     */
-    void setWeights(std::vector<value_t> *weights, const int &numData)
-    {
-        if (weights == NULL)
-        {
-            std::vector<value_t> vectorWeights(numData, 1);
-            weights = &vectorWeights;
-        }
-
-        this->weights = weights;
-    }
 };
