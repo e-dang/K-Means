@@ -72,6 +72,41 @@ protected:
     }
 
     /**
+     * @brief Helper function that returns the current number of clusters stored in the clusters member variable. Since
+     *        the clusters are stored in a flattened array, the number of clusters is equal to the the size of the array
+     *        divided by the number of columns of the matrix.
+     *
+     * @return int - The current number of clusters.
+     */
+    int getCurrentNumClusters() { return clusters->data.size() / clusters->numCols; }
+
+    /**
+     * @brief Helper function that find the closest cluster and corresponding distance for a given datapoint.
+     *
+     * @param dataIdx - A the index of the datapoint that the function will find the closest cluster to.
+     * @param distanceFunc - A functor that defines the distance metric.
+     * @return ClosestCluster - struct containing the cluster index of the closest cluster and the corresponding distance.
+     */
+    virtual ClosestCluster findClosestCluster(const int &dataIdx, IDistanceFunctor *distanceFunc)
+    {
+        int clusterIdx, numExistingClusters = getCurrentNumClusters();
+        value_t tempDistance, minDistance = -1;
+
+        for (int i = 0; i < numExistingClusters; i++)
+        {
+            tempDistance = (*distanceFunc)(&*matrix->at(dataIdx), &*clusters->at(i), clusters->numCols);
+
+            if (minDistance > tempDistance || minDistance < 0)
+            {
+                minDistance = tempDistance;
+                clusterIdx = i;
+            }
+        }
+
+        return ClosestCluster{clusterIdx, minDistance};
+    }
+
+    /**
      * @brief Helper function that updates the clustering assignments and cluster weights given the index of the
      *        datapoint whose clustering assignment has been changed and the index of the new cluster it is assigned to.
      *

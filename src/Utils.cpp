@@ -1,25 +1,6 @@
 #include "Utils.hpp"
 #include <numeric>
 
-ClosestCluster findClosestCluster(value_t *datapoint, Matrix *clusters, IDistanceFunctor *distanceFunc)
-{
-    int clusterIdx, numExistingClusters = clusters->data.size() / clusters->numCols;
-    value_t tempDistance, minDistance = -1;
-
-    for (int i = 0; i < numExistingClusters; i++)
-    {
-        tempDistance = (*distanceFunc)(datapoint, &*clusters->at(i), clusters->numCols);
-
-        if (minDistance > tempDistance || minDistance < 0)
-        {
-            minDistance = tempDistance;
-            clusterIdx = i;
-        }
-    }
-
-    return ClosestCluster{clusterIdx, minDistance};
-}
-
 int weightedRandomSelection(std::vector<value_t> *weights, float randomFrac)
 {
     int maxIdx = weights->size();

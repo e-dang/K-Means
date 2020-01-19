@@ -1,6 +1,5 @@
 
 #include "Lloyd.hpp"
-#include "Utils.hpp"
 
 void SerialLloyd::maximize(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc)
 {
@@ -45,7 +44,7 @@ int SerialLloyd::reassignPoints(std::vector<value_t> *distances, IDistanceFuncto
 
         // find closest cluster for each datapoint and update cluster assignment
         int before = clustering->at(i);
-        auto closestCluster = findClosestCluster(&*matrix->at(i), clusters, distanceFunc);
+        auto closestCluster = findClosestCluster(i, distanceFunc);
         updateClustering(i, closestCluster.clusterIdx);
         distances->at(i) = std::pow(closestCluster.distance, 2);
 
@@ -70,7 +69,7 @@ int OptimizedSerialLloyd::reassignPoints(std::vector<value_t> *distances, IDista
         {
             // find closest cluster for each datapoint and update cluster assignment
             int before = clustering->at(i);
-            auto closestCluster = findClosestCluster(&*matrix->at(i), clusters, distanceFunc);
+            auto closestCluster = findClosestCluster(i, distanceFunc);
             updateClustering(i, closestCluster.clusterIdx);
             distances->at(i) = std::pow(closestCluster.distance, 2);
 
