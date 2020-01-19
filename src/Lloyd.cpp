@@ -1,7 +1,6 @@
 
 #include "Lloyd.hpp"
 #include "Utils.hpp"
-#include <iostream>
 
 std::vector<value_t> SerialLloyd::maximize(IDistanceFunctor *distanceFunc)
 {
@@ -47,9 +46,9 @@ int SerialLloyd::reassignPoints(std::vector<value_t> *distances, IDistanceFuncto
     int changed = 0;
     for (int i = 0; i < matrix->numRows; i++)
     {
-        int before = clustering->at(i);
 
         // find closest cluster for each datapoint and update cluster assignment
+        int before = clustering->at(i);
         auto closestCluster = findClosestCluster(&*matrix->at(i), clusters, distanceFunc);
         updateClustering(i, closestCluster.clusterIdx);
         distances->at(i) = std::pow(closestCluster.distance, 2);
@@ -58,6 +57,36 @@ int SerialLloyd::reassignPoints(std::vector<value_t> *distances, IDistanceFuncto
         if (before != clustering->at(i))
         {
             changed++;
+        }
+    }
+
+    return changed;
+}
+
+int OptimizedSerialLloyd::reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc)
+{
+    int changed = 0;
+    for (int i = 0; i < matrix->numRows; i++)
+    {
+        // check distance to previously closest cluster, if it increased then recalculate distances to all clusters
+        value_t dist = std::pow((*distanceFunc)(&*matrix->at(i), &*clusters->at(clustering->at(i)), matrix->numCols), 2);
+        if (dist > distances->at(i) || distances->at(i) < 0)
+        {
+            // find closest cluster for each datapoint and update cluster assignment
+            int before = clustering->at(i);
+            auto closestCluster = findClosestCluster(&*matrix->at(i), clusters, distanceFunc);
+            updateClustering(i, closestCluster.clusterIdx);
+            distances->at(i) = std::pow(closestCluster.distance, 2);
+
+            // check if cluster assignments have changed
+            if (before != clustering->at(i))
+            {
+                changed++;
+            }
+        }
+        else // distance is smaller, thus update the distances vector
+        {
+            distances->at(i) = dist;
         }
     }
 
