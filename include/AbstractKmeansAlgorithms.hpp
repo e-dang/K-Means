@@ -113,7 +113,7 @@ protected:
      * @param dataIdx - The index of the datapoint whose clustering assignment needs to be updated.
      * @param clusterIdx - The index of the cluster to which the datapoint is now assigned.
      */
-    inline void updateClustering(const int &dataIdx, const int &clusterIdx)
+    virtual inline void updateClustering(const int &dataIdx, const int &clusterIdx)
     {
         int &clusterAssignment = clustering->at(dataIdx);
 

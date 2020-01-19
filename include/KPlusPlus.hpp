@@ -7,7 +7,7 @@
  *        weighted by the square distance between the point and its nearest cluster. Thus farther points have a higher
  *        probability of being selected.
  */
-class SerialKPlusPlus : public AbstractKmeansInitializer
+class KPlusPlus : public AbstractKmeansInitializer
 {
 protected:
     /**
@@ -42,7 +42,7 @@ public:
     /**
      * @brief Destroy the Serial KPlusPlus object
      */
-    virtual ~SerialKPlusPlus(){};
+    virtual ~KPlusPlus(){};
 
     /**
      * @brief Top level function that initializes the clusters.
@@ -56,16 +56,39 @@ public:
 };
 
 /**
- * @brief Optimized version of SerialKPlusPlus that only differs in the implementation of findAndUpdateClosestCluster()
- *        and findClosestCluster(). The optimization made to the K++ algorithm is noticing that you don't need to
- *        recalculate the distances between each point and each cluster each time a cluster is added. Rather you can
- *        calculate the distance between each point and the newly added cluster each iteration because up until then
- *        the datapoint is already assigned to its closest cluster out of all existing clusters. Thus we need only to
- *        compare that distance to the distance between the datapoint and the newly added cluster and update if
- *        necessary.
- *
+ * @brief Optimized version of KPlusPlus that only differs in the implementation of findAndUpdateClosestCluster(). The
+ *        optimization made to the K++ algorithm is noticing that you don't need to recalculate the distances between
+ *        each point and each cluster each time a cluster is added. Rather you can calculate the distance between each
+ *        point and the newly added cluster each iteration because up until then the datapoint is already assigned to
+ *        its closest cluster out of all existing clusters. Thus we need only to compare that distance to the distance
+ *        between the datapoint and the newly added cluster and update if necessary.
  */
-class OptimizedSerialKPlusPlus : public SerialKPlusPlus
+class OptimizedKPlusPlus : public KPlusPlus
+{
+protected:
+    /**
+     * @brief Helper function that wraps the functionality of findClosestCluster() and updateClustering() in order to
+     *        find the closest cluster for each datapoint and update the clustering assignments.
+     *
+     * @param distances - A pointer to a vector that stores the squared distances of each datapoint to its closest
+     *                    cluster.
+     * @param distanceFunc - A functor that defines the distance metric.
+     */
+    void findAndUpdateClosestCluster(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
+
+public:
+    /**
+     * @brief Destroy the OptimizedKPlusPlus object
+     */
+    ~OptimizedKPlusPlus(){};
+};
+
+/**
+ * @brief Parallelized version of the KPlusPlus algorithm using OMP thread parallelism in findAndUpdateClosestCluster()
+ *        and implementing atomic operations in updateClustering(). To change the number of threads, use the environment
+ *        variable OMP_NUM_THREADS.
+ */
+class OMPKPlusPlus : public KPlusPlus
 {
 protected:
     /**
@@ -79,18 +102,43 @@ protected:
     void findAndUpdateClosestCluster(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
 
     /**
-     * @brief Special implementation that calculates the distance between the specified datapoint and the most recently
-     *        added cluster.
+     * @brief Helper function that updates the clustering assignments and cluster weights given the index of the
+     *        datapoint whose clustering assignment has been changed and the index of the new cluster it is assigned to.
      *
-     * @param dataIdx - A the index of the datapoint that the function will find the closest cluster to.
-     * @param distanceFunc - A functor that defines the distance metric.
-     * @return ClosestCluster - struct containing the cluster index and the corresponding distance.
+     * @param dataIdx - The index of the datapoint whose clustering assignment needs to be updated.
+     * @param clusterIdx - The index of the cluster to which the datapoint is now assigned.
      */
-    ClosestCluster findClosestCluster(const int &dataIdx, IDistanceFunctor *distanceFunc) override;
+    void updateClustering(const int &dataIdx, const int &clusterIdx) override;
 
 public:
     /**
-     * @brief Destroy the OptimizedSerialKPlusPlus object
+     * @brief Destroy the OMPKPlusPlus object
+     *
      */
-    ~OptimizedSerialKPlusPlus(){};
+    virtual ~OMPKPlusPlus(){};
+};
+
+/**
+ * @brief Parallelized version of the OptimizedKPlusPlus algorithm using OMP thread parallelism in
+ *        findAndUpdateClosestCluster(). This class inherits and uses OMPKPlusPlus' atomic updateClustering(). To change
+ *        the number of threads, use the environment variable OMP_NUM_THREADS.
+ */
+class OMPOptimizedKPlusPlus : public OMPKPlusPlus
+{
+protected:
+    /**
+     * @brief Helper function that wraps the functionality of findClosestCluster() and updateClustering() in order to
+     *        find the closest cluster for each datapoint and update the clustering assignments.
+     *
+     * @param distances - A pointer to a vector that stores the squared distances of each datapoint to its closest
+     *                    cluster.
+     * @param distanceFunc - A functor that defines the distance metric.
+     */
+    void findAndUpdateClosestCluster(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
+
+public:
+    /**
+     * @brief Destroy the OptimizedKPlusPlus object
+     */
+    ~OMPOptimizedKPlusPlus(){};
 };

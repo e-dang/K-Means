@@ -2,10 +2,11 @@
 #include "Utils.hpp"
 #include "boost/random.hpp"
 #include "boost/generator_iterator.hpp"
+#include <omp.h>
 
 typedef boost::mt19937 RNGType;
 
-void SerialKPlusPlus::initialize(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc, const float &seed)
+void KPlusPlus::initialize(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc, const float &seed)
 {
     // initialize RNG
     RNGType rng(seed);
@@ -31,7 +32,7 @@ void SerialKPlusPlus::initialize(std::vector<value_t> *distances, IDistanceFunct
     findAndUpdateClosestCluster(distances, distanceFunc);
 }
 
-void SerialKPlusPlus::initializeFirstCluster(int randIdx)
+void KPlusPlus::initializeFirstCluster(int randIdx)
 {
     if (clusters->data.size() != 0)
     {
@@ -43,7 +44,7 @@ void SerialKPlusPlus::initializeFirstCluster(int randIdx)
     updateClustering(randIdx, 0); // 0 is index of the cluster than has just been added
 }
 
-void SerialKPlusPlus::findAndUpdateClosestCluster(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc)
+void KPlusPlus::findAndUpdateClosestCluster(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc)
 {
     for (int i = 0; i < matrix->numRows; i++)
     {
@@ -53,30 +54,64 @@ void SerialKPlusPlus::findAndUpdateClosestCluster(std::vector<value_t> *distance
     }
 }
 
-void SerialKPlusPlus::weightedClusterSelection(std::vector<value_t> *distances, float randFrac)
+void KPlusPlus::weightedClusterSelection(std::vector<value_t> *distances, float randFrac)
 {
     int randIdx = weightedRandomSelection(distances, randFrac);
     std::copy(matrix->at(randIdx), matrix->at(randIdx) + matrix->numCols, std::back_inserter(clusters->data));
     updateClustering(randIdx, getCurrentNumClusters() - 1);
 }
 
-void OptimizedSerialKPlusPlus::findAndUpdateClosestCluster(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc)
+void OptimizedKPlusPlus::findAndUpdateClosestCluster(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc)
 {
+    int clusterIdx = getCurrentNumClusters() - 1;
+
     for (int i = 0; i < matrix->numRows; i++)
     {
-        auto closestCluster = findClosestCluster(i, distanceFunc);
-        if (closestCluster.distance < distances->at(i) || distances->at(i) < 0)
+        value_t newDist = (*distanceFunc)(&*matrix->at(i), &*clusters->at(clusterIdx), clusters->numCols);
+        if (newDist < distances->at(i) || distances->at(i) < 0)
         {
-            updateClustering(i, closestCluster.clusterIdx);
-            distances->at(i) = std::pow(closestCluster.distance, 2);
+            updateClustering(i, clusterIdx);
+            distances->at(i) = std::pow(newDist, 2);
         }
     }
 }
 
-ClosestCluster OptimizedSerialKPlusPlus::findClosestCluster(const int &dataIdx, IDistanceFunctor *distanceFunc)
+void OMPKPlusPlus::findAndUpdateClosestCluster(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc)
+{
+#pragma omp parallel for shared(distances), schedule(static)
+    for (int i = 0; i < matrix->numRows; i++)
+    {
+        auto closestCluster = findClosestCluster(i, distanceFunc);
+        updateClustering(i, closestCluster.clusterIdx);
+        distances->at(i) = std::pow(closestCluster.distance, 2);
+    }
+}
+
+inline void OMPKPlusPlus::updateClustering(const int &dataIdx, const int &clusterIdx)
+{
+    int &clusterAssignment = clustering->at(dataIdx);
+
+    // cluster assignments are initialized to -1, so ignore decrement if datapoint has yet to be assigned
+    if (clusterAssignment >= 0 && clusterWeights->at(clusterAssignment) > 0)
+#pragma omp atomic
+        clusterWeights->at(clusterAssignment) -= weights->at(dataIdx);
+#pragma omp atomic
+    clusterWeights->at(clusterIdx) += weights->at(dataIdx);
+    clusterAssignment = clusterIdx;
+}
+
+void OMPOptimizedKPlusPlus::findAndUpdateClosestCluster(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc)
 {
     int clusterIdx = getCurrentNumClusters() - 1;
-    value_t distance = (*distanceFunc)(&*matrix->at(dataIdx), &*clusters->at(clusterIdx), clusters->numCols);
 
-    return ClosestCluster{clusterIdx, distance};
+#pragma omp parallel for shared(distances, clusterIdx), schedule(static)
+    for (int i = 0; i < matrix->numRows; i++)
+    {
+        value_t newDist = (*distanceFunc)(&*matrix->at(i), &*clusters->at(clusterIdx), clusters->numCols);
+        if (newDist < distances->at(i) || distances->at(i) < 0)
+        {
+            updateClustering(i, clusterIdx);
+            distances->at(i) = std::pow(newDist, 2);
+        }
+    }
 }
