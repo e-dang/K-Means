@@ -3,8 +3,8 @@
 #include "AbstractKmeansAlgorithms.hpp"
 
 /**
- * @brief Implementation of a Kmeans initialization aglorithm. Selects datapoints to be new clusters at random weighted
- *        by the square distance between the point and its nearest cluster. Thus farther points have a higher
+ * @brief Implementation of a Kmeans++ initialization aglorithm. Selects datapoints to be new clusters at random
+ *        weighted by the square distance between the point and its nearest cluster. Thus farther points have a higher
  *        probability of being selected.
  */
 class SerialKPlusPlus : public AbstractKmeansInitializer
@@ -26,7 +26,7 @@ protected:
      *                    cluster.
      * @param distanceFunc - A functor that defines the distance metric.
      */
-    void findAndUpdateClosestCluster(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc);
+    virtual void findAndUpdateClosestCluster(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc);
 
     /**
      * @brief Helper function that selects a datapoint to be a new cluster center with a probability proportional to the
@@ -42,7 +42,7 @@ public:
     /**
      * @brief Destroy the Serial KPlusPlus object
      */
-    ~SerialKPlusPlus(){};
+    virtual ~SerialKPlusPlus(){};
 
     /**
      * @brief Top level function that initializes the clusters.
@@ -53,4 +53,44 @@ public:
      * @param seed - The seed for the RNG.
      */
     void initialize(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc, const float &seed) override;
+};
+
+/**
+ * @brief Optimized version of SerialKPlusPlus that only differs in the implementation of findAndUpdateClosestCluster()
+ *        and findClosestCluster(). The optimization made to the K++ algorithm is noticing that you don't need to
+ *        recalculate the distances between each point and each cluster each time a cluster is added. Rather you can
+ *        calculate the distance between each point and the newly added cluster each iteration because up until then
+ *        the datapoint is already assigned to its closest cluster out of all existing clusters. Thus we need only to
+ *        compare that distance to the distance between the datapoint and the newly added cluster and update if
+ *        necessary.
+ *
+ */
+class OptimizedSerialKPlusPlus : public SerialKPlusPlus
+{
+protected:
+    /**
+     * @brief Helper function that wraps the functionality of findClosestCluster() and updateClustering() in order to
+     *        find the closest cluster for each datapoint and update the clustering assignments.
+     *
+     * @param distances - A pointer to a vector that stores the squared distances of each datapoint to its closest
+     *                    cluster.
+     * @param distanceFunc - A functor that defines the distance metric.
+     */
+    void findAndUpdateClosestCluster(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
+
+    /**
+     * @brief Special implementation that calculates the distance between the specified datapoint and the most recently
+     *        added cluster.
+     *
+     * @param dataIdx - A the index of the datapoint that the function will find the closest cluster to.
+     * @param distanceFunc - A functor that defines the distance metric.
+     * @return ClosestCluster - struct containing the cluster index and the corresponding distance.
+     */
+    ClosestCluster findClosestCluster(const int &dataIdx, IDistanceFunctor *distanceFunc) override;
+
+public:
+    /**
+     * @brief Destroy the OptimizedSerialKPlusPlus object
+     */
+    ~OptimizedSerialKPlusPlus(){};
 };

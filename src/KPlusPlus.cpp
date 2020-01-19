@@ -59,3 +59,24 @@ void SerialKPlusPlus::weightedClusterSelection(std::vector<value_t> *distances, 
     std::copy(matrix->at(randIdx), matrix->at(randIdx) + matrix->numCols, std::back_inserter(clusters->data));
     updateClustering(randIdx, getCurrentNumClusters() - 1);
 }
+
+void OptimizedSerialKPlusPlus::findAndUpdateClosestCluster(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc)
+{
+    for (int i = 0; i < matrix->numRows; i++)
+    {
+        auto closestCluster = findClosestCluster(i, distanceFunc);
+        if (closestCluster.distance < distances->at(i) || distances->at(i) < 0)
+        {
+            updateClustering(i, closestCluster.clusterIdx);
+            distances->at(i) = std::pow(closestCluster.distance, 2);
+        }
+    }
+}
+
+ClosestCluster OptimizedSerialKPlusPlus::findClosestCluster(const int &dataIdx, IDistanceFunctor *distanceFunc)
+{
+    int clusterIdx = getCurrentNumClusters() - 1;
+    value_t distance = (*distanceFunc)(&*matrix->at(dataIdx), &*clusters->at(clusterIdx), clusters->numCols);
+
+    return ClosestCluster{clusterIdx, distance};
+}
