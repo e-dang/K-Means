@@ -16,6 +16,11 @@ struct Matrix
     int numCols; // this is the number of features of each datapoint in the matrix
 
     /**
+     * @brief Destroy the Matrix object
+     */
+    ~Matrix() {};
+
+    /**
      * @brief Function to access the beginning of a "row" of the matrix, where each row of the matrix is a datapoint.
      *        This function returns an iterator to the beginning of the row which can be used to access the rest of the
      *        row.
@@ -54,7 +59,7 @@ struct ClusterData
     /**
      * @brief Default constructor.
      */
-    ClusterData(){};
+    ClusterData() {};
 
     /**
      * @brief Construct a new ClusterData object.
@@ -70,6 +75,11 @@ struct ClusterData
         clusters = {std::vector<value_t>(), numClusters, numFeatures};
         clusters.data.reserve(numClusters * numFeatures);
     }
+
+    /**
+     * @brief Destroy the ClusterData object
+     */
+    ~ClusterData() {};
 
     /**
      * @brief Overloaded assignment operator.

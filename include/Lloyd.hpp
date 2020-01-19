@@ -9,15 +9,7 @@
  */
 class SerialLloyd : public AbstractKmeansMaximizer
 {
-public:
-    /**
-     * @brief Top level function for running Lloyd's algorithm on a set of pre-initialized clusters.
-     *
-     * @param distanceFunc - The functor that defines the distance metric to use.
-     * @return std::vector<value_t> - A vector of the squared distances of every point to its closest cluster.
-     */
-    std::vector<value_t> maximize(IDistanceFunctor *distanceFunc) override;
-
+protected:
     /**
      * @brief Helper function that updates clusters based on the center of mass of the points assigned to it.
      */
@@ -33,4 +25,18 @@ public:
      * @return int - The number of datapoints whose cluster assignment has changed in the current iteration.
      */
     int reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc);
+
+public:
+    /**
+     * @brief Destroy the SerialLloyd object
+     */
+    virtual ~SerialLloyd() {};
+
+    /**
+     * @brief Top level function for running Lloyd's algorithm on a set of pre-initialized clusters.
+     *
+     * @param distanceFunc - The functor that defines the distance metric to use.
+     * @return std::vector<value_t> - A vector of the squared distances of every point to its closest cluster.
+     */
+    std::vector<value_t> maximize(IDistanceFunctor *distanceFunc) override;
 };

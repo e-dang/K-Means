@@ -11,6 +11,11 @@ class SerialKPlusPlus : public AbstractKmeansInitializer
 {
 public:
     /**
+     * @brief Destroy the Serial KPlusPlus object
+     */
+    ~SerialKPlusPlus() {};
+
+    /**
      * @brief Top level function that initializes the clusters.
      *
      * @param distanceFunc - The functor that defines the distance metric to use.

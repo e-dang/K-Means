@@ -18,6 +18,12 @@ protected:
     std::vector<value_t> *weights;
 
 public:
+
+    /**
+     * @brief Destroy the AbstractKmeansAlgorithm object
+     */
+    virtual ~AbstractKmeansAlgorithm() {};
+
     /**
      * @brief Function that calls protected member functions setMatrix(), setClusterData(), and setWeights() with
      *        the given arguments, in order to initialize protected member variables.
@@ -93,6 +99,11 @@ class AbstractKmeansInitializer : public AbstractKmeansAlgorithm
 {
 public:
     /**
+     * @brief Destroy the AbstractKmeansInitializer object
+     */
+    virtual ~AbstractKmeansInitializer() {};
+
+    /**
      * @brief Interface that Kmeans initialization algorithms must follow for initializing the clusters.
      *
      * @param distanceFunc - A pointer to a class that calculates distances between points and is an implementation of
@@ -112,6 +123,11 @@ protected:
     const float MIN_PERCENT_CHANGED = 0.0001; // the % amount of data points allowed to changed before going to next
                                               // iteration
 public:
+    /**
+     * @brief Destroy the AbstractKmeansMaximizer object
+     */
+    virtual ~AbstractKmeansMaximizer() {};
+
     /**
      * @brief Interface that Kmeans maximization algorithms must follow for finding the best clustering given a set of
      *        pre-initialized clusters.

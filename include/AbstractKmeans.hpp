@@ -39,7 +39,7 @@ public:
     /**
      * @brief Destroy the Abstract Kmeans object.
      */
-    virtual ~AbstractKmeans(){};
+    virtual ~AbstractKmeans() {};
 
     /**
      * @brief Overloaded interface for the top level function that initiates the clustering process, where the weights
