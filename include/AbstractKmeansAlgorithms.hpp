@@ -18,11 +18,10 @@ protected:
     std::vector<value_t> *weights;
 
 public:
-
     /**
      * @brief Destroy the AbstractKmeansAlgorithm object
      */
-    virtual ~AbstractKmeansAlgorithm() {};
+    virtual ~AbstractKmeansAlgorithm(){};
 
     /**
      * @brief Function that calls protected member functions setMatrix(), setClusterData(), and setWeights() with
@@ -101,16 +100,18 @@ public:
     /**
      * @brief Destroy the AbstractKmeansInitializer object
      */
-    virtual ~AbstractKmeansInitializer() {};
+    virtual ~AbstractKmeansInitializer(){};
 
     /**
      * @brief Interface that Kmeans initialization algorithms must follow for initializing the clusters.
      *
+     * @param distances - A pointer to a vector that stores the squared distances of each datapoint to its closest
+     *                    cluster.
      * @param distanceFunc - A pointer to a class that calculates distances between points and is an implementation of
      *                       IDistanceFunctor.
      * @param seed - The number to seed the RNG.
      */
-    virtual void initialize(IDistanceFunctor *distanceFunc, const float &seed) = 0;
+    virtual void initialize(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc, const float &seed) = 0;
 };
 
 /**
@@ -126,15 +127,16 @@ public:
     /**
      * @brief Destroy the AbstractKmeansMaximizer object
      */
-    virtual ~AbstractKmeansMaximizer() {};
+    virtual ~AbstractKmeansMaximizer(){};
 
     /**
      * @brief Interface that Kmeans maximization algorithms must follow for finding the best clustering given a set of
      *        pre-initialized clusters.
      *
+     * @param distances - A pointer to a vector that stores the squared distances of each datapoint to its closest
+     *                    cluster.
      * @param distanceFunc - A pointer to a class that calculates distances between points and is an implementation of
      *                       IDistanceFunctor.
-     * @return std::vector<value_t> - A vector containing the square distances of each point to its nearest cluster.
      */
-    virtual std::vector<value_t> maximize(IDistanceFunctor *distanceFunc) = 0;
+    virtual void maximize(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) = 0;
 };

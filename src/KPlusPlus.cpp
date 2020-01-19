@@ -5,7 +5,7 @@
 
 typedef boost::mt19937 RNGType;
 
-void SerialKPlusPlus::initialize(IDistanceFunctor *distanceFunc, const float &seed)
+void SerialKPlusPlus::initialize(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc, const float &seed)
 {
     // initialize RNG
     RNGType rng(seed);
@@ -14,8 +14,6 @@ void SerialKPlusPlus::initialize(IDistanceFunctor *distanceFunc, const float &se
     boost::variate_generator<RNGType, boost::uniform_int<>> intDistr(rng, intRange);
     boost::variate_generator<RNGType, boost::uniform_real<>> floatDistr(rng, floatRange);
 
-    std::vector<value_t> distances(matrix->numRows, -1);
-
     // initialize first cluster randomly
     initializeFirstCluster(intDistr());
 
@@ -23,14 +21,14 @@ void SerialKPlusPlus::initialize(IDistanceFunctor *distanceFunc, const float &se
     for (int i = 1; i < clusters->numRows; i++)
     {
         // find distance between each datapoint and nearest cluster, then update clustering assignment
-        findAndUpdateClosestCluster(&distances, distanceFunc);
+        findAndUpdateClosestCluster(distances, distanceFunc);
 
         // select point to be next cluster center weighted by nearest distance squared
-        weightedClusterSelection(&distances, floatDistr());
+        weightedClusterSelection(distances, floatDistr());
     }
 
     // find distance between each datapoint and nearest cluster, then update clustering assignment
-    findAndUpdateClosestCluster(&distances, distanceFunc);
+    findAndUpdateClosestCluster(distances, distanceFunc);
 }
 
 void SerialKPlusPlus::initializeFirstCluster(int randIdx)

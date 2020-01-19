@@ -2,19 +2,15 @@
 #include "Lloyd.hpp"
 #include "Utils.hpp"
 
-std::vector<value_t> SerialLloyd::maximize(IDistanceFunctor *distanceFunc)
+void SerialLloyd::maximize(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc)
 {
     int changed;
-    std::vector<value_t> distances(matrix->numRows, -1);
-
     do
     {
         updateClusters();
-        changed = reassignPoints(&distances, distanceFunc);
+        changed = reassignPoints(distances, distanceFunc);
 
     } while (changed > (matrix->numRows * MIN_PERCENT_CHANGED)); // do until 99.9% of data doesnt change
-
-    return distances;
 }
 
 void SerialLloyd::updateClusters()

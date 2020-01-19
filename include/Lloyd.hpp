@@ -35,10 +35,11 @@ public:
     /**
      * @brief Top level function for running Lloyd's algorithm on a set of pre-initialized clusters.
      *
+     * @param distances - A pointer to a vector that stores the squared distances of each datapoint to its closest
+     *                    cluster.
      * @param distanceFunc - The functor that defines the distance metric to use.
-     * @return std::vector<value_t> - A vector of the squared distances of every point to its closest cluster.
      */
-    std::vector<value_t> maximize(IDistanceFunctor *distanceFunc) override;
+    void maximize(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
 };
 
 /**

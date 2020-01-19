@@ -47,8 +47,10 @@ public:
     /**
      * @brief Top level function that initializes the clusters.
      *
+     * @param distances - A pointer to a vector that stores the squared distances of each datapoint to its closest
+     *                    cluster.
      * @param distanceFunc - The functor that defines the distance metric to use.
      * @param seed - The seed for the RNG.
      */
-    void initialize(IDistanceFunctor *distanceFunc, const float &seed) override;
+    void initialize(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc, const float &seed) override;
 };
