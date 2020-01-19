@@ -124,7 +124,7 @@ int OMPLloyd::reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *
         // find closest cluster for each datapoint and update cluster assignment
         int before = clustering->at(i);
         auto closestCluster = findClosestCluster(i, distanceFunc);
-        updateClustering(i, closestCluster.clusterIdx);
+        atomicUpdateClustering(this, i, closestCluster.clusterIdx);
         distances->at(i) = std::pow(closestCluster.distance, 2);
 
         // check if cluster assignments have changed
@@ -135,23 +135,6 @@ int OMPLloyd::reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *
     }
 
     return changed;
-}
-
-inline void OMPLloyd::updateClustering(const int &dataIdx, const int &clusterIdx)
-{
-    int &clusterAssignment = clustering->at(dataIdx);
-
-    // only go through this update if the cluster assignment is going to change
-    if (clusterAssignment != clusterIdx)
-    {
-        // cluster assignments are initialized to -1, so ignore decrement if datapoint has yet to be assigned
-        if (clusterAssignment >= 0 && clusterWeights->at(clusterAssignment) > 0)
-#pragma omp atomic
-            clusterWeights->at(clusterAssignment) -= weights->at(dataIdx);
-#pragma omp atomic
-        clusterWeights->at(clusterIdx) += weights->at(dataIdx);
-        clusterAssignment = clusterIdx;
-    }
 }
 
 int OMPOptimizedLloyd::reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc)
@@ -169,7 +152,7 @@ int OMPOptimizedLloyd::reassignPoints(std::vector<value_t> *distances, IDistance
             // find closest cluster for each datapoint and update cluster assignment
             int before = clustering->at(i);
             auto closestCluster = findClosestCluster(i, distanceFunc);
-            updateClustering(i, closestCluster.clusterIdx);
+            atomicUpdateClustering(this, i, closestCluster.clusterIdx);
             distances->at(i) = std::pow(closestCluster.distance, 2);
 
             // check if cluster assignments have changed

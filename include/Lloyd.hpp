@@ -76,7 +76,7 @@ public:
  * @brief Parallelized version of Lloyd's algorithm using OMP thread parallelism in both updateClusters() and
  *        reassignPoints(). To change the number of threads, use the environment variable OMP_NUM_THREADS.
  */
-class OMPLloyd : public Lloyd
+class OMPLloyd : public Lloyd, public AbstractOMPKmeansAlgorithm
 {
 protected:
     /**
@@ -95,15 +95,6 @@ protected:
      */
     int reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
 
-    /**
-     * @brief Helper function that updates the clustering assignments and cluster weights given the index of the
-     *        datapoint whose clustering assignment has been changed and the index of the new cluster it is assigned to.
-     *
-     * @param dataIdx - The index of the datapoint whose clustering assignment needs to be updated.
-     * @param clusterIdx - The index of the cluster to which the datapoint is now assigned.
-     */
-    void updateClustering(const int &dataIdx, const int &clusterIdx) override;
-
 public:
     /**
      * @brief Destroy the OMPLloyd object
@@ -114,8 +105,8 @@ public:
 
 /**
  * @brief Parallelized version of the OptimizedLloyd algorithm using OMP thread parallelism. This class has its own
- *        implementation of reassignPoints() but uses OMPLloyd's versions of updateClusters() and updateClustering().
- *        To change the number of threads, use the environment variable OMP_NUM_THREADS.
+ *        implementation of reassignPoints() but uses OMPLloyd's versions of updateClusters(). To change the  number of
+ *        threads, use the environment variable OMP_NUM_THREADS.
  */
 class OMPOptimizedLloyd : public OMPLloyd
 {

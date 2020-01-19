@@ -82,25 +82,8 @@ void OMPKPlusPlus::findAndUpdateClosestCluster(std::vector<value_t> *distances, 
     for (int i = 0; i < matrix->numRows; i++)
     {
         auto closestCluster = findClosestCluster(i, distanceFunc);
-        updateClustering(i, closestCluster.clusterIdx);
+        atomicUpdateClustering(this, i, closestCluster.clusterIdx);
         distances->at(i) = std::pow(closestCluster.distance, 2);
-    }
-}
-
-inline void OMPKPlusPlus::updateClustering(const int &dataIdx, const int &clusterIdx)
-{
-    int &clusterAssignment = clustering->at(dataIdx);
-
-    // only go through this update if the cluster assignment is going to change
-    if (clusterAssignment != clusterIdx)
-    {
-        // cluster assignments are initialized to -1, so ignore decrement if datapoint has yet to be assigned
-        if (clusterAssignment >= 0 && clusterWeights->at(clusterAssignment) > 0)
-#pragma omp atomic
-            clusterWeights->at(clusterAssignment) -= weights->at(dataIdx);
-#pragma omp atomic
-        clusterWeights->at(clusterIdx) += weights->at(dataIdx);
-        clusterAssignment = clusterIdx;
     }
 }
 
@@ -114,7 +97,7 @@ void OMPOptimizedKPlusPlus::findAndUpdateClosestCluster(std::vector<value_t> *di
         value_t newDist = (*distanceFunc)(&*matrix->at(i), &*clusters->at(clusterIdx), clusters->numCols);
         if (newDist < distances->at(i) || distances->at(i) < 0)
         {
-            updateClustering(i, clusterIdx);
+            atomicUpdateClustering(this, i, clusterIdx);
             distances->at(i) = std::pow(newDist, 2);
         }
     }

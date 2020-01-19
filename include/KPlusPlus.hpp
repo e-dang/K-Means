@@ -84,11 +84,10 @@ public:
 };
 
 /**
- * @brief Parallelized version of the KPlusPlus algorithm using OMP thread parallelism in findAndUpdateClosestCluster()
- *        and implementing atomic operations in updateClustering(). To change the number of threads, use the environment
- *        variable OMP_NUM_THREADS.
+ * @brief Parallelized version of the KPlusPlus algorithm using OMP thread parallelism in findAndUpdateClosestCluster().
+ *        To change the number of threads, use the environment variable OMP_NUM_THREADS.
  */
-class OMPKPlusPlus : public KPlusPlus
+class OMPKPlusPlus : public KPlusPlus, public AbstractOMPKmeansAlgorithm
 {
 protected:
     /**
@@ -101,15 +100,6 @@ protected:
      */
     void findAndUpdateClosestCluster(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
 
-    /**
-     * @brief Helper function that updates the clustering assignments and cluster weights given the index of the
-     *        datapoint whose clustering assignment has been changed and the index of the new cluster it is assigned to.
-     *
-     * @param dataIdx - The index of the datapoint whose clustering assignment needs to be updated.
-     * @param clusterIdx - The index of the cluster to which the datapoint is now assigned.
-     */
-    void updateClustering(const int &dataIdx, const int &clusterIdx) override;
-
 public:
     /**
      * @brief Destroy the OMPKPlusPlus object
@@ -120,8 +110,7 @@ public:
 
 /**
  * @brief Parallelized version of the OptimizedKPlusPlus algorithm using OMP thread parallelism in
- *        findAndUpdateClosestCluster(). This class inherits and uses OMPKPlusPlus' atomic updateClustering(). To change
- *        the number of threads, use the environment variable OMP_NUM_THREADS.
+ *        findAndUpdateClosestCluster(). To change the number of threads, use the environment variable OMP_NUM_THREADS.
  */
 class OMPOptimizedKPlusPlus : public OMPKPlusPlus
 {

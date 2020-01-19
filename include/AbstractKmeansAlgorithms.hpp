@@ -17,6 +17,8 @@ protected:
     std::vector<value_t> *clusterWeights;
     std::vector<value_t> *weights;
 
+    friend class AbstractOMPKmeansAlgorithm;
+
 public:
     /**
      * @brief Destroy the AbstractKmeansAlgorithm object
@@ -178,4 +180,43 @@ public:
      *                       IDistanceFunctor.
      */
     virtual void maximize(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) = 0;
+};
+
+/**
+ * @brief An abstract class that should also be inherited along with AbstractKmeansAlgorithm for classes that use OMP
+ *        thread level parallelism. This class offers an atomic version of functions that have race conditions.
+ */
+class AbstractOMPKmeansAlgorithm
+{
+protected:
+    /**
+     * @brief Atomic version of updateClustering for Kmeans algorithm classes who use OMP thread level parallelism.
+     *
+     * @param alg - An pointer to an instance of AbstractKmeansAlgorithm that uses OMP thread level parallelism.
+     * @param dataIdx - The index of the datapoint whose clustering assignment needs to be updated.
+     * @param clusterIdx - The index of the cluster to which the datapoint is now assigned.
+     */
+    void atomicUpdateClustering(AbstractKmeansAlgorithm *alg, const int &dataIdx, const int &clusterIdx)
+    {
+        int &clusterAssignment = alg->clustering->at(dataIdx);
+
+        // only go through this update if the cluster assignment is going to change
+        if (clusterAssignment != clusterIdx)
+        {
+            // cluster assignments are initialized to -1, so ignore decrement if datapoint has yet to be assigned
+            if (clusterAssignment >= 0 && alg->clusterWeights->at(clusterAssignment) > 0)
+#pragma omp atomic
+                alg->clusterWeights->at(clusterAssignment) -= alg->weights->at(dataIdx);
+#pragma omp atomic
+            alg->clusterWeights->at(clusterIdx) += alg->weights->at(dataIdx);
+            clusterAssignment = clusterIdx;
+        }
+    }
+
+public:
+    /**
+     * @brief Destroy the AbstractOMPKmeansAlgorithm object.
+     *
+     */
+    ~AbstractOMPKmeansAlgorithm(){};
 };
