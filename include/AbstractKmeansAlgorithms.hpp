@@ -117,11 +117,15 @@ protected:
     {
         int &clusterAssignment = clustering->at(dataIdx);
 
-        // cluster assignments are initialized to -1, so ignore decrement if datapoint has yet to be assigned
-        if (clusterAssignment >= 0 && clusterWeights->at(clusterAssignment) > 0)
-            clusterWeights->at(clusterAssignment) -= weights->at(dataIdx);
-        clusterWeights->at(clusterIdx) += weights->at(dataIdx);
-        clusterAssignment = clusterIdx;
+        // only go through this update if the cluster assignment is going to change
+        if (clusterAssignment != clusterIdx)
+        {
+            // cluster assignments are initialized to -1, so ignore decrement if datapoint has yet to be assigned
+            if (clusterAssignment >= 0 && clusterWeights->at(clusterAssignment) > 0)
+                clusterWeights->at(clusterAssignment) -= weights->at(dataIdx);
+            clusterWeights->at(clusterIdx) += weights->at(dataIdx);
+            clusterAssignment = clusterIdx;
+        }
     }
 };
 

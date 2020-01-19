@@ -78,7 +78,7 @@ void OptimizedKPlusPlus::findAndUpdateClosestCluster(std::vector<value_t> *dista
 
 void OMPKPlusPlus::findAndUpdateClosestCluster(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc)
 {
-#pragma omp parallel for shared(distances), schedule(static)
+#pragma omp parallel for shared(distances, distanceFunc), schedule(static)
     for (int i = 0; i < matrix->numRows; i++)
     {
         auto closestCluster = findClosestCluster(i, distanceFunc);
@@ -91,20 +91,24 @@ inline void OMPKPlusPlus::updateClustering(const int &dataIdx, const int &cluste
 {
     int &clusterAssignment = clustering->at(dataIdx);
 
-    // cluster assignments are initialized to -1, so ignore decrement if datapoint has yet to be assigned
-    if (clusterAssignment >= 0 && clusterWeights->at(clusterAssignment) > 0)
+    // only go through this update if the cluster assignment is going to change
+    if (clusterAssignment != clusterIdx)
+    {
+        // cluster assignments are initialized to -1, so ignore decrement if datapoint has yet to be assigned
+        if (clusterAssignment >= 0 && clusterWeights->at(clusterAssignment) > 0)
 #pragma omp atomic
-        clusterWeights->at(clusterAssignment) -= weights->at(dataIdx);
+            clusterWeights->at(clusterAssignment) -= weights->at(dataIdx);
 #pragma omp atomic
-    clusterWeights->at(clusterIdx) += weights->at(dataIdx);
-    clusterAssignment = clusterIdx;
+        clusterWeights->at(clusterIdx) += weights->at(dataIdx);
+        clusterAssignment = clusterIdx;
+    }
 }
 
 void OMPOptimizedKPlusPlus::findAndUpdateClosestCluster(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc)
 {
     int clusterIdx = getCurrentNumClusters() - 1;
 
-#pragma omp parallel for shared(distances, clusterIdx), schedule(static)
+#pragma omp parallel for shared(distances, distanceFunc, clusterIdx), schedule(static)
     for (int i = 0; i < matrix->numRows; i++)
     {
         value_t newDist = (*distanceFunc)(&*matrix->at(i), &*clusters->at(clusterIdx), clusters->numCols);
