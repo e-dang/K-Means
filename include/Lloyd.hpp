@@ -64,4 +64,10 @@ protected:
      * @return int - The number of datapoints whose cluster assignment has changed in the current iteration.
      */
     int reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
+
+public:
+    /**
+     * @brief Destroy the OptimizedSerialLloyd object
+     */
+    ~OptimizedSerialLloyd(){};
 };
