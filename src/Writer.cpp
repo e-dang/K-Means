@@ -78,3 +78,25 @@ void ClusterWriter::writeTimes(std::vector<double> times, std::string filepath)
         file << std::endl;
     }
 }
+
+void ClusterDataWriter::writeClusters(std::string filepath)
+{
+    std::ofstream file(filepath, std::ios::binary);
+    if (!file.is_open())
+    {
+        throw std::runtime_error("Unable to open specified file");
+    }
+
+    file.write(reinterpret_cast<char *>(clusterData.clusters.data.data()), sizeof(value_t) * clusterData.clusters.numRows * numFeatures);
+}
+
+void ClusterDataWriter::writeClustering(std::string filepath)
+{
+    std::ofstream file(filepath, std::ios::binary);
+    if (!file.is_open())
+    {
+        throw std::runtime_error("Unable to open specified file");
+    }
+
+    file.write(reinterpret_cast<char *>(clusterData.clustering.data()), sizeof(int) * numData);
+}

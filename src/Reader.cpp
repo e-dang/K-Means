@@ -17,6 +17,19 @@ void CReader::read(std::string filepath, int numData, int numFeatures)
     }
 }
 
+void VectorReader::read(std::string filepath, int numData, int numFeatures)
+{
+
+    std::ifstream file(filepath, std::ios::binary);
+    if (!file.is_open())
+    {
+        throw std::runtime_error("Unable to open specified file");
+    }
+
+    data = std::vector<value_t>(numData * numFeatures);
+    file.read(reinterpret_cast<char *>(data.data()), sizeof(value_t) * numData * numFeatures);
+}
+
 void DataSetReader::read(std::string filepath, int numData, int numFeatures)
 {
     std::ifstream file(filepath, std::ios::binary);

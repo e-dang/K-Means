@@ -38,3 +38,20 @@ public:
     void writeClustering(std::string filepath) override;
     void writeTimes(std::vector<double> time, std::string);
 };
+
+class ClusterDataWriter : public IWriter
+{
+private:
+    ClusterData clusterData;
+    int numData;
+    int numFeatures;
+
+public:
+    ClusterDataWriter(ClusterData clusterData, int numData, int numFeatures) : clusterData(clusterData),
+                                                                               numData(numData),
+                                                                               numFeatures(numFeatures){};
+    ~ClusterDataWriter(){};
+
+    void writeClusters(std::string filepath) override;
+    void writeClustering(std::string filepath) override;
+};

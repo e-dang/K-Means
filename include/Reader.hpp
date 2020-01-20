@@ -36,3 +36,17 @@ public:
 
     dataset_t getData() { return this->data; }
 };
+
+class VectorReader : public IReader
+{
+private:
+    std::vector<value_t> data;
+
+public:
+    VectorReader(){};
+    ~VectorReader(){};
+
+    void read(std::string filepath, int numData, int numFeatures) override;
+
+    std::vector<value_t> getData() { return this->data; }
+};
