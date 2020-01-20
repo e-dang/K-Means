@@ -13,14 +13,10 @@ find_package(Boost 1.71.0 COMPONENTS random math)
 
 # include
 include_directories(./include)
-include_directories("/usr/local/include" "/usr/local/opt/llvm/include")
-link_directories("/usr/local/lib" "/usr/local/opt/llvm/lib")
 
 # target
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
-    add_executable(mpi_kmeans ./src/main_MPI.cpp ./src/Kmeans.cpp ./src/SerialKmeans.cpp ./src/OMPKmeans.cpp  ./src/MPIKmeans.cpp ./src/Reader.cpp ./src/Writer.cpp)
-    add_executable(omp_kmeans ./src/main_omp.cpp ./src/SerialKMeans.cpp ./src/OMPKmeans.cpp ./src/Kmeans.cpp ./src/Reader.cpp ./src/Writer.cpp)
-    target_link_libraries(mpi_kmeans ${Boost_LIBRARIES})
-    target_link_libraries(omp_kmeans ${Boost_LIBRARIES})
+    add_executable(kmeans ./src/main.cpp ./src/Kmeans.cpp ./src/Lloyd.cpp ./src/KPlusPlus.cpp ./src/Reader.cpp ./src/Writer.cpp ./src/Utils.cpp ./include/DistanceFunctors.hpp)
+    target_link_libraries(kmeans ${Boost_LIBRARIES})
 endif()

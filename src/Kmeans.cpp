@@ -1,7 +1,6 @@
 #include "Kmeans.hpp"
 #include "mpi.h"
 #include <ctime>
-#include <iostream>
 
 void Kmeans::fit(Matrix *matrix, int numClusters, int numRestarts)
 {
