@@ -169,3 +169,68 @@ int OMPOptimizedLloyd::reassignPoints(std::vector<value_t> *distances, IDistance
 
     return changed;
 }
+
+void MPILloyd::updateClusters()
+{
+    std::vector<value_t> copyWeights(clusterWeights->size());
+    MPI_Reduce(clusterWeights->data(), copyWeights.data(), copyWeights.size(), MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+
+    if (rank == 0)
+    {
+        // reinitialize clusters
+        std::fill(clusters->data.begin(), clusters->data.end(), 0);
+
+        // calc the weighted sum of each feature for all points belonging to a cluster
+        for (int i = 0; i < matrix->numRows; i++)
+        {
+            for (int j = 0; j < matrix->numCols; j++)
+            {
+                clusters->at(clustering->at(i), j) += weights->at(i) * matrix->at(i, j);
+            }
+        }
+
+        // average out the weighted sum of each cluster based on the number of datapoints assigned to it
+        for (int i = 0; i < clusters->numRows; i++)
+        {
+            for (int j = 0; j < clusters->numCols; j++)
+            {
+                clusters->data.at(i * clusters->numCols + j) /= copyWeights.at(i);
+            }
+        }
+    }
+
+    MPI_Bcast(clusters->data.data(), clusters->data.size(), MPI_FLOAT, 0, MPI_COMM_WORLD);
+}
+
+int MPILloyd::reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc)
+{
+    int changed = 0;
+
+    for (int i = 0; i < matrixChunk->numRows; i++)
+    {
+        // find closest cluster for each datapoint and update cluster assignment
+        int before = clustering->at(i);
+        auto closestCluster = findClosestCluster(&*matrixChunk->at(i), distanceFunc);
+        AbstractMPIKmeansAlgorithm::updateClustering(this, displacements->at(rank) + i, closestCluster.clusterIdx);
+        distances->at(displacements->at(rank) + i) = std::pow(closestCluster.distance, 2);
+
+        // check if cluster assignments have changed
+        if (before != clustering->at(i))
+        {
+            changed++;
+        }
+    }
+
+    MPI_Allgatherv(MPI_IN_PLACE, lengths->at(rank), MPI_INT, clustering->data(),
+                   lengths->data(), displacements->data(), MPI_INT, MPI_COMM_WORLD);
+    MPI_Allreduce(MPI_IN_PLACE, &changed, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, lengths->at(rank), MPI_INT, distances->data(),
+                   lengths->data(), displacements->data(), MPI_INT, MPI_COMM_WORLD);
+
+    return changed;
+}
+
+void MPILloyd::setUp(BundledAlgorithmData *bundledData)
+{
+    AbstractMPIKmeansAlgorithm::setUp(this, dynamic_cast<BundledMPIAlgorithmData *>(bundledData));
+}

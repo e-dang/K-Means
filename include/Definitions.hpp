@@ -18,7 +18,7 @@ struct Matrix
     /**
      * @brief Destroy the Matrix object
      */
-    ~Matrix() {};
+    ~Matrix(){};
 
     /**
      * @brief Function to access the beginning of a "row" of the matrix, where each row of the matrix is a datapoint.
@@ -59,7 +59,7 @@ struct ClusterData
     /**
      * @brief Default constructor.
      */
-    ClusterData() {};
+    ClusterData(){};
 
     /**
      * @brief Construct a new ClusterData object.
@@ -79,7 +79,7 @@ struct ClusterData
     /**
      * @brief Destroy the ClusterData object
      */
-    ~ClusterData() {};
+    ~ClusterData(){};
 
     /**
      * @brief Overloaded assignment operator.
@@ -105,6 +105,32 @@ struct ClosestCluster
     // Public member variables
     int clusterIdx;
     value_t distance;
+};
+
+struct MPIDataChunks
+{
+    int rank;
+    Matrix matrixChunk;
+    std::vector<int> lengths;
+    std::vector<int> displacements;
+};
+
+struct BundledAlgorithmData
+{
+    Matrix *matrix;
+    ClusterData *clusterData;
+    std::vector<value_t> *weights;
+
+    BundledAlgorithmData(Matrix *matrix, ClusterData *clusterData, std::vector<value_t> *weights) : matrix(matrix), clusterData(clusterData), weights(weights){};
+    virtual ~BundledAlgorithmData(){};
+};
+
+struct BundledMPIAlgorithmData : public BundledAlgorithmData
+{
+    MPIDataChunks *dataChunks;
+
+    BundledMPIAlgorithmData(Matrix *matrix, ClusterData *clusterData, std::vector<value_t> *weights, MPIDataChunks *dataChunks) : BundledAlgorithmData(matrix, clusterData, weights), dataChunks(dataChunks){};
+    ~BundledMPIAlgorithmData(){};
 };
 
 typedef std::vector<value_t> datapoint_t;
