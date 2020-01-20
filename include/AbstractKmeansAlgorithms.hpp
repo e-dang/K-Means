@@ -52,20 +52,8 @@ public:
      */
     virtual void setUp(BundledAlgorithmData *bundledData)
     {
-        setMatrix(bundledData->matrix);
-        setClusterData(bundledData->clusterData);
-        setWeights(bundledData->weights);
-    }
-
-protected:
-    /**
-     * @brief Set the matrix member variable.
-     *
-     * @param matrix - The data to be clustered.
-     */
-    void setMatrix(Matrix *matrix)
-    {
-        this->matrix = matrix;
+        this->matrix = bundledData->matrix;
+        this->weights = bundledData->weights;
     }
 
     /**
@@ -80,16 +68,7 @@ protected:
         clusterWeights = &clusterData->clusterWeights;
     }
 
-    /**
-     * @brief Set the weights member variable.
-     *
-     * @param weights - A pointer to the vector of weights for each datapoint.
-     */
-    void setWeights(std::vector<value_t> *weights)
-    {
-        this->weights = weights;
-    }
-
+protected:
     /**
      * @brief Helper function that returns the current number of clusters stored in the clusters member variable. Since
      *        the clusters are stored in a flattened array, the number of clusters is equal to the the size of the array
@@ -297,38 +276,17 @@ protected:
 
     void setUp(AbstractKmeansAlgorithm *alg, BundledMPIAlgorithmData *bundledData)
     {
-        alg->setMatrix(bundledData->matrix);
-        alg->setClusterData(bundledData->clusterData);
-        alg->setWeights(bundledData->weights);
-        setRank(bundledData->dataChunks->rank);
-        setMatrixChunk(&bundledData->dataChunks->matrixChunk);
-        setLengths(&bundledData->dataChunks->lengths);
-        setDisplacements(&bundledData->dataChunks->displacements);
+        alg->matrix = bundledData->matrix;
+        alg->weights = bundledData->weights;
+        this->rank = bundledData->dataChunks->rank;
+        this->matrixChunk = &bundledData->dataChunks->matrixChunk;
+        this->lengths = &bundledData->dataChunks->lengths;
+        this->displacements = &bundledData->dataChunks->displacements;
     }
 
     void bcastClusterData(AbstractKmeansAlgorithm *alg)
     {
         MPI_Bcast(alg->clustering->data(), alg->clustering->size(), MPI_INT, 0, MPI_COMM_WORLD);
         MPI_Bcast(alg->clusters->data.data(), alg->clusters->data.size(), MPI_FLOAT, 0, MPI_COMM_WORLD);
-    }
-
-    void setMatrixChunk(Matrix *matrixChunk)
-    {
-        this->matrixChunk = matrixChunk;
-    }
-
-    void setLengths(std::vector<int> *lengths)
-    {
-        this->lengths = lengths;
-    }
-
-    void setDisplacements(std::vector<int> *displacements)
-    {
-        this->displacements = displacements;
-    }
-
-    void setRank(const int &rank)
-    {
-        this->rank = rank;
     }
 };

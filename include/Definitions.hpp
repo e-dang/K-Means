@@ -118,10 +118,9 @@ struct MPIDataChunks
 struct BundledAlgorithmData
 {
     Matrix *matrix;
-    ClusterData *clusterData;
     std::vector<value_t> *weights;
 
-    BundledAlgorithmData(Matrix *matrix, ClusterData *clusterData, std::vector<value_t> *weights) : matrix(matrix), clusterData(clusterData), weights(weights){};
+    BundledAlgorithmData(Matrix *matrix, std::vector<value_t> *weights) : matrix(matrix), weights(weights){};
     virtual ~BundledAlgorithmData(){};
 };
 
@@ -129,7 +128,7 @@ struct BundledMPIAlgorithmData : public BundledAlgorithmData
 {
     MPIDataChunks *dataChunks;
 
-    BundledMPIAlgorithmData(Matrix *matrix, ClusterData *clusterData, std::vector<value_t> *weights, MPIDataChunks *dataChunks) : BundledAlgorithmData(matrix, clusterData, weights), dataChunks(dataChunks){};
+    BundledMPIAlgorithmData(Matrix *matrix, std::vector<value_t> *weights, MPIDataChunks *dataChunks) : BundledAlgorithmData(matrix, weights), dataChunks(dataChunks){};
     ~BundledMPIAlgorithmData(){};
 };
 

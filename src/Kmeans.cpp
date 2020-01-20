@@ -11,14 +11,17 @@ void Kmeans::fit(Matrix *matrix, int numClusters, int numRestarts)
 
 void Kmeans::fit(Matrix *matrix, int numClusters, int numRestarts, std::vector<value_t> *weights)
 {
+    BundledAlgorithmData bundledData = {matrix, weights};
+    initializer->setUp(&bundledData);
+    maximizer->setUp(&bundledData);
+
     for (int i = 0; i < numRestarts; i++)
     {
         std::vector<value_t> distances(matrix->numRows, -1);
         ClusterData clusterData(matrix->numRows, matrix->numCols, numClusters);
-        BundledAlgorithmData bundledData = {matrix, &clusterData, weights};
 
-        initializer->setUp(&bundledData);
-        maximizer->setUp(&bundledData);
+        initializer->setClusterData(&clusterData);
+        maximizer->setClusterData(&clusterData);
 
         initializer->initialize(&distances, distanceFunc, time(NULL) * (float)i);
         maximizer->maximize(&distances, distanceFunc);
@@ -41,36 +44,34 @@ MPIDataChunks MPIKmeans::initMPIMembers(Matrix *matrix, std::vector<value_t> *we
     int chunk = matrix->numRows / numProcs;
     int scrap = chunk + (matrix->numRows % numProcs);
 
-    // Size of each sub-array to gather
-    std::vector<int> vLens(numProcs);
-    // Index of each sub-array to gather
-    std::vector<int> vDisps(numProcs);
+    std::vector<int> lengths(numProcs);       // size of each sub-array to gather
+    std::vector<int> displacements(numProcs); // index of each sub-array to gather
     for (int i = 0; i < numProcs; i++)
     {
-        vLens[i] = chunk;
-        vDisps[i] = i * chunk;
+        lengths[i] = chunk;
+        displacements[i] = i * chunk;
     }
-    vLens[numProcs - 1] = scrap;
+    lengths[numProcs - 1] = scrap;
 
     // Create disp/len arrays for data scatter
     int dataLens[numProcs];
     int dataDisps[numProcs];
     for (int i = 0; i < numProcs; i++)
     {
-        dataLens[i] = vLens[i] * matrix->numCols;
-        dataDisps[i] = vDisps[i] * matrix->numCols;
+        dataLens[i] = lengths[i] * matrix->numCols;
+        dataDisps[i] = displacements[i] * matrix->numCols;
     }
 
     Matrix matrixChunk;
     matrixChunk.data.resize(dataLens[rank]);
-    matrixChunk.numRows = vLens[rank];
+    matrixChunk.numRows = lengths[rank];
     matrixChunk.numCols = matrix->numCols;
 
     MPI_Scatterv(matrix->data.data(), dataLens, dataDisps, MPI_FLOAT, matrixChunk.data.data(), dataLens[rank],
                  MPI_FLOAT, 0, MPI_COMM_WORLD);
     MPI_Bcast(weights->data(), weights->size(), MPI_FLOAT, 0, MPI_COMM_WORLD);
 
-    return MPIDataChunks{rank, matrixChunk, vLens, vDisps};
+    return MPIDataChunks{rank, matrixChunk, lengths, displacements};
 }
 
 void MPIKmeans::fit(Matrix *matrix, int numClusters, int numRestarts)
@@ -82,15 +83,18 @@ void MPIKmeans::fit(Matrix *matrix, int numClusters, int numRestarts)
 void MPIKmeans::fit(Matrix *matrix, int numClusters, int numRestarts, std::vector<value_t> *weights)
 {
     auto dataChunks = initMPIMembers(matrix, weights);
+    BundledMPIAlgorithmData bundledData = {matrix, weights, &dataChunks};
+
+    initializer->setUp(&bundledData);
+    maximizer->setUp(&bundledData);
 
     for (int i = 0; i < numRestarts; i++)
     {
         std::vector<value_t> distances(matrix->numRows, -1);
         ClusterData clusterData(matrix->numRows, matrix->numCols, numClusters);
-        BundledMPIAlgorithmData bundledData = {matrix, &clusterData, weights, &dataChunks};
 
-        initializer->setUp(&bundledData);
-        maximizer->setUp(&bundledData);
+        initializer->setClusterData(&clusterData);
+        maximizer->setClusterData(&clusterData);
 
         initializer->initialize(&distances, distanceFunc, time(NULL) * (float)i);
         maximizer->maximize(&distances, distanceFunc);
