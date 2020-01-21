@@ -121,6 +121,10 @@ public:
      *                       IDistanceFunctor.
      */
     virtual void maximize(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) = 0;
+
+    void addPointToCluster(const int &dataIdx);
+
+    void averageCluster(const int &clusterIdx);
 };
 
 /**
@@ -229,21 +233,69 @@ public:
     OptFindAndUpdateClosestCluster(AbstractKmeansAlgorithm *alg) : AbstractFindAndUpdate(alg){};
     ~OptFindAndUpdateClosestCluster(){};
 
-    void findAndUpdateClosestCluster(const int &dataIdx, std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
+    void findAndUpdateClosestCluster(const int &dataIdx, std::vector<value_t> *distances,
+                                     IDistanceFunctor *distanceFunc) override;
 };
 
-class AbstractUpdateClusters : public AbstractKmeansAlgorithm
+class ReassignmentClosestClusterFinder : public AbstractFindAndUpdate
 {
 public:
-    ~AbstractUpdateClusters(){};
+    ReassignmentClosestClusterFinder(AbstractKmeansAlgorithm *alg) : AbstractFindAndUpdate(alg){};
+    ~ReassignmentClosestClusterFinder(){};
 
-    virtual void updateClusters() = 0;
+    void findAndUpdateClosestCluster(const int &dataIdx, std::vector<value_t> *distances,
+                                     IDistanceFunctor *distanceFunc) override;
 };
 
-class UpdateClusters : public AbstractUpdateClusters
-{
-public:
-    ~UpdateClusters(){};
+// class AbstractReassignmentClosestClusterFinder : public AbstractKmeansAlgorithm
+// {
+// protected:
+//     AbstractKmeansAlgorithm *pAlg;
 
-    void updateClusters();
-};
+// public:
+//     AbstractReassignmentClosestClusterFinder(AbstractKmeansAlgorithm *alg) : pAlg(alg){};
+//     virtual ~AbstractReassignmentClosestClusterFinder(){};
+
+//     virtual int findAndUpdateClosestCluster(const int &dataIdx, const int &clusterIdx, std::vector<value_t> *distances,
+//                                             IDistanceFunctor *distanceFunc) = 0;
+// };
+
+// class ReassignmentClosestClusterFinder : public AbstractReassignmentClosestClusterFinder
+// {
+//     ReassignmentClosestClusterFinder(AbstractKmeansAlgorithm *alg) : AbstractReassignmentClosestClusterFinder(alg){};
+//     ~ReassignmentClosestClusterFinder(){};
+
+//     int findAndUpdateClosestCluster(const int &dataIdx, const int &clusterIdx, std::vector<value_t> *distances,
+//                                     IDistanceFunctor *distanceFunc) override;
+// };
+
+// class OptReassignmentClosestClusterFinder : public AbstractReassignmentClosestClusterFinder
+// {
+//     OptReassignmentClosestClusterFinder(AbstractKmeansAlgorithm *alg) : AbstractReassignmentClosestClusterFinder(alg){};
+//     ~OptReassignmentClosestClusterFinder(){};
+
+//     int findAndUpdateClosestCluster(const int &dataIdx, const int &clusterIdx, std::vector<value_t> *distances,
+//                                     IDistanceFunctor *distanceFunc) override;
+// };
+// class AbstractCalculateClusterMeans : public AbstractKmeansAlgorithm
+// {
+// protected:
+//     AbstractKmeansMaximizer *pAlg;
+
+// public:
+//     AbstractCalculateClusterMeans(AbstractKmeansMaximizer *alg) : pAlg(alg){};
+//     ~AbstractCalculateClusterMeans(){};
+
+//     virtual void calculateSum() = 0;
+//     virtual void calculateMean() = 0;
+// };
+
+// class CalculateClusterMeans : public AbstractCalculateClusterMeans
+// {
+// public:
+//     CalculateClusterMeans(AbstractKmeansMaximizer *alg) : AbstractCalculateClusterMeans(alg){};
+//     ~CalculateClusterMeans(){};
+
+//     void calculateSum();
+//     void updateClusters();
+// };

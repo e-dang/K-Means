@@ -2,18 +2,41 @@
 
 #include "AbstractKmeansAlgorithms.hpp"
 #include "DistanceFunctors.hpp"
+#include <memory>
 
 /**
  * @brief Implementation of a Kmeans maximization algorithm. Given a set of initialized clusters, this class will
  *        optimize the clusters using Lloyd's algorithm.
  */
-class Lloyd : public AbstractKmeansMaximizer
+class TemplateLloyd : public AbstractKmeansMaximizer
 {
+protected:
+    std::unique_ptr<AbstractFindAndUpdate> pFinder;
+
+public:
+    TemplateLloyd(AbstractFindAndUpdate *finder) : pFinder(finder){};
+
+    /**
+     * @brief Destroy the SerialLloyd object
+     */
+    virtual ~TemplateLloyd(){};
+
+    /**
+     * @brief Top level function for running Lloyd's algorithm on a set of pre-initialized clusters.
+     *
+     * @param distances - A pointer to a vector that stores the squared distances of each datapoint to its closest
+     *                    cluster.
+     * @param distanceFunc - The functor that defines the distance metric to use.
+     */
+    void maximize(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
+
 protected:
     /**
      * @brief Helper function that updates clusters based on the center of mass of the points assigned to it.
      */
-    virtual void updateClusters();
+    virtual void calcClusterSums();
+
+    virtual void averageClusterSums();
 
     /**
      * @brief Helper function that checks if each point's closest cluster has changed after the clusters have been
@@ -25,21 +48,13 @@ protected:
      * @return int - The number of datapoints whose cluster assignment has changed in the current iteration.
      */
     virtual int reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc);
+};
 
+class Lloyd : public TemplateLloyd
+{
 public:
-    /**
-     * @brief Destroy the SerialLloyd object
-     */
-    virtual ~Lloyd(){};
-
-    /**
-     * @brief Top level function for running Lloyd's algorithm on a set of pre-initialized clusters.
-     *
-     * @param distances - A pointer to a vector that stores the squared distances of each datapoint to its closest
-     *                    cluster.
-     * @param distanceFunc - The functor that defines the distance metric to use.
-     */
-    void maximize(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
+    Lloyd() : TemplateLloyd(new FindAndUpdateClosestCluster(this)){};
+    ~Lloyd(){};
 };
 
 /**
@@ -51,8 +66,16 @@ public:
  *        https://link.springer.com/content/pdf/10.1631%2Fjzus.2006.A1626.pdf
  *
  */
-class OptimizedLloyd : public Lloyd
+class OptimizedLloyd : public TemplateLloyd
 {
+public:
+    OptimizedLloyd() : TemplateLloyd(new FindAndUpdateClosestCluster(this)){};
+
+    /**
+     * @brief Destroy the OptimizedSerialLloyd object
+     */
+    ~OptimizedLloyd(){};
+
 protected:
     /**
      * @brief Helper function that checks if each point's closest cluster has changed after the clusters have been
@@ -64,25 +87,26 @@ protected:
      * @return int - The number of datapoints whose cluster assignment has changed in the current iteration.
      */
     int reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
-
-public:
-    /**
-     * @brief Destroy the OptimizedSerialLloyd object
-     */
-    ~OptimizedLloyd(){};
 };
 
 /**
  * @brief Parallelized version of Lloyd's algorithm using OMP thread parallelism in both updateClusters() and
  *        reassignPoints(). To change the number of threads, use the environment variable OMP_NUM_THREADS.
  */
-class OMPLloyd : public Lloyd, public AbstractOMPKmeansAlgorithm
+class OMPLloyd : public TemplateLloyd, public AbstractOMPKmeansAlgorithm
 {
-protected:
+public:
+    OMPLloyd() : TemplateLloyd(new FindAndUpdateClosestCluster(this)){};
+    OMPLloyd(AbstractFindAndUpdate *finder) : TemplateLloyd(finder){};
+
     /**
-     * @brief Helper function that updates clusters based on the center of mass of the points assigned to it.
+     * @brief Destroy the OMPLloyd object
+     *
      */
-    void updateClusters() override;
+    virtual ~OMPLloyd(){};
+
+protected:
+    void averageClusterSums() override;
 
     /**
      * @brief Helper function that checks if each point's closest cluster has changed after the clusters have been
@@ -93,14 +117,7 @@ protected:
      * @param distanceFunc - The functor that defines the distance metric to use.
      * @return int - The number of datapoints whose cluster assignment has changed in the current iteration.
      */
-    int reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
-
-public:
-    /**
-     * @brief Destroy the OMPLloyd object
-     *
-     */
-    ~OMPLloyd(){};
+    virtual int reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
 };
 
 /**
@@ -110,6 +127,13 @@ public:
  */
 class OMPOptimizedLloyd : public OMPLloyd
 {
+public:
+    OMPOptimizedLloyd() : OMPLloyd(new FindAndUpdateClosestCluster(this)){};
+    /**
+     * @brief Destroy the OptimizedSerialLloyd object
+     */
+    ~OMPOptimizedLloyd(){};
+
 protected:
     /**
      * @brief Helper function that checks if each point's closest cluster has changed after the clusters have been
@@ -121,22 +145,17 @@ protected:
      * @return int - The number of datapoints whose cluster assignment has changed in the current iteration.
      */
     int reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
-
-public:
-    /**
-     * @brief Destroy the OptimizedSerialLloyd object
-     */
-    ~OMPOptimizedLloyd(){};
 };
 
-class MPILloyd : public Lloyd, public AbstractMPIKmeansAlgorithm
+class MPILloyd : public TemplateLloyd, public AbstractMPIKmeansAlgorithm
 {
-protected:
-    /**
-     * @brief Helper function that updates clusters based on the center of mass of the points assigned to it.
-     */
-    void updateClusters() override;
+public:
+    MPILloyd() : TemplateLloyd(new FindAndUpdateClosestCluster(this)){};
+    ~MPILloyd(){};
 
+protected:
+    void calcClusterSums() override;
+    void averageClusterSums() override;
     /**
      * @brief Helper function that checks if each point's closest cluster has changed after the clusters have been
      *        updated in the call to updateClusters(), and updates the clustering data if necessary. This function also

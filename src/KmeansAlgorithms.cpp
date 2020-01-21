@@ -65,6 +65,22 @@ void AbstractKmeansInitializer::appendCluster(const int &dataIdx)
     std::copy(pMatrix->at(dataIdx), pMatrix->at(dataIdx) + pMatrix->numCols, std::back_inserter(pClusters->data));
 }
 
+void AbstractKmeansMaximizer::addPointToCluster(const int &dataIdx)
+{
+    for (int j = 0; j < pMatrix->numCols; j++)
+    {
+        pClusters->at(pClustering->at(dataIdx), j) += pWeights->at(dataIdx) * pMatrix->at(dataIdx, j);
+    }
+}
+
+void AbstractKmeansMaximizer::averageCluster(const int &clusterIdx)
+{
+    for (int j = 0; j < pClusters->numCols; j++)
+    {
+        pClusters->data.at(clusterIdx * pClusters->numCols + j) /= pClusterWeights->at(clusterIdx);
+    }
+}
+
 inline void AbstractOMPKmeansAlgorithm::updateClustering(const int &dataIdx, const int &clusterIdx)
 {
     int &clusterAssignment = pClustering->at(dataIdx);
@@ -147,14 +163,28 @@ void OptFindAndUpdateClosestCluster::findAndUpdateClosestCluster(const int &data
     }
 }
 
-// void UpdateClusters::updateClusters()
+void ReassignmentClosestClusterFinder::findAndUpdateClosestCluster(const int &dataIdx, std::vector<value_t> *distances,
+                                                                   IDistanceFunctor *distanceFunc)
+{
+    // check distance to previously closest cluster, if it increased then recalculate distances to all clusters
+    value_t dist = std::pow(pAlg->calcDistance(dataIdx, pClustering->at(dataIdx), distanceFunc), 2);
+    if (dist > distances->at(dataIdx) || distances->at(dataIdx) < 0)
+    {
+        // find closest cluster for each datapoint and update cluster assignment
+        auto closestCluster = pAlg->findClosestCluster(dataIdx, distanceFunc);
+        pAlg->updateClustering(dataIdx, closestCluster.clusterIdx);
+        distances->at(dataIdx) = std::pow(closestCluster.distance, 2);
+    }
+}
+
+// void CalculateClusterMeans::calculateSum()
 // {
 //     // reinitialize clusters
 //     std::fill(clusters->data.begin(), clusters->data.end(), 0);
 
 //     // calc the weighted sum of each feature for all points belonging to a cluster
-//     int numFeatures = getNumFeatures();
-//     for (int i = 0, numData = getNumData(); i < numData; i++)
+//     int numData = pAlg->getNumData(), numFeatures = pAlg->getNumFeatures();
+//     for (int i = 0; i < numData; i++)
 //     {
 //         int clusterIdx = getClusteringAt(i);
 //         value_t weight = getWeightsAt(i);
@@ -163,6 +193,10 @@ void OptFindAndUpdateClosestCluster::findAndUpdateClosestCluster(const int &data
 //             clusters->at(clusterIdx, j) += weight * getDataValAt(i, j);
 //         }
 //     }
+// }
+
+// void CalculateClusterMeans::calculateMean()
+// {
 
 //     // average out the weighted sum of each cluster based on the number of datapoints assigned to it
 //     for (int i = 0; i < clusters->numRows; i++)

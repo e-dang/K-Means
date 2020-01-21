@@ -1,43 +1,69 @@
 
 #include "Lloyd.hpp"
 #include "mpi.h"
+#include <iostream>
 
-void Lloyd::maximize(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc)
+void TemplateLloyd::maximize(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc)
 {
-    int changed;
+    int changed, numData = pMatrix->numRows;
+
     do
     {
-        updateClusters();
+        // reinitialize clusters
+        std::fill(pClusters->data.begin(), pClusters->data.end(), 0);
+
+        // calc the weighted sum of each feature for all points belonging to a cluster
+        calcClusterSums();
+
+        averageClusterSums();
+
         changed = reassignPoints(distances, distanceFunc);
 
-    } while (changed > (pMatrix->numRows * MIN_PERCENT_CHANGED)); // do until 99.9% of data doesnt change
+    } while (changed > (numData * MIN_PERCENT_CHANGED)); // do until 99.9% of data doesnt change
 }
 
-void Lloyd::updateClusters()
+void TemplateLloyd::calcClusterSums()
 {
-    // reinitialize clusters
-    std::fill(pClusters->data.begin(), pClusters->data.end(), 0);
 
-    // calc the weighted sum of each feature for all points belonging to a cluster
     for (int i = 0; i < pMatrix->numRows; i++)
     {
-        for (int j = 0; j < pMatrix->numCols; j++)
-        {
-            pClusters->at(pClustering->at(i), j) += pWeights->at(i) * pMatrix->at(i, j);
-        }
-    }
-
-    // average out the weighted sum of each cluster based on the number of datapoints assigned to it
-    for (int i = 0; i < pClusters->numRows; i++)
-    {
-        for (int j = 0; j < pClusters->numCols; j++)
-        {
-            pClusters->data.at(i * pClusters->numCols + j) /= pClusterWeights->at(i);
-        }
+        addPointToCluster(i);
     }
 }
 
-int Lloyd::reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc)
+void TemplateLloyd::averageClusterSums()
+{
+    for (int i = 0; i < pClusters->numRows; i++)
+    {
+        averageCluster(i);
+    }
+}
+
+// void Lloyd::updateClusters()
+// {
+//     // reinitialize clusters
+//     std::fill(pClusters->data.begin(), pClusters->data.end(), 0);
+
+//     // calc the weighted sum of each feature for all points belonging to a cluster
+//     for (int i = 0; i < pMatrix->numRows; i++)
+//     {
+//         for (int j = 0; j < pMatrix->numCols; j++)
+//         {
+//             pClusters->at(pClustering->at(i), j) += pWeights->at(i) * pMatrix->at(i, j);
+//         }
+//     }
+
+//     // average out the weighted sum of each cluster based on the number of datapoints assigned to it
+//     for (int i = 0; i < pClusters->numRows; i++)
+//     {
+//         for (int j = 0; j < pClusters->numCols; j++)
+//         {
+//             pClusters->data.at(i * pClusters->numCols + j) /= pClusterWeights->at(i);
+//         }
+//     }
+// }
+
+int TemplateLloyd::reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc)
 {
     int changed = 0;
     for (int i = 0; i < pMatrix->numRows; i++)
@@ -45,9 +71,11 @@ int Lloyd::reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *dis
 
         // find closest cluster for each datapoint and update cluster assignment
         int before = pClustering->at(i);
-        auto closestCluster = findClosestCluster(i, distanceFunc);
-        updateClustering(i, closestCluster.clusterIdx);
-        distances->at(i) = std::pow(closestCluster.distance, 2);
+
+        pFinder->findAndUpdateClosestCluster(i, distances, distanceFunc);
+        // auto closestCluster = findClosestCluster(i, distanceFunc);
+        // updateClustering(i, closestCluster.clusterIdx);
+        // distances->at(i) = std::pow(closestCluster.distance, 2);
 
         // check if cluster assignments have changed
         if (before != pClustering->at(i))
@@ -65,14 +93,13 @@ int OptimizedLloyd::reassignPoints(std::vector<value_t> *distances, IDistanceFun
     for (int i = 0; i < pMatrix->numRows; i++)
     {
         // check distance to previously closest cluster, if it increased then recalculate distances to all clusters
-        value_t dist = std::pow((*distanceFunc)(&*pMatrix->at(i), &*pClusters->at(pClustering->at(i)), pMatrix->numCols), 2);
+        value_t dist = std::pow(calcDistance(i, pClustering->at(i), distanceFunc), 2);
         if (dist > distances->at(i) || distances->at(i) < 0)
         {
-            // find closest cluster for each datapoint and update cluster assignment
             int before = pClustering->at(i);
-            auto closestCluster = findClosestCluster(i, distanceFunc);
-            updateClustering(i, closestCluster.clusterIdx);
-            distances->at(i) = std::pow(closestCluster.distance, 2);
+
+            // find closest cluster for each datapoint and update cluster assignment
+            pFinder->findAndUpdateClosestCluster(i, distances, distanceFunc);
 
             // check if cluster assignments have changed
             if (before != pClustering->at(i))
@@ -89,44 +116,28 @@ int OptimizedLloyd::reassignPoints(std::vector<value_t> *distances, IDistanceFun
     return changed;
 }
 
-void OMPLloyd::updateClusters()
+void OMPLloyd::averageClusterSums()
 {
-    // reinitialize clusters
-    std::fill(pClusters->data.begin(), pClusters->data.end(), 0);
-
-    // calc the weighted sum of each feature for all points belonging to a cluster
-    for (int i = 0; i < pMatrix->numRows; i++)
+    int numClusters = pClusters->numRows;
+#pragma omp parallel for shared(numClusters), schedule(static)
+    for (int i = 0; i < numClusters; i++)
     {
-        for (int j = 0; j < pMatrix->numCols; j++)
-        {
-            pClusters->at(pClustering->at(i), j) += pWeights->at(i) * pMatrix->at(i, j);
-        }
-    }
-
-    // average out the weighted sum of each cluster based on the number of datapoints assigned to it
-#pragma omp parallel for schedule(static), collapse(2)
-    for (int i = 0; i < pClusters->numRows; i++)
-    {
-        for (int j = 0; j < pClusters->numCols; j++)
-        {
-            pClusters->data.at(i * pClusters->numCols + j) /= pClusterWeights->at(i);
-        }
+        averageCluster(i);
     }
 }
 
 int OMPLloyd::reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc)
 {
-    int changed = 0;
+    int changed = 0, numData = pMatrix->numRows;
 
-#pragma omp parallel for shared(distances, distanceFunc), schedule(static), reduction(+ \
-                                                                                      : changed)
-    for (int i = 0; i < pMatrix->numRows; i++)
+#pragma omp parallel for shared(numData, distances, distanceFunc), schedule(static), reduction(+ \
+                                                                                               : changed)
+    for (int i = 0; i < numData; i++)
     {
-        // find closest cluster for each datapoint and update cluster assignment
         int before = pClustering->at(i);
-        auto closestCluster = findClosestCluster(i, distanceFunc);
-        updateClustering(i, closestCluster.clusterIdx);
-        distances->at(i) = std::pow(closestCluster.distance, 2);
+
+        // find closest cluster for each datapoint and update cluster assignment
+        pFinder->findAndUpdateClosestCluster(i, distances, distanceFunc);
 
         // check if cluster assignments have changed
         if (before != pClustering->at(i))
@@ -150,11 +161,10 @@ int OMPOptimizedLloyd::reassignPoints(std::vector<value_t> *distances, IDistance
         value_t dist = std::pow((*distanceFunc)(&*pMatrix->at(i), &*pClusters->at(pClustering->at(i)), pMatrix->numCols), 2);
         if (dist > distances->at(i) || distances->at(i) < 0)
         {
-            // find closest cluster for each datapoint and update cluster assignment
             int before = pClustering->at(i);
-            auto closestCluster = findClosestCluster(i, distanceFunc);
-            updateClustering(i, closestCluster.clusterIdx);
-            distances->at(i) = std::pow(closestCluster.distance, 2);
+
+            // find closest cluster for each datapoint and update cluster assignment
+            pFinder->findAndUpdateClosestCluster(i, distances, distanceFunc);
 
             // check if cluster assignments have changed
             if (before != pClustering->at(i))
@@ -171,26 +181,25 @@ int OMPOptimizedLloyd::reassignPoints(std::vector<value_t> *distances, IDistance
     return changed;
 }
 
-void MPILloyd::updateClusters()
+void MPILloyd::calcClusterSums()
+{
+    int numData = pMatrixChunk->numRows;
+    for (int i = 0; i < numData; i++)
+    {
+        int dataIdx = pDisplacements->at(mRank) + i;
+        addPointToCluster(dataIdx);
+    }
+
+    MPI_Allreduce(MPI_IN_PLACE, pClusters->data.data(), pClusters->data.size(), MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+}
+
+void MPILloyd::averageClusterSums()
 {
     std::vector<value_t> copyWeights(pClusterWeights->size());
     MPI_Reduce(pClusterWeights->data(), copyWeights.data(), copyWeights.size(), MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
 
     if (mRank == 0)
     {
-        // reinitialize clusters
-        std::fill(pClusters->data.begin(), pClusters->data.end(), 0);
-
-        // calc the weighted sum of each feature for all points belonging to a cluster
-        for (int i = 0; i < pMatrix->numRows; i++)
-        {
-            for (int j = 0; j < pMatrix->numCols; j++)
-            {
-                pClusters->at(pClustering->at(i), j) += pWeights->at(i) * pMatrix->at(i, j);
-            }
-        }
-
-        // average out the weighted sum of each cluster based on the number of datapoints assigned to it
         for (int i = 0; i < pClusters->numRows; i++)
         {
             for (int j = 0; j < pClusters->numCols; j++)
@@ -211,9 +220,7 @@ int MPILloyd::reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *
     {
         // find closest cluster for each datapoint and update cluster assignment
         int before = pClustering->at(i);
-        auto closestCluster = findClosestCluster(i, distanceFunc);
-        AbstractMPIKmeansAlgorithm::updateClustering(pDisplacements->at(mRank) + i, closestCluster.clusterIdx);
-        distances->at(pDisplacements->at(mRank) + i) = std::pow(closestCluster.distance, 2);
+        pFinder->findAndUpdateClosestCluster(pDisplacements->at(mRank) + i, distances, distanceFunc);
 
         // check if cluster assignments have changed
         if (before != pClustering->at(i))
