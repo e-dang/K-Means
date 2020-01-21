@@ -39,30 +39,6 @@ void TemplateLloyd::averageClusterSums()
     }
 }
 
-// void Lloyd::updateClusters()
-// {
-//     // reinitialize clusters
-//     std::fill(pClusters->data.begin(), pClusters->data.end(), 0);
-
-//     // calc the weighted sum of each feature for all points belonging to a cluster
-//     for (int i = 0; i < pMatrix->numRows; i++)
-//     {
-//         for (int j = 0; j < pMatrix->numCols; j++)
-//         {
-//             pClusters->at(pClustering->at(i), j) += pWeights->at(i) * pMatrix->at(i, j);
-//         }
-//     }
-
-//     // average out the weighted sum of each cluster based on the number of datapoints assigned to it
-//     for (int i = 0; i < pClusters->numRows; i++)
-//     {
-//         for (int j = 0; j < pClusters->numCols; j++)
-//         {
-//             pClusters->data.at(i * pClusters->numCols + j) /= pClusterWeights->at(i);
-//         }
-//     }
-// }
-
 int TemplateLloyd::reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc)
 {
     int changed = 0;
@@ -73,9 +49,6 @@ int TemplateLloyd::reassignPoints(std::vector<value_t> *distances, IDistanceFunc
         int before = pClustering->at(i);
 
         pFinder->findAndUpdateClosestCluster(i, distances, distanceFunc);
-        // auto closestCluster = findClosestCluster(i, distanceFunc);
-        // updateClustering(i, closestCluster.clusterIdx);
-        // distances->at(i) = std::pow(closestCluster.distance, 2);
 
         // check if cluster assignments have changed
         if (before != pClustering->at(i))
@@ -158,7 +131,7 @@ int OMPOptimizedLloyd::reassignPoints(std::vector<value_t> *distances, IDistance
     for (int i = 0; i < pMatrix->numRows; i++)
     {
         // check distance to previously closest cluster, if it increased then recalculate distances to all clusters
-        value_t dist = std::pow((*distanceFunc)(&*pMatrix->at(i), &*pClusters->at(pClustering->at(i)), pMatrix->numCols), 2);
+        value_t dist = std::pow(calcDistance(i, pClustering->at(i), distanceFunc), 2);
         if (dist > distances->at(i) || distances->at(i) < 0)
         {
             int before = pClustering->at(i);
@@ -214,9 +187,9 @@ void MPILloyd::averageClusterSums()
 
 int MPILloyd::reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc)
 {
-    int changed = 0;
+    int changed = 0, numData = pMatrixChunk->numRows;
 
-    for (int i = 0; i < pMatrixChunk->numRows; i++)
+    for (int i = 0; i < numData; i++)
     {
         // find closest cluster for each datapoint and update cluster assignment
         int before = pClustering->at(i);
@@ -226,6 +199,42 @@ int MPILloyd::reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *
         if (before != pClustering->at(i))
         {
             changed++;
+        }
+    }
+
+    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_INT, pClustering->data(),
+                   pLengths->data(), pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
+    MPI_Allreduce(MPI_IN_PLACE, &changed, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_INT, distances->data(),
+                   pLengths->data(), pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
+
+    return changed;
+}
+
+int MPIOptimizedLloyd::reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc)
+{
+    int changed = 0, numData = pMatrixChunk->numRows;
+
+    for (int i = 0; i < numData; i++)
+    {
+
+        value_t dist = std::pow(calcDistance(pDisplacements->at(mRank) + i, pClustering->at(i), distanceFunc), 2);
+        if (dist > distances->at(i) || distances->at(i) < 0)
+        {
+            int before = pClustering->at(i);
+
+            // find closest cluster for each datapoint and update cluster assignment
+            pFinder->findAndUpdateClosestCluster(pDisplacements->at(mRank) + i, distances, distanceFunc);
+
+            // check if cluster assignments have changed
+            if (before != pClustering->at(i))
+            {
+                changed++;
+            }
+        }
+        else // distance is smaller, thus update the distances vector
+        {
+            distances->at(i) = dist;
         }
     }
 

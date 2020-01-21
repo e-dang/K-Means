@@ -134,6 +134,8 @@ class MPIKPlusPlus : public TemplateKPlusPlus, public AbstractMPIKmeansAlgorithm
 {
 public:
     MPIKPlusPlus() : TemplateKPlusPlus(new WeightedClusterSelection(this), new FindAndUpdateClosestCluster(this)){};
+    MPIKPlusPlus(AbstractWeightedClusterSelection *selector, AbstractFindAndUpdate *finder) : TemplateKPlusPlus(
+                                                                                                  selector, finder){};
     virtual ~MPIKPlusPlus(){};
 
 protected:
@@ -156,4 +158,11 @@ protected:
      * @param randFrac - A randomly generated float in the range of [0, 1) needed by weightedRandomSelection().
      */
     void weightedClusterSelection(std::vector<value_t> *distances, float randFrac) override;
+};
+
+class MPIOptimizedKPlusPlus : public MPIKPlusPlus
+{
+public:
+    MPIOptimizedKPlusPlus() : MPIKPlusPlus(new WeightedClusterSelection(this), new OptFindAndUpdateClosestCluster(this)){};
+    virtual ~MPIOptimizedKPlusPlus(){};
 };
