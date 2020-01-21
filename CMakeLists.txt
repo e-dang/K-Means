@@ -17,6 +17,6 @@ include_directories(./include)
 # target
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
-    add_executable(kmeans ./src/main.cpp ./src/Kmeans.cpp ./src/Lloyd.cpp ./src/KPlusPlus.cpp ./src/Reader.cpp ./src/Writer.cpp ./src/Utils.cpp ./include/DistanceFunctors.hpp)
+    add_executable(kmeans ./src/main.cpp ./src/Kmeans.cpp ./src/Lloyd.cpp ./src/KPlusPlus.cpp ./src/Reader.cpp ./src/Writer.cpp ./src/Utils.cpp ./include/DistanceFunctors.hpp ./src/KmeansAlgorithms.cpp)
     target_link_libraries(kmeans ${Boost_LIBRARIES})
 endif()

@@ -7,6 +7,7 @@
 #include "Kmeans.hpp"
 #include <iostream>
 #include "Definitions.hpp"
+#include "mpi.h"
 // #include "boost/random.hpp"
 // #include "boost/generator_iterator.hpp"
 
@@ -22,23 +23,23 @@ int main(int argc, char *argv[])
     std::vector<double> times;
 
     VectorReader reader;
-    std::string inFile = "../test_" + std::to_string(numData) + "_" + std::to_string(numFeatures) + ".txt";
+    std::string inFile = "../data/test_" + std::to_string(numData) + "_" + std::to_string(numFeatures) + ".txt";
     reader.read(inFile, numData, numFeatures);
     Matrix matrix = {reader.getData(), numData, numFeatures};
 
     // KPlusPlus kplusplus;
     // OptimizedKPlusPlus kplusplus;
     // OMPKPlusPlus kplusplus;
-    // OMPOptimizedKPlusPlus kplusplus;
-    MPIKPlusPlus kplusplus;
+    OMPOptimizedKPlusPlus kplusplus;
+    // MPIKPlusPlus kplusplus;
     // Lloyd lloyd;
     // OptimizedLloyd lloyd;
     // OMPLloyd lloyd;
-    // OMPOptimizedLloyd lloyd;
-    MPILloyd lloyd;
+    OMPOptimizedLloyd lloyd;
+    // MPILloyd lloyd;
     EuclideanDistance distanceFunc;
-    // Kmeans kmeans(&kplusplus, &lloyd, &distanceFunc);
-    MPIKmeans kmeans(&kplusplus, &lloyd, &distanceFunc);
+    Kmeans kmeans(&kplusplus, &lloyd, &distanceFunc);
+    // MPIKmeans kmeans(&kplusplus, &lloyd, &distanceFunc);
 
     MPI_Init(&argc, &argv);
     int rank, numProcs;
@@ -53,8 +54,8 @@ int main(int argc, char *argv[])
     if (rank == 0)
     {
         ClusterDataWriter writer(kmeans.getClusterData(), numData, numFeatures);
-        std::string serialKppClustersFile = "../clusters_serial_kpp_" + std::to_string(numData) + "_" + std::to_string(numFeatures) + ".txt";
-        std::string serialKppClusteringFile = "../clustering_serial_kpp_" + std::to_string(numData) + "_" + std::to_string(numFeatures) + ".txt";
+        std::string serialKppClustersFile = "../data/clusters_serial_kpp_" + std::to_string(numData) + "_" + std::to_string(numFeatures) + ".txt";
+        std::string serialKppClusteringFile = "../data/clustering_serial_kpp_" + std::to_string(numData) + "_" + std::to_string(numFeatures) + ".txt";
         writer.writeClusters(serialKppClustersFile);
         writer.writeClustering(serialKppClusteringFile);
 
