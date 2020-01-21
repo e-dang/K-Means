@@ -40,7 +40,15 @@ public:
      */
     void setClusterData(ClusterData *clusterData);
 
-protected:
+    /**
+     * @brief Helper function that updates the clustering assignments and cluster weights given the index of the
+     *        datapoint whose clustering assignment has been changed and the index of the new cluster it is assigned to.
+     *
+     * @param dataIdx - The index of the datapoint whose clustering assignment needs to be updated.
+     * @param clusterIdx - The index of the cluster to which the datapoint is now assigned.
+     */
+    virtual void updateClustering(const int &dataIdx, const int &clusterIdx);
+
     /**
      * @brief Helper function that returns the current number of clusters stored in the clusters member variable. Since
      *        the clusters are stored in a flattened array, the number of clusters is equal to the the size of the array
@@ -60,15 +68,6 @@ protected:
      * @return ClosestCluster - struct containing the cluster index of the closest cluster and the corresponding distance.
      */
     ClosestCluster findClosestCluster(const int &dataIdx, IDistanceFunctor *distanceFunc);
-
-    /**
-     * @brief Helper function that updates the clustering assignments and cluster weights given the index of the
-     *        datapoint whose clustering assignment has been changed and the index of the new cluster it is assigned to.
-     *
-     * @param dataIdx - The index of the datapoint whose clustering assignment needs to be updated.
-     * @param clusterIdx - The index of the cluster to which the datapoint is now assigned.
-     */
-    virtual void updateClustering(const int &dataIdx, const int &clusterIdx);
 };
 
 /**
@@ -93,6 +92,8 @@ public:
      * @param seed - The number to seed the RNG.
      */
     virtual void initialize(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc, const float &seed) = 0;
+
+    void appendCluster(const int &dataIdx);
 };
 
 /**
@@ -135,7 +136,6 @@ public:
      */
     ~AbstractOMPKmeansAlgorithm(){};
 
-protected:
     /**
      * @brief Atomic version of updateClustering for Kmeans algorithm classes who use OMP thread level parallelism.
      *
@@ -162,7 +162,6 @@ public:
 
     void setUp(BundledAlgorithmData *bundledData) override;
 
-protected:
     value_t calcDistance(const int &dataIdx, const int &clusterIdx, IDistanceFunctor *distanceFunc) override;
 
     /**
@@ -173,5 +172,78 @@ protected:
      */
     void updateClustering(const int &dataIdx, const int &clusterIdx) override;
 
+protected:
     void bcastClusterData();
+};
+
+class AbstractWeightedClusterSelection : public AbstractKmeansAlgorithm
+{
+protected:
+    // Member variables
+    AbstractKmeansInitializer *pAlg;
+
+public:
+    AbstractWeightedClusterSelection(AbstractKmeansInitializer *alg) : pAlg(alg){};
+    /**
+     * @brief Destroy the AbstractWeightedClusterSelection object
+     *
+     */
+    virtual ~AbstractWeightedClusterSelection(){};
+
+    virtual void weightedClusterSelection(std::vector<value_t> *distances, float &randSumFrac) = 0;
+};
+
+class WeightedClusterSelection : public AbstractWeightedClusterSelection
+{
+public:
+    WeightedClusterSelection(AbstractKmeansInitializer *alg) : AbstractWeightedClusterSelection(alg){};
+    ~WeightedClusterSelection(){};
+
+    void weightedClusterSelection(std::vector<value_t> *distances, float &randSumFrac) override;
+};
+
+class AbstractFindAndUpdate : public AbstractKmeansAlgorithm
+{
+protected:
+    AbstractKmeansAlgorithm *pAlg;
+
+public:
+    AbstractFindAndUpdate(AbstractKmeansAlgorithm *alg) : pAlg(alg){};
+    virtual ~AbstractFindAndUpdate(){};
+
+    virtual void findAndUpdateClosestCluster(const int &dataIdx, std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) = 0;
+};
+
+class FindAndUpdateClosestCluster : public AbstractFindAndUpdate
+{
+public:
+    FindAndUpdateClosestCluster(AbstractKmeansAlgorithm *alg) : AbstractFindAndUpdate(alg){};
+    ~FindAndUpdateClosestCluster(){};
+
+    void findAndUpdateClosestCluster(const int &dataIdx, std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
+};
+
+class OptFindAndUpdateClosestCluster : public AbstractFindAndUpdate
+{
+public:
+    OptFindAndUpdateClosestCluster(AbstractKmeansAlgorithm *alg) : AbstractFindAndUpdate(alg){};
+    ~OptFindAndUpdateClosestCluster(){};
+
+    void findAndUpdateClosestCluster(const int &dataIdx, std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
+};
+
+class AbstractUpdateClusters : public AbstractKmeansAlgorithm
+{
+public:
+    ~AbstractUpdateClusters(){};
+
+    virtual void updateClusters() = 0;
+};
+
+class UpdateClusters : public AbstractUpdateClusters
+{
+public:
+    ~UpdateClusters(){};
+
+    void updateClusters();
 };

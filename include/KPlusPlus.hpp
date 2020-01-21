@@ -1,23 +1,45 @@
 #pragma once
 
 #include "AbstractKmeansAlgorithms.hpp"
+#include <memory>
 
 /**
  * @brief Implementation of a Kmeans++ initialization aglorithm. Selects datapoints to be new clusters at random
  *        weighted by the square distance between the point and its nearest cluster. Thus farther points have a higher
  *        probability of being selected.
  */
-class KPlusPlus : public AbstractKmeansInitializer
+class TemplateKPlusPlus : public AbstractKmeansInitializer
 {
 protected:
-    /**
-     * @brief Helper method that initializes the first cluster to the datapoint whose index is randIdx, thus randIdx
-     *        should be an integer generated uniformly at random in the range of [0, numData).
-     *
-     * @param randIdx - The index of the datapoint to make as the first cluster, drawn at random.
-     */
-    virtual void initializeFirstCluster(int randIdx);
+    // Member variables
+    std::unique_ptr<AbstractWeightedClusterSelection> pSelector;
+    std::unique_ptr<AbstractFindAndUpdate> pFinder;
 
+public:
+    /**
+     * @brief Construct a new TemplateKPlusPlus object
+     *
+     * @param selector
+     * @param finder
+     */
+    TemplateKPlusPlus(AbstractWeightedClusterSelection *selector, AbstractFindAndUpdate *finder) : pSelector(selector), pFinder(finder){};
+
+    /**
+     * @brief Destroy the Serial KPlusPlus object
+     */
+    virtual ~TemplateKPlusPlus(){};
+
+    /**
+     * @brief Template function that initializes the clusters.
+     *
+     * @param distances - A pointer to a vector that stores the squared distances of each datapoint to its closest
+     *                    cluster.
+     * @param distanceFunc - The functor that defines the distance metric to use.
+     * @param seed - The seed for the RNG.
+     */
+    void initialize(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc, const float &seed) override;
+
+protected:
     /**
      * @brief Helper function that wraps the functionality of findClosestCluster() and updateClustering() in order to
      *        find the closest cluster for each datapoint and update the clustering assignments.
@@ -37,22 +59,13 @@ protected:
      * @param randFrac - A randomly generated float in the range of [0, 1) needed by weightedRandomSelection().
      */
     virtual void weightedClusterSelection(std::vector<value_t> *distances, float randFrac);
+};
 
+class KPlusPlus : public TemplateKPlusPlus
+{
 public:
-    /**
-     * @brief Destroy the Serial KPlusPlus object
-     */
+    KPlusPlus() : TemplateKPlusPlus(new WeightedClusterSelection(this), new FindAndUpdateClosestCluster(this)){};
     virtual ~KPlusPlus(){};
-
-    /**
-     * @brief Top level function that initializes the clusters.
-     *
-     * @param distances - A pointer to a vector that stores the squared distances of each datapoint to its closest
-     *                    cluster.
-     * @param distanceFunc - The functor that defines the distance metric to use.
-     * @param seed - The seed for the RNG.
-     */
-    virtual void initialize(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc, const float &seed) override;
 };
 
 /**
@@ -63,32 +76,33 @@ public:
  *        its closest cluster out of all existing clusters. Thus we need only to compare that distance to the distance
  *        between the datapoint and the newly added cluster and update if necessary.
  */
-class OptimizedKPlusPlus : public KPlusPlus
+class OptimizedKPlusPlus : public TemplateKPlusPlus
 {
-protected:
-    /**
-     * @brief Helper function that wraps the functionality of findClosestCluster() and updateClustering() in order to
-     *        find the closest cluster for each datapoint and update the clustering assignments.
-     *
-     * @param distances - A pointer to a vector that stores the squared distances of each datapoint to its closest
-     *                    cluster.
-     * @param distanceFunc - A functor that defines the distance metric.
-     */
-    void findAndUpdateClosestCluster(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
-
 public:
+    OptimizedKPlusPlus() : TemplateKPlusPlus(new WeightedClusterSelection(this), new OptFindAndUpdateClosestCluster(this)){};
+
     /**
      * @brief Destroy the OptimizedKPlusPlus object
      */
-    ~OptimizedKPlusPlus(){};
+    virtual ~OptimizedKPlusPlus(){};
 };
 
 /**
  * @brief Parallelized version of the KPlusPlus algorithm using OMP thread parallelism in findAndUpdateClosestCluster().
  *        To change the number of threads, use the environment variable OMP_NUM_THREADS.
  */
-class OMPKPlusPlus : public KPlusPlus, public AbstractOMPKmeansAlgorithm
+class OMPKPlusPlus : public TemplateKPlusPlus, public AbstractOMPKmeansAlgorithm
 {
+public:
+    OMPKPlusPlus() : TemplateKPlusPlus(new WeightedClusterSelection(this), new FindAndUpdateClosestCluster(this)){};
+    OMPKPlusPlus(AbstractWeightedClusterSelection *selector, AbstractFindAndUpdate *finder) : TemplateKPlusPlus(selector, finder){};
+
+    /**
+     * @brief Destroy the OMPKPlusPlus object
+     *
+     */
+    virtual ~OMPKPlusPlus(){};
+
 protected:
     /**
      * @brief Helper function that wraps the functionality of findClosestCluster() and updateClustering() in order to
@@ -99,13 +113,6 @@ protected:
      * @param distanceFunc - A functor that defines the distance metric.
      */
     void findAndUpdateClosestCluster(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
-
-public:
-    /**
-     * @brief Destroy the OMPKPlusPlus object
-     *
-     */
-    virtual ~OMPKPlusPlus(){};
 };
 
 /**
@@ -114,26 +121,21 @@ public:
  */
 class OMPOptimizedKPlusPlus : public OMPKPlusPlus
 {
-protected:
-    /**
-     * @brief Helper function that wraps the functionality of findClosestCluster() and updateClustering() in order to
-     *        find the closest cluster for each datapoint and update the clustering assignments.
-     *
-     * @param distances - A pointer to a vector that stores the squared distances of each datapoint to its closest
-     *                    cluster.
-     * @param distanceFunc - A functor that defines the distance metric.
-     */
-    void findAndUpdateClosestCluster(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
-
 public:
+    OMPOptimizedKPlusPlus() : OMPKPlusPlus(new WeightedClusterSelection(this), new OptFindAndUpdateClosestCluster(this)){};
+
     /**
      * @brief Destroy the OptimizedKPlusPlus object
      */
-    ~OMPOptimizedKPlusPlus(){};
+    virtual ~OMPOptimizedKPlusPlus(){};
 };
 
-class MPIKPlusPlus : public KPlusPlus, public AbstractMPIKmeansAlgorithm
+class MPIKPlusPlus : public TemplateKPlusPlus, public AbstractMPIKmeansAlgorithm
 {
+public:
+    MPIKPlusPlus() : TemplateKPlusPlus(new WeightedClusterSelection(this), new FindAndUpdateClosestCluster(this)){};
+    virtual ~MPIKPlusPlus(){};
+
 protected:
     /**
      * @brief Helper function that wraps the functionality of findClosestCluster() and updateClustering() in order to
@@ -154,8 +156,4 @@ protected:
      * @param randFrac - A randomly generated float in the range of [0, 1) needed by weightedRandomSelection().
      */
     void weightedClusterSelection(std::vector<value_t> *distances, float randFrac) override;
-    void initializeFirstCluster(int randIdx) override;
-
-public:
-    void initialize(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc, const float &seed) override;
 };

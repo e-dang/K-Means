@@ -1,6 +1,7 @@
 #include "Kmeans.hpp"
 #include "mpi.h"
 #include <ctime>
+#include <iostream>
 
 void Kmeans::fit(Matrix *matrix, int numClusters, int numRestarts)
 {
@@ -16,7 +17,7 @@ void Kmeans::fit(Matrix *matrix, int numClusters, int numRestarts, std::vector<v
 
     for (int i = 0; i < numRestarts; i++)
     {
-        std::vector<value_t> distances(matrix->numRows, -1);
+        std::vector<value_t> distances(matrix->numRows, 1);
         ClusterData clusterData(matrix->numRows, matrix->numCols, numClusters);
 
         initializer->setClusterData(&clusterData);
@@ -89,7 +90,7 @@ void MPIKmeans::fit(Matrix *matrix, int numClusters, int numRestarts, std::vecto
 
     for (int i = 0; i < numRestarts; i++)
     {
-        std::vector<value_t> distances(matrix->numRows, -1);
+        std::vector<value_t> distances(matrix->numRows, 1);
         ClusterData clusterData(matrix->numRows, matrix->numCols, numClusters);
 
         initializer->setClusterData(&clusterData);

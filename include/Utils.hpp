@@ -14,4 +14,4 @@
  * @param randomFrac - A random float used in the algorithm to perform the random selection, [0, 1).
  * @return int - The selected index.
  */
-int weightedRandomSelection(std::vector<value_t> *weights, float randomFrac);
+int weightedRandomSelection(std::vector<value_t> *weights, float &randomFrac);

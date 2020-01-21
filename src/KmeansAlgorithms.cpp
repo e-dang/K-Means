@@ -1,5 +1,6 @@
 #include "AbstractKmeansAlgorithms.hpp"
 #include "mpi.h"
+#include "Utils.hpp"
 
 inline int AbstractKmeansAlgorithm::getCurrentNumClusters()
 {
@@ -59,6 +60,11 @@ inline void AbstractKmeansAlgorithm::updateClustering(const int &dataIdx, const 
     }
 }
 
+void AbstractKmeansInitializer::appendCluster(const int &dataIdx)
+{
+    std::copy(pMatrix->at(dataIdx), pMatrix->at(dataIdx) + pMatrix->numCols, std::back_inserter(pClusters->data));
+}
+
 inline void AbstractOMPKmeansAlgorithm::updateClustering(const int &dataIdx, const int &clusterIdx)
 {
     int &clusterAssignment = pClustering->at(dataIdx);
@@ -111,5 +117,59 @@ void AbstractMPIKmeansAlgorithm::bcastClusterData()
 inline value_t AbstractMPIKmeansAlgorithm::calcDistance(const int &dataIdx, const int &clusterIdx,
                                                         IDistanceFunctor *distanceFunc)
 {
-    return (*distanceFunc)(&*pMatrixChunk->at(dataIdx), &*pClusters->at(clusterIdx), pClusters->numCols);
+    return (*distanceFunc)(&*pMatrixChunk->at(dataIdx - pDisplacements->at(mRank)), &*pClusters->at(clusterIdx), pClusters->numCols);
 }
+
+void WeightedClusterSelection::weightedClusterSelection(std::vector<value_t> *distances, float &randSumFrac)
+{
+    int randIdx = weightedRandomSelection(distances, randSumFrac);
+    pAlg->appendCluster(randIdx);
+    pAlg->updateClustering(randIdx, pAlg->getCurrentNumClusters() - 1);
+}
+
+void FindAndUpdateClosestCluster::findAndUpdateClosestCluster(const int &dataIdx, std::vector<value_t> *distances,
+                                                              IDistanceFunctor *distanceFunc)
+{
+    auto closestCluster = pAlg->findClosestCluster(dataIdx, distanceFunc);
+    pAlg->updateClustering(dataIdx, closestCluster.clusterIdx);
+    distances->at(dataIdx) = std::pow(closestCluster.distance, 2);
+}
+
+void OptFindAndUpdateClosestCluster::findAndUpdateClosestCluster(const int &dataIdx, std::vector<value_t> *distances,
+                                                                 IDistanceFunctor *distanceFunc)
+{
+    int clusterIdx = pAlg->getCurrentNumClusters() - 1;
+    value_t newDist = pAlg->calcDistance(dataIdx, clusterIdx, distanceFunc);
+    if (newDist < distances->at(dataIdx) || distances->at(dataIdx) < 0)
+    {
+        pAlg->updateClustering(dataIdx, clusterIdx);
+        distances->at(dataIdx) = std::pow(newDist, 2);
+    }
+}
+
+// void UpdateClusters::updateClusters()
+// {
+//     // reinitialize clusters
+//     std::fill(clusters->data.begin(), clusters->data.end(), 0);
+
+//     // calc the weighted sum of each feature for all points belonging to a cluster
+//     int numFeatures = getNumFeatures();
+//     for (int i = 0, numData = getNumData(); i < numData; i++)
+//     {
+//         int clusterIdx = getClusteringAt(i);
+//         value_t weight = getWeightsAt(i);
+//         for (int j = 0; j < numFeatures; j++)
+//         {
+//             clusters->at(clusterIdx, j) += weight * getDataValAt(i, j);
+//         }
+//     }
+
+//     // average out the weighted sum of each cluster based on the number of datapoints assigned to it
+//     for (int i = 0; i < clusters->numRows; i++)
+//     {
+//         for (int j = 0; j < numFeatures; j++)
+//         {
+//             clusters->data.at(i * numFeatures + j) /= clusterWeights->at(i);
+//         }
+//     }
+// }
