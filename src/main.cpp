@@ -30,22 +30,24 @@ int main(int argc, char *argv[])
     // KPlusPlus kplusplus;
     // OptimizedKPlusPlus kplusplus;
     // OMPKPlusPlus kplusplus;
-    OMPOptimizedKPlusPlus kplusplus;
+    // OMPOptimizedKPlusPlus kplusplus;
     // MPIKPlusPlus kplusplus;
+    MPIOptimizedKPlusPlus kplusplus;
     // Lloyd lloyd;
     // OptimizedLloyd lloyd;
     // OMPLloyd lloyd;
-    OMPOptimizedLloyd lloyd;
+    // OMPOptimizedLloyd lloyd;
     // MPILloyd lloyd;
+    MPIOptimizedLloyd lloyd;
     EuclideanDistance distanceFunc;
-    Kmeans kmeans(&kplusplus, &lloyd, &distanceFunc);
-    // MPIKmeans kmeans(&kplusplus, &lloyd, &distanceFunc);
-
+    // Kmeans kmeans(&kplusplus, &lloyd, &distanceFunc);
+    MPIKmeans kmeans(&kplusplus, &lloyd, &distanceFunc);
+    // int rank = 0;
     MPI_Init(&argc, &argv);
     int rank, numProcs;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
-
+    // std::cout << matrix.data.size() << " " << rank << std::endl;
     auto start = std::chrono::high_resolution_clock::now();
     kmeans.fit(&matrix, numClusters, numRestarts);
     auto stop = std::chrono::high_resolution_clock::now();
