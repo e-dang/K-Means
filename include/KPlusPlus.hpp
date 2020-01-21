@@ -158,6 +158,4 @@ protected:
 
 public:
     void initialize(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc, const float &seed) override;
-
-    void setUp(BundledAlgorithmData *bundledData) override;
 };

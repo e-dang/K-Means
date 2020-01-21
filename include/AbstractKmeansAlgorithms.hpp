@@ -2,7 +2,6 @@
 
 #include "Definitions.hpp"
 #include "DistanceFunctors.hpp"
-#include "mpi.h"
 
 /**
  * @brief Abstract class that all Kmeans algorithms, such as initializers and maximizers will derive from. This class
@@ -12,35 +11,17 @@ class AbstractKmeansAlgorithm
 {
 protected:
     // Member variables
-    Matrix *matrix;
-    Matrix *clusters;
-    std::vector<int> *clustering;
-    std::vector<value_t> *clusterWeights;
-    std::vector<value_t> *weights;
-
-    friend class AbstractOMPKmeansAlgorithm;
-    friend class AbstractMPIKmeansAlgorithm;
+    Matrix *pMatrix;
+    Matrix *pClusters;
+    std::vector<int> *pClustering;
+    std::vector<value_t> *pClusterWeights;
+    std::vector<value_t> *pWeights;
 
 public:
     /**
      * @brief Destroy the AbstractKmeansAlgorithm object
      */
     virtual ~AbstractKmeansAlgorithm(){};
-
-    // /**
-    //  * @brief Function that calls protected member functions setMatrix(), setClusterData(), and setWeights() with
-    //  *        the given arguments, in order to initialize protected member variables.
-    //  *
-    //  * @param matrix - The data to be clustered.
-    //  * @param clusterData - The struct where the clustering data is going to be stored for a given run.
-    //  * @param weights - The weights for individual datapoints.
-    //  */
-    // virtual void setUp(Matrix *matrix, ClusterData *clusterData, std::vector<value_t> *weights)
-    // {
-    //     setMatrix(matrix);
-    //     setClusterData(clusterData);
-    //     setWeights(weights);
-    // }
 
     /**
      * @brief Function that calls protected member functions setMatrix(), setClusterData(), and setWeights() with
@@ -50,23 +31,14 @@ public:
      * @param clusterData - The struct where the clustering data is going to be stored for a given run.
      * @param weights - The weights for individual datapoints.
      */
-    virtual void setUp(BundledAlgorithmData *bundledData)
-    {
-        this->matrix = bundledData->matrix;
-        this->weights = bundledData->weights;
-    }
+    virtual void setUp(BundledAlgorithmData *bundledData);
 
     /**
      * @brief Set the clusters, clustering, and clusterWeights member variables using an instance of ClusterData.
      *
      * @param clusterData - A pointer to an instance of clusterData, where the clustering results will be stored.
      */
-    void setClusterData(ClusterData *clusterData)
-    {
-        clustering = &clusterData->clustering;
-        clusters = &clusterData->clusters;
-        clusterWeights = &clusterData->clusterWeights;
-    }
+    void setClusterData(ClusterData *clusterData);
 
 protected:
     /**
@@ -76,7 +48,9 @@ protected:
      *
      * @return int - The current number of clusters.
      */
-    int getCurrentNumClusters() { return clusters->data.size() / clusters->numCols; }
+    int getCurrentNumClusters();
+
+    virtual value_t calcDistance(const int &dataIdx, const int &clusterIdx, IDistanceFunctor *distanceFunc);
 
     /**
      * @brief Helper function that find the closest cluster and corresponding distance for a given datapoint.
@@ -85,50 +59,7 @@ protected:
      * @param distanceFunc - A functor that defines the distance metric.
      * @return ClosestCluster - struct containing the cluster index of the closest cluster and the corresponding distance.
      */
-    ClosestCluster findClosestCluster(const int &dataIdx, IDistanceFunctor *distanceFunc)
-    {
-        int clusterIdx, numExistingClusters = getCurrentNumClusters();
-        value_t tempDistance, minDistance = -1;
-
-        for (int i = 0; i < numExistingClusters; i++)
-        {
-            tempDistance = (*distanceFunc)(&*matrix->at(dataIdx), &*clusters->at(i), clusters->numCols);
-
-            if (minDistance > tempDistance || minDistance < 0)
-            {
-                minDistance = tempDistance;
-                clusterIdx = i;
-            }
-        }
-
-        return ClosestCluster{clusterIdx, minDistance};
-    }
-
-    /**
-     * @brief Helper function that find the closest cluster and corresponding distance for a given datapoint.
-     *
-     * @param dataIdx - A the index of the datapoint that the function will find the closest cluster to.
-     * @param distanceFunc - A functor that defines the distance metric.
-     * @return ClosestCluster - struct containing the cluster index of the closest cluster and the corresponding distance.
-     */
-    ClosestCluster findClosestCluster(value_t *datapoint, IDistanceFunctor *distanceFunc)
-    {
-        int clusterIdx, numExistingClusters = getCurrentNumClusters();
-        value_t tempDistance, minDistance = -1;
-
-        for (int i = 0; i < numExistingClusters; i++)
-        {
-            tempDistance = (*distanceFunc)(datapoint, &*clusters->at(i), clusters->numCols);
-
-            if (minDistance > tempDistance || minDistance < 0)
-            {
-                minDistance = tempDistance;
-                clusterIdx = i;
-            }
-        }
-
-        return ClosestCluster{clusterIdx, minDistance};
-    }
+    ClosestCluster findClosestCluster(const int &dataIdx, IDistanceFunctor *distanceFunc);
 
     /**
      * @brief Helper function that updates the clustering assignments and cluster weights given the index of the
@@ -137,27 +68,14 @@ protected:
      * @param dataIdx - The index of the datapoint whose clustering assignment needs to be updated.
      * @param clusterIdx - The index of the cluster to which the datapoint is now assigned.
      */
-    inline void updateClustering(const int &dataIdx, const int &clusterIdx)
-    {
-        int &clusterAssignment = clustering->at(dataIdx);
-
-        // only go through this update if the cluster assignment is going to change
-        if (clusterAssignment != clusterIdx)
-        {
-            // cluster assignments are initialized to -1, so ignore decrement if datapoint has yet to be assigned
-            if (clusterAssignment >= 0 && clusterWeights->at(clusterAssignment) > 0)
-                clusterWeights->at(clusterAssignment) -= weights->at(dataIdx);
-            clusterWeights->at(clusterIdx) += weights->at(dataIdx);
-            clusterAssignment = clusterIdx;
-        }
-    }
+    virtual void updateClustering(const int &dataIdx, const int &clusterIdx);
 };
 
 /**
  * @brief Abstract class that defines the interface for Kmeans initialization algorithms, such as K++ or random
  *        initialization.
  */
-class AbstractKmeansInitializer : public AbstractKmeansAlgorithm
+class AbstractKmeansInitializer : public virtual AbstractKmeansAlgorithm
 {
 public:
     /**
@@ -180,7 +98,7 @@ public:
 /**
  * @brief Abstract class that defines the interface for Kmeans maximization algorithms, such as Lloyd's algorithm.
  */
-class AbstractKmeansMaximizer : public AbstractKmeansAlgorithm
+class AbstractKmeansMaximizer : public virtual AbstractKmeansAlgorithm
 {
 protected:
     // Constants
@@ -208,85 +126,52 @@ public:
  * @brief An abstract class that should also be inherited along with AbstractKmeansAlgorithm for classes that use OMP
  *        thread level parallelism. This class offers an atomic version of functions that have race conditions.
  */
-class AbstractOMPKmeansAlgorithm
+class AbstractOMPKmeansAlgorithm : public virtual AbstractKmeansAlgorithm
 {
-protected:
-    /**
-     * @brief Atomic version of updateClustering for Kmeans algorithm classes who use OMP thread level parallelism.
-     *
-     * @param alg - An pointer to an instance of AbstractKmeansAlgorithm that uses OMP thread level parallelism.
-     * @param dataIdx - The index of the datapoint whose clustering assignment needs to be updated.
-     * @param clusterIdx - The index of the cluster to which the datapoint is now assigned.
-     */
-    void atomicUpdateClustering(AbstractKmeansAlgorithm *alg, const int &dataIdx, const int &clusterIdx)
-    {
-        int &clusterAssignment = alg->clustering->at(dataIdx);
-
-        // only go through this update if the cluster assignment is going to change
-        if (clusterAssignment != clusterIdx)
-        {
-            // cluster assignments are initialized to -1, so ignore decrement if datapoint has yet to be assigned
-            if (clusterAssignment >= 0 && alg->clusterWeights->at(clusterAssignment) > 0)
-#pragma omp atomic
-                alg->clusterWeights->at(clusterAssignment) -= alg->weights->at(dataIdx);
-#pragma omp atomic
-            alg->clusterWeights->at(clusterIdx) += alg->weights->at(dataIdx);
-            clusterAssignment = clusterIdx;
-        }
-    }
-
 public:
     /**
      * @brief Destroy the AbstractOMPKmeansAlgorithm object.
      *
      */
     ~AbstractOMPKmeansAlgorithm(){};
+
+protected:
+    /**
+     * @brief Atomic version of updateClustering for Kmeans algorithm classes who use OMP thread level parallelism.
+     *
+     * @param dataIdx - The index of the datapoint whose clustering assignment needs to be updated.
+     * @param clusterIdx - The index of the cluster to which the datapoint is now assigned.
+     */
+    void updateClustering(const int &dataIdx, const int &clusterIdx) override;
 };
 
-class AbstractMPIKmeansAlgorithm
+class AbstractMPIKmeansAlgorithm : public virtual AbstractKmeansAlgorithm
 {
 protected:
     // Member variables
-    int rank;
-    Matrix *matrixChunk;
-    std::vector<int> *lengths;
-    std::vector<int> *displacements;
+    int mRank;
+    Matrix *pMatrixChunk;
+    std::vector<int> *pLengths;
+    std::vector<int> *pDisplacements;
+
+public:
+    /**
+     * @brief Destroy the AbstractMPIKmeansAlgorithm object
+     */
+    virtual ~AbstractMPIKmeansAlgorithm(){};
+
+    void setUp(BundledAlgorithmData *bundledData) override;
+
+protected:
+    value_t calcDistance(const int &dataIdx, const int &clusterIdx, IDistanceFunctor *distanceFunc) override;
 
     /**
      * @brief MPI version of updateClustering for Kmeans algorithm classes who use MPI process level parallelism.
      *
-     * @param alg - An pointer to an instance of AbstractKmeansAlgorithm that uses MPI process level parallelism.
      * @param dataIdx - The index of the datapoint whose clustering assignment needs to be updated.
      * @param clusterIdx - The index of the cluster to which the datapoint is now assigned.
      */
-    void updateClustering(AbstractKmeansAlgorithm *alg, const int &dataIdx, const int &clusterIdx)
-    {
-        int &clusterAssignment = alg->clustering->at(dataIdx);
+    void updateClustering(const int &dataIdx, const int &clusterIdx) override;
 
-        // only go through this update if the cluster assignment is going to change
-        if (clusterAssignment != clusterIdx)
-        {
-            // cluster assignments are initialized to -1, so ignore decrement if datapoint has yet to be assigned
-            if (clusterAssignment >= 0)
-                alg->clusterWeights->at(clusterAssignment) -= alg->weights->at(dataIdx);
-            alg->clusterWeights->at(clusterIdx) += alg->weights->at(dataIdx);
-            clusterAssignment = clusterIdx;
-        }
-    }
-
-    void setUp(AbstractKmeansAlgorithm *alg, BundledMPIAlgorithmData *bundledData)
-    {
-        alg->matrix = bundledData->matrix;
-        alg->weights = bundledData->weights;
-        this->rank = bundledData->dataChunks->rank;
-        this->matrixChunk = &bundledData->dataChunks->matrixChunk;
-        this->lengths = &bundledData->dataChunks->lengths;
-        this->displacements = &bundledData->dataChunks->displacements;
-    }
-
-    void bcastClusterData(AbstractKmeansAlgorithm *alg)
-    {
-        MPI_Bcast(alg->clustering->data(), alg->clustering->size(), MPI_INT, 0, MPI_COMM_WORLD);
-        MPI_Bcast(alg->clusters->data.data(), alg->clusters->data.size(), MPI_FLOAT, 0, MPI_COMM_WORLD);
-    }
+    void bcastClusterData();
 };
