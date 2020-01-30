@@ -70,24 +70,26 @@ public:
     virtual ~KPlusPlus(){};
 };
 
-// /**
-//  * @brief Optimized version of KPlusPlus that only differs in the implementation of findAndUpdateClosestCluster(). The
-//  *        optimization made to the K++ algorithm is noticing that you don't need to recalculate the distances between
-//  *        each point and each cluster each time a cluster is added. Rather you can calculate the distance between each
-//  *        point and the newly added cluster each iteration because up until then the datapoint is already assigned to
-//  *        its closest cluster out of all existing clusters. Thus we need only to compare that distance to the distance
-//  *        between the datapoint and the newly added cluster and update if necessary.
-//  */
-// class OptimizedKPlusPlus : public TemplateKPlusPlus
-// {
-// public:
-//     OptimizedKPlusPlus() : TemplateKPlusPlus(new WeightedClusterSelection(this), new OptFindAndUpdateClosestCluster(this)){};
+/**
+ * @brief Optimized version of KPlusPlus that only differs in the implementation of findAndUpdateClosestCluster(). The
+ *        optimization made to the K++ algorithm is noticing that you don't need to recalculate the distances between
+ *        each point and each cluster each time a cluster is added. Rather you can calculate the distance between each
+ *        point and the newly added cluster each iteration because up until then the datapoint is already assigned to
+ *        its closest cluster out of all existing clusters. Thus we need only to compare that distance to the distance
+ *        between the datapoint and the newly added cluster and update if necessary.
+ */
+class OptimizedKPlusPlus : public TemplateKPlusPlus
+{
+public:
+    OptimizedKPlusPlus() : TemplateKPlusPlus(new SingleWeightedRandomSelector(),
+                                             new ClosestNewClusterFinder(&pClusters),
+                                             new ClusteringUpdater(&pClustering, &pClusterWeights)){};
 
-//     /**
-//      * @brief Destroy the OptimizedKPlusPlus object
-//      */
-//     virtual ~OptimizedKPlusPlus(){};
-// };
+    /**
+     * @brief Destroy the OptimizedKPlusPlus object
+     */
+    virtual ~OptimizedKPlusPlus(){};
+};
 
 /**
  * @brief Parallelized version of the KPlusPlus algorithm using OMP thread parallelism in findAndUpdateClosestCluster().
