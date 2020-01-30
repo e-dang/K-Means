@@ -26,7 +26,10 @@ public:
      * @param selector
      * @param finder
      */
-    TemplateKPlusPlus(AbstractWeightedRandomSelector *selector) : pSelector(selector){};
+    TemplateKPlusPlus(AbstractWeightedRandomSelector *selector, AbstractClosestClusterFinder *finder,
+                      AbstractClusteringUpdater *updater) : pSelector(selector),
+                                                            pFinder(finder),
+                                                            pUpdater(updater){};
 
     /**
      * @brief Destroy the Serial KPlusPlus object
@@ -68,7 +71,8 @@ protected:
 class KPlusPlus : public TemplateKPlusPlus
 {
 public:
-    KPlusPlus() : TemplateKPlusPlus(new SingleWeightedRandomSelector()){};
+    KPlusPlus() : TemplateKPlusPlus(new SingleWeightedRandomSelector(), new ClosestClusterFinder(pClusters),
+                                    new ClusteringUpdater(pClustering, pClusterWeights)){};
     virtual ~KPlusPlus(){};
 };
 
@@ -98,7 +102,8 @@ public:
 class OMPKPlusPlus : public TemplateKPlusPlus
 {
 public:
-    OMPKPlusPlus() : TemplateKPlusPlus(new SingleWeightedRandomSelector()){};
+    OMPKPlusPlus() : TemplateKPlusPlus(new SingleWeightedRandomSelector(), new ClosestClusterFinder(pClusters),
+                                       new ClusteringUpdater(pClustering, pClusterWeights)){};
     // OMPKPlusPlus(AbstractWeightedClusterSelection *selector, AbstractFindAndUpdate *finder) : TemplateKPlusPlus(selector, finder){};
 
     /**
