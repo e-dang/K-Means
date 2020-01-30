@@ -91,10 +91,7 @@ int OMPLloyd::reassignPoints()
     {
         int before = pClustering->at(i);
 
-        // find closest cluster for each datapoint and update cluster assignment
-        auto closestCluster = pFinder->findClosestCluster(pData->at(i), pDistanceFunc);
-        pUpdater->update(i, closestCluster.clusterIdx, pWeights->at(i));
-        pDistances->at(i) = closestCluster.distance;
+        findAndUpdateClosestCluster(i);
 
         // check if cluster assignments have changed
         if (before != pClustering->at(i))
@@ -106,37 +103,37 @@ int OMPLloyd::reassignPoints()
     return changed;
 }
 
-// int OMPOptimizedLloyd::reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc)
-// {
-//     int changed = 0;
+int OMPOptimizedLloyd::reassignPoints()
+{
+    int changed = 0;
 
-// #pragma omp parallel for shared(distances, distanceFunc), schedule(static), reduction(+ \
-//                                                                                       : changed)
-//     for (int i = 0; i < pData->numRows; i++)
-//     {
-//         // check distance to previously closest cluster, if it increased then recalculate distances to all clusters
-//         value_t dist = std::pow(calcDistance(i, pClustering->at(i), distanceFunc), 2);
-//         if (dist > distances->at(i) || distances->at(i) < 0)
-//         {
-//             int before = pClustering->at(i);
+#pragma omp parallel for schedule(static), reduction(+ \
+                                                     : changed)
+    for (int i = 0; i < pData->getMaxNumData(); i++)
+    {
+        // check distance to previously closest cluster, if it increased then recalculate distances to all clusters
+        value_t dist = std::pow((*pDistanceFunc)(pData->at(i), pClusters->at(i), pData->getNumFeatures()), 2);
+        if (dist > pDistances->at(i) || pDistances->at(i) < 0)
+        {
+            int before = pClustering->at(i);
 
-//             // find closest cluster for each datapoint and update cluster assignment
-//             pFinder->findAndUpdateClosestCluster(i, distances, distanceFunc);
+            // find closest cluster for each datapoint and update cluster assignment
+            findAndUpdateClosestCluster(i);
 
-//             // check if cluster assignments have changed
-//             if (before != pClustering->at(i))
-//             {
-//                 changed++;
-//             }
-//         }
-//         else // distance is smaller, thus update the distances vector
-//         {
-//             distances->at(i) = dist;
-//         }
-//     }
+            // check if cluster assignments have changed
+            if (before != pClustering->at(i))
+            {
+                changed++;
+            }
+        }
+        else // distance is smaller, thus update the distances vector
+        {
+            pDistances->at(i) = dist;
+        }
+    }
 
-//     return changed;
-// }
+    return changed;
+}
 
 // void MPILloyd::calcClusterSums()
 // {

@@ -99,7 +99,7 @@ class OMPKPlusPlus : public TemplateKPlusPlus
 {
 public:
     OMPKPlusPlus() : TemplateKPlusPlus(new SingleWeightedRandomSelector(), new ClosestClusterFinder(&pClusters),
-                                       new ClusteringUpdater(&pClustering, &pClusterWeights)){};
+                                       new AtomicClusteringUpdater(&pClustering, &pClusterWeights)){};
     // OMPKPlusPlus(AbstractWeightedClusterSelection *selector, AbstractFindAndUpdate *finder) : TemplateKPlusPlus(selector, finder){};
 
     /**
@@ -120,20 +120,22 @@ protected:
     void findAndUpdateClosestClusters() override;
 };
 
-// /**
-//  * @brief Parallelized version of the OptimizedKPlusPlus algorithm using OMP thread parallelism in
-//  *        findAndUpdateClosestCluster(). To change the number of threads, use the environment variable OMP_NUM_THREADS.
-//  */
-// class OMPOptimizedKPlusPlus : public OMPKPlusPlus
-// {
-// public:
-//     OMPOptimizedKPlusPlus() : OMPKPlusPlus(new WeightedClusterSelection(this), new OptFindAndUpdateClosestCluster(this)){};
+/**
+ * @brief Parallelized version of the OptimizedKPlusPlus algorithm using OMP thread parallelism in
+ *        findAndUpdateClosestCluster(). To change the number of threads, use the environment variable OMP_NUM_THREADS.
+ */
+class OMPOptimizedKPlusPlus : public TemplateKPlusPlus
+{
+public:
+    OMPOptimizedKPlusPlus() : TemplateKPlusPlus(new SingleWeightedRandomSelector(),
+                                                new ClosestNewClusterFinder(&pClusters),
+                                                new AtomicClusteringUpdater(&pClustering, &pClusterWeights)){};
 
-//     /**
-//      * @brief Destroy the OptimizedKPlusPlus object
-//      */
-//     virtual ~OMPOptimizedKPlusPlus(){};
-// };
+    /**
+     * @brief Destroy the OptimizedKPlusPlus object
+     */
+    virtual ~OMPOptimizedKPlusPlus(){};
+};
 
 // class MPIKPlusPlus : public TemplateKPlusPlus
 // {
