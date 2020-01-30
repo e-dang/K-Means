@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Definitions.hpp"
+#include "DataClasses.hpp"
 #include "AbstractKmeansAlgorithms.hpp"
 #include "DistanceFunctors.hpp"
 #include <numeric>
@@ -116,5 +117,16 @@ protected:
             error = currError;
             finalClusterData = *clusterData;
         }
+    }
+
+    virtual StaticData initStaticData(Matrix *data, std::vector<value_t> *weights)
+    {
+        return StaticData{data,
+                          weights,
+                          distanceFunc,
+                          0,
+                          data->getMaxNumData(),
+                          std::vector<int>(1, data->getMaxNumData()),
+                          std::vector<int>(1, 0)};
     }
 };
