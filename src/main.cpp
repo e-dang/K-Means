@@ -25,28 +25,28 @@ int main(int argc, char *argv[])
     VectorReader reader;
     std::string inFile = "../data/test_" + std::to_string(numData) + "_" + std::to_string(numFeatures) + ".txt";
     reader.read(inFile, numData, numFeatures);
-    Matrix matrix = {reader.getData(), numData, numFeatures};
+    Matrix matrix(reader.getData(), numData, numFeatures);
 
     // KPlusPlus kplusplus;
     // OptimizedKPlusPlus kplusplus;
     // OMPKPlusPlus kplusplus;
-    // OMPOptimizedKPlusPlus kplusplus;
+    OMPOptimizedKPlusPlus kplusplus;
     // MPIKPlusPlus kplusplus;
-    MPIOptimizedKPlusPlus kplusplus;
+    // MPIOptimizedKPlusPlus kplusplus;
     // Lloyd lloyd;
     // OptimizedLloyd lloyd;
     // OMPLloyd lloyd;
-    // OMPOptimizedLloyd lloyd;
+    OMPOptimizedLloyd lloyd;
     // MPILloyd lloyd;
-    MPIOptimizedLloyd lloyd;
+    // MPIOptimizedLloyd lloyd;
     EuclideanDistance distanceFunc;
-    // Kmeans kmeans(&kplusplus, &lloyd, &distanceFunc);
-    MPIKmeans kmeans(&kplusplus, &lloyd, &distanceFunc);
-    // int rank = 0;
-    MPI_Init(&argc, &argv);
-    int rank, numProcs;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+    Kmeans kmeans(&kplusplus, &lloyd, &distanceFunc);
+    // MPIKmeans kmeans(&kplusplus, &lloyd, &distanceFunc);
+    int rank = 0;
+    // MPI_Init(&argc, &argv);
+    // int rank, numProcs;
+    // MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    // MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
     // std::cout << matrix.data.size() << " " << rank << std::endl;
     auto start = std::chrono::high_resolution_clock::now();
     kmeans.fit(&matrix, numClusters, numRestarts);
@@ -72,10 +72,7 @@ int main(int argc, char *argv[])
         std::cout << std::endl
                   << std::endl;
         std::cout << "Clusters" << std::endl;
-        for (auto &val : clusterdata.clusters.data)
-        {
-            std::cout << val << " ";
-        }
+        clusterdata.mClusters.display();
     }
-    MPI_Finalize();
+    // MPI_Finalize();
 }
