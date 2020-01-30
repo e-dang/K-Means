@@ -42,7 +42,7 @@ void TemplateKPlusPlus::weightedClusterSelection(float randFrac)
 
 void TemplateKPlusPlus::findAndUpdateClosestCluster()
 {
-    for (int i = 0; i < pData->getNumData(); i++)
+    for (int i = 0; i < pData->getMaxNumData(); i++)
     {
         auto closestCluster = pFinder->findClosestCluster(pData->at(i), pDistanceFunc);
         pUpdater->update(i, closestCluster.clusterIdx, pWeights->at(i));
@@ -53,7 +53,7 @@ void TemplateKPlusPlus::findAndUpdateClosestCluster()
 void OMPKPlusPlus::findAndUpdateClosestCluster()
 {
 #pragma omp parallel for schedule(static)
-    for (int i = 0; i < pData->getNumData(); i++)
+    for (int i = 0; i < pData->getMaxNumData(); i++)
     {
         auto closestCluster = pFinder->findClosestCluster(pData->at(i), pDistanceFunc);
         pUpdater->update(i, closestCluster.clusterIdx, pWeights->at(i));
