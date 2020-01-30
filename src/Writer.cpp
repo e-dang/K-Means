@@ -87,7 +87,7 @@ void ClusterDataWriter::writeClusters(std::string filepath)
         throw std::runtime_error("Unable to open specified file");
     }
 
-    file.write(reinterpret_cast<char *>(clusterData.clusters.data.data()), sizeof(value_t) * clusterData.clusters.numRows * numFeatures);
+    file.write(reinterpret_cast<char *>(clusterData.mClusters.data()), sizeof(value_t) * clusterData.mClusters.getNumData() * numFeatures);
 }
 
 void ClusterDataWriter::writeClustering(std::string filepath)
@@ -98,5 +98,5 @@ void ClusterDataWriter::writeClustering(std::string filepath)
         throw std::runtime_error("Unable to open specified file");
     }
 
-    file.write(reinterpret_cast<char *>(clusterData.clustering.data()), sizeof(int) * numData);
+    file.write(reinterpret_cast<char *>(clusterData.mClustering.data()), sizeof(int) * numData);
 }

@@ -2,6 +2,7 @@
 
 #include <string>
 #include "Definitions.hpp"
+#include "DataClasses.hpp"
 
 class IReader
 {
