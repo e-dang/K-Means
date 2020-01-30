@@ -49,8 +49,8 @@ public:
 
 class MPIKmeans : public AbstractKmeans
 {
-protected:
-    MPIDataChunks initMPIMembers(Matrix *matrix, std::vector<value_t> *weights);
+private:
+    int mTotalNumData;
 
 public:
     /**
@@ -61,8 +61,9 @@ public:
      * @param distanceFunc - A pointer to a functor class used to calculate the distance between points, such as the
      *                       euclidean distance.
      */
-    MPIKmeans(AbstractKmeansInitializer *initializer, AbstractKmeansMaximizer *maximizer,
-              IDistanceFunctor *distanceFunc) : AbstractKmeans(initializer, maximizer, distanceFunc) {}
+    MPIKmeans(const int &totalNumData, AbstractKmeansInitializer *initializer, AbstractKmeansMaximizer *maximizer,
+              IDistanceFunctor *distanceFunc) : mTotalNumData(totalNumData),
+                                                AbstractKmeans(initializer, maximizer, distanceFunc) {}
 
     /**
      * @brief Destroy the MPIKmeans object.
@@ -90,4 +91,7 @@ public:
      * @param weights - The weights corresponding to each datapoint. Defaults to NULL.
      */
     void fit(Matrix *matrix, int numClusters, int numRestarts, std::vector<value_t> *weights) override;
+
+protected:
+    StaticData initStaticData(Matrix *data, std::vector<value_t> *weights) override;
 };
