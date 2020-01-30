@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Definitions.hpp"
+#include "DistanceFunctors.hpp"
+#include <iostream>
 #include <vector>
 
 /**
@@ -20,6 +22,18 @@ public:
 
     Matrix(const int &numRows, const int &numCols)
     {
+        mData.reserve(numRows * numCols);
+        mNumRows = numRows;
+        mNumCols = numCols;
+    }
+
+    Matrix(std::vector<value_t> data, const int &numRows, const int &numCols)
+    {
+        if (data.size() > numRows * numCols)
+        {
+            throw std::runtime_error("The vector has more data than was specified.");
+        }
+        mData = data;
         mData.reserve(numRows * numCols);
         mNumRows = numRows;
         mNumCols = numCols;
@@ -55,16 +69,24 @@ public:
         return *(this->at(row) + col);
     }
 
-    bool appendDataPoint(value_t *datapoint)
+    void appendDataPoint(value_t *datapoint)
     {
         if (getNumData() < mNumRows)
         {
             std::copy(datapoint, datapoint + mNumCols, std::back_inserter(mData));
-            return true;
         }
-
-        return false;
+        else
+        {
+            throw std::overflow_error("Cannot append to full matrix");
+        }
     }
+
+    void fill(const int val)
+    {
+        std::fill(mData.begin(), mData.end(), val);
+    }
+
+    value_t *data() { return mData.data(); }
 
     int getNumData() { return mData.size() / mNumCols; }
     int getMaxNumData() { return mNumRows; }
@@ -75,6 +97,15 @@ public:
         mData = std::move(lhs.mData);
         mNumRows = lhs.mNumRows;
         mNumCols = lhs.mNumCols;
+    }
+
+    void display()
+    {
+        for (auto &val : mData)
+        {
+            std::cout << val << " ";
+        }
+        std::cout << std::endl;
     }
 };
 
