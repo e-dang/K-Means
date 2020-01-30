@@ -102,8 +102,11 @@ protected:
     void findAndUpdateClosestCluster(const int &dataIdx)
     {
         auto closestCluster = pFinder->findClosestCluster(pData->at(dataIdx), pDistanceFunc);
-        pUpdater->update(dataIdx, closestCluster.clusterIdx, pWeights->at(dataIdx));
-        pDistances->at(dataIdx) = std::pow(closestCluster.distance, 2);
+        if (pDistances->at(dataIdx) > closestCluster.distance || pDistances->at(dataIdx) < 0)
+        {
+            pUpdater->update(dataIdx, closestCluster.clusterIdx, pWeights->at(dataIdx));
+            pDistances->at(dataIdx) = closestCluster.distance;
+        }
     }
 };
 
