@@ -1,6 +1,6 @@
-#include "Utils.hpp"
+#include "RandomSelector.hpp"
 
-int weightedRandomSelection(std::vector<value_t> *weights, float &randomSumFrac)
+int SingleWeightedRandomSelector::select(std::vector<value_t> *weights, value_t randomSumFrac)
 {
     int maxIdx = weights->size();
 
