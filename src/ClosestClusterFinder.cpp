@@ -16,18 +16,24 @@ ClosestCluster ClosestClusterFinder::findClosestCluster(value_t *datapoint, IDis
         }
     }
 
-    return ClosestCluster{clusterIdx, minDistance};
+    return ClosestCluster{clusterIdx, std::pow(minDistance, 2)};
 }
 
 ClosestCluster ClosestNewClusterFinder::findClosestCluster(value_t *datapoint, IDistanceFunctor *distanceFunc)
 {
-    static int prevNumClusters = 0;
+    static int prevNumClusters, intermediate;
     int clusterIdx, numExistingClusters = (*ppClusters)->getNumData();
-    value_t tempDistance, minDistance = -1;
+    value_t minDistance = -1;
+
+    if (numExistingClusters == 1)
+    {
+        prevNumClusters = 0;
+        intermediate = 1;
+    }
 
     for (int i = prevNumClusters; i < numExistingClusters; i++)
     {
-        tempDistance = (*distanceFunc)(datapoint, (*ppClusters)->at(i), (*ppClusters)->getNumFeatures());
+        value_t tempDistance = (*distanceFunc)(datapoint, (*ppClusters)->at(i), (*ppClusters)->getNumFeatures());
 
         if (minDistance > tempDistance || minDistance < 0)
         {
@@ -36,7 +42,11 @@ ClosestCluster ClosestNewClusterFinder::findClosestCluster(value_t *datapoint, I
         }
     }
 
-    prevNumClusters = numExistingClusters;
+    if (intermediate != numExistingClusters)
+    {
+        prevNumClusters = intermediate;
+        intermediate = numExistingClusters;
+    }
 
-    return ClosestCluster{clusterIdx, minDistance};
+    return ClosestCluster{clusterIdx, std::pow(minDistance, 2)};
 }
