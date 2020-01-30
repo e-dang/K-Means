@@ -55,7 +55,19 @@ public:
         return *(this->at(row) + col);
     }
 
-    int getNumData() { return mNumRows; }
+    bool appendDataPoint(value_t *datapoint)
+    {
+        if (getNumData() < mNumRows)
+        {
+            std::copy(datapoint, datapoint + mNumCols, std::back_inserter(mData));
+            return true;
+        }
+
+        return false;
+    }
+
+    int getNumData() { return mData.size() / mNumCols; }
+    int getMaxNumData() { return mNumRows; }
     int getNumFeatures() { return mNumCols; }
 
     void operator=(const Matrix &lhs)
@@ -122,3 +134,17 @@ struct ClosestCluster
     int clusterIdx;
     value_t distance;
 };
+
+struct StaticData
+{
+    // user data
+    Matrix *pData;
+    std::vector<value_t> *pWeights;
+    IDistanceFunctor *pDistanceFunc;
+
+    // chunk data
+    int mRank;
+    int mTotalNumData;
+    std::vector<int> mLengths;
+    std::vector<int> mDisplacements;
+}
