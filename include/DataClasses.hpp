@@ -147,4 +147,4 @@ struct StaticData
     int mTotalNumData;
     std::vector<int> mLengths;
     std::vector<int> mDisplacements;
-}
+};
