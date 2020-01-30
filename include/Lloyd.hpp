@@ -1,7 +1,7 @@
 #pragma once
 
 #include "AbstractKmeansAlgorithms.hpp"
-#include "DistanceFunctors.hpp"
+#include "Averager.hpp"
 #include <memory>
 
 /**
@@ -11,10 +11,11 @@
 class TemplateLloyd : public AbstractKmeansMaximizer
 {
 protected:
-    std::unique_ptr<AbstractFindAndUpdate> pFinder;
+    std::unique_ptr<AbstractWeightedAverager> pAverager;
 
 public:
-    TemplateLloyd(AbstractFindAndUpdate *finder) : pFinder(finder){};
+    TemplateLloyd(AbstractWeightedAverager *averager, AbstractClosestClusterFinder *finder,
+                  AbstractClusteringUpdater *updater) : pAverager(averager), AbstractKmeansMaximizer(finder, updater){};
 
     /**
      * @brief Destroy the SerialLloyd object
@@ -28,7 +29,7 @@ public:
      *                    cluster.
      * @param distanceFunc - The functor that defines the distance metric to use.
      */
-    void maximize(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
+    void maximize() override;
 
 protected:
     /**
@@ -47,13 +48,14 @@ protected:
      * @param distanceFunc - The functor that defines the distance metric to use.
      * @return int - The number of datapoints whose cluster assignment has changed in the current iteration.
      */
-    virtual int reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc);
+    virtual int reassignPoints();
 };
 
 class Lloyd : public TemplateLloyd
 {
 public:
-    Lloyd() : TemplateLloyd(new FindAndUpdateClosestCluster(this)){};
+    Lloyd() : TemplateLloyd(new WeightedMultiVectorAverager(), new ClosestClusterFinder(&pClusters),
+                            new ClusteringUpdater(&pClustering, &pClusterWeights)){};
     ~Lloyd(){};
 };
 
@@ -69,7 +71,8 @@ public:
 class OptimizedLloyd : public TemplateLloyd
 {
 public:
-    OptimizedLloyd() : TemplateLloyd(new FindAndUpdateClosestCluster(this)){};
+    OptimizedLloyd() : TemplateLloyd(new WeightedMultiVectorAverager(), new ClosestClusterFinder(&pClusters),
+                                     new ClusteringUpdater(&pClustering, &pClusterWeights)){};
 
     /**
      * @brief Destroy the OptimizedSerialLloyd object
@@ -86,18 +89,19 @@ protected:
      * @param distanceFunc - The functor that defines the distance metric to use.
      * @return int - The number of datapoints whose cluster assignment has changed in the current iteration.
      */
-    int reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
+    int reassignPoints() override;
 };
 
 /**
  * @brief Parallelized version of Lloyd's algorithm using OMP thread parallelism in both updateClusters() and
  *        reassignPoints(). To change the number of threads, use the environment variable OMP_NUM_THREADS.
  */
-class OMPLloyd : public TemplateLloyd, public AbstractOMPKmeansAlgorithm
+class OMPLloyd : public TemplateLloyd
 {
 public:
-    OMPLloyd() : TemplateLloyd(new FindAndUpdateClosestCluster(this)){};
-    OMPLloyd(AbstractFindAndUpdate *finder) : TemplateLloyd(finder){};
+    OMPLloyd() : TemplateLloyd(new OMPWeightedMultiVectorAverager(), new ClosestClusterFinder(&pClusters),
+                               new ClusteringUpdater(&pClustering, &pClusterWeights)){};
+    // OMPLloyd(AbstractFindAndUpdate *finder) : TemplateLloyd(finder){};
 
     /**
      * @brief Destroy the OMPLloyd object
@@ -117,73 +121,73 @@ protected:
      * @param distanceFunc - The functor that defines the distance metric to use.
      * @return int - The number of datapoints whose cluster assignment has changed in the current iteration.
      */
-    virtual int reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
+    virtual int reassignPoints() override;
 };
 
-/**
- * @brief Parallelized version of the OptimizedLloyd algorithm using OMP thread parallelism. This class has its own
- *        implementation of reassignPoints() but uses OMPLloyd's versions of updateClusters(). To change the  number of
- *        threads, use the environment variable OMP_NUM_THREADS.
- */
-class OMPOptimizedLloyd : public OMPLloyd
-{
-public:
-    OMPOptimizedLloyd() : OMPLloyd(new FindAndUpdateClosestCluster(this)){};
-    /**
-     * @brief Destroy the OptimizedSerialLloyd object
-     */
-    ~OMPOptimizedLloyd(){};
+// /**
+//  * @brief Parallelized version of the OptimizedLloyd algorithm using OMP thread parallelism. This class has its own
+//  *        implementation of reassignPoints() but uses OMPLloyd's versions of updateClusters(). To change the  number of
+//  *        threads, use the environment variable OMP_NUM_THREADS.
+//  */
+// class OMPOptimizedLloyd : public OMPLloyd
+// {
+// public:
+//     OMPOptimizedLloyd() : OMPLloyd(new FindAndUpdateClosestCluster(this)){};
+//     /**
+//      * @brief Destroy the OptimizedSerialLloyd object
+//      */
+//     ~OMPOptimizedLloyd(){};
 
-protected:
-    /**
-     * @brief Helper function that checks if each point's closest cluster has changed after the clusters have been
-     *        updated in the call to updateClusters(), and updates the clustering data if necessary. This function also
-     *        keeps track of the number of datapoints that have changed cluster assignments and returns this value.
-     *
-     * @param distances - A vector to store the square distances of each point to their assigned cluster.
-     * @param distanceFunc - The functor that defines the distance metric to use.
-     * @return int - The number of datapoints whose cluster assignment has changed in the current iteration.
-     */
-    int reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
-};
+// protected:
+//     /**
+//      * @brief Helper function that checks if each point's closest cluster has changed after the clusters have been
+//      *        updated in the call to updateClusters(), and updates the clustering data if necessary. This function also
+//      *        keeps track of the number of datapoints that have changed cluster assignments and returns this value.
+//      *
+//      * @param distances - A vector to store the square distances of each point to their assigned cluster.
+//      * @param distanceFunc - The functor that defines the distance metric to use.
+//      * @return int - The number of datapoints whose cluster assignment has changed in the current iteration.
+//      */
+//     int reassignPoints() override;
+// };
 
-class MPILloyd : public TemplateLloyd, public AbstractMPIKmeansAlgorithm
-{
-public:
-    MPILloyd() : TemplateLloyd(new FindAndUpdateClosestCluster(this)){};
-    MPILloyd(AbstractFindAndUpdate *finder) : TemplateLloyd(finder){};
-    ~MPILloyd(){};
+// class MPILloyd : public TemplateLloyd, public AbstractMPIKmeansAlgorithm
+// {
+// public:
+//     MPILloyd() : TemplateLloyd(new FindAndUpdateClosestCluster(this)){};
+//     MPILloyd(AbstractFindAndUpdate *finder) : TemplateLloyd(finder){};
+//     ~MPILloyd(){};
 
-protected:
-    void calcClusterSums() override;
-    void averageClusterSums() override;
-    /**
-     * @brief Helper function that checks if each point's closest cluster has changed after the clusters have been
-     *        updated in the call to updateClusters(), and updates the clustering data if necessary. This function also
-     *        keeps track of the number of datapoints that have changed cluster assignments and returns this value.
-     *
-     * @param distances - A vector to store the square distances of each point to their assigned cluster.
-     * @param distanceFunc - The functor that defines the distance metric to use.
-     * @return int - The number of datapoints whose cluster assignment has changed in the current iteration.
-     */
-    virtual int reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
-};
+// protected:
+//     void calcClusterSums() override;
+//     void averageClusterSums() override;
+//     /**
+//      * @brief Helper function that checks if each point's closest cluster has changed after the clusters have been
+//      *        updated in the call to updateClusters(), and updates the clustering data if necessary. This function also
+//      *        keeps track of the number of datapoints that have changed cluster assignments and returns this value.
+//      *
+//      * @param distances - A vector to store the square distances of each point to their assigned cluster.
+//      * @param distanceFunc - The functor that defines the distance metric to use.
+//      * @return int - The number of datapoints whose cluster assignment has changed in the current iteration.
+//      */
+//     virtual int reassignPoints() override;
+// };
 
-class MPIOptimizedLloyd : public MPILloyd
-{
-public:
-    MPIOptimizedLloyd() : MPILloyd(new FindAndUpdateClosestCluster(this)){};
-    ~MPIOptimizedLloyd(){};
+// class MPIOptimizedLloyd : public MPILloyd
+// {
+// public:
+//     MPIOptimizedLloyd() : MPILloyd(new FindAndUpdateClosestCluster(this)){};
+//     ~MPIOptimizedLloyd(){};
 
-protected:
-    /**
-     * @brief Helper function that checks if each point's closest cluster has changed after the clusters have been
-     *        updated in the call to updateClusters(), and updates the clustering data if necessary. This function also
-     *        keeps track of the number of datapoints that have changed cluster assignments and returns this value.
-     *
-     * @param distances - A vector to store the square distances of each point to their assigned cluster.
-     * @param distanceFunc - The functor that defines the distance metric to use.
-     * @return int - The number of datapoints whose cluster assignment has changed in the current iteration.
-     */
-    int reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
-};
+// protected:
+//     /**
+//      * @brief Helper function that checks if each point's closest cluster has changed after the clusters have been
+//      *        updated in the call to updateClusters(), and updates the clustering data if necessary. This function also
+//      *        keeps track of the number of datapoints that have changed cluster assignments and returns this value.
+//      *
+//      * @param distances - A vector to store the square distances of each point to their assigned cluster.
+//      * @param distanceFunc - The functor that defines the distance metric to use.
+//      * @return int - The number of datapoints whose cluster assignment has changed in the current iteration.
+//      */
+//     int reassignPoints() override;
+// };
