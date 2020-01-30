@@ -10,7 +10,7 @@ protected:
     Matrix **ppClusters;
 
 public:
-    AbstractClosestClusterFinder(Matrix *clusters) : ppClusters(&clusters) {}
+    AbstractClosestClusterFinder(Matrix **clusters) : ppClusters(clusters) {}
 
     virtual ClosestCluster findClosestCluster(value_t *datapoint, IDistanceFunctor *distanceFunc) = 0;
 };
@@ -18,7 +18,7 @@ public:
 class ClosestClusterFinder : public AbstractClosestClusterFinder
 {
 public:
-    ClosestClusterFinder(Matrix *clusters) : AbstractClosestClusterFinder(clusters) {}
+    ClosestClusterFinder(Matrix **clusters) : AbstractClosestClusterFinder(clusters) {}
 
     ClosestCluster findClosestCluster(value_t *datapoint, IDistanceFunctor *distanceFunc) override;
 };
@@ -26,7 +26,7 @@ public:
 class ClosestNewClusterFinder : public AbstractClosestClusterFinder
 {
 public:
-    ClosestNewClusterFinder(Matrix *clusters) : AbstractClosestClusterFinder(clusters) {}
+    ClosestNewClusterFinder(Matrix **clusters) : AbstractClosestClusterFinder(clusters) {}
 
     ClosestCluster findClosestCluster(value_t *datapoint, IDistanceFunctor *distanceFunc) override;
 };

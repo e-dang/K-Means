@@ -71,8 +71,8 @@ protected:
 class KPlusPlus : public TemplateKPlusPlus
 {
 public:
-    KPlusPlus() : TemplateKPlusPlus(new SingleWeightedRandomSelector(), new ClosestClusterFinder(pClusters),
-                                    new ClusteringUpdater(pClustering, pClusterWeights)){};
+    KPlusPlus() : TemplateKPlusPlus(new SingleWeightedRandomSelector(), new ClosestClusterFinder(&pClusters),
+                                    new ClusteringUpdater(&pClustering, &pClusterWeights)){};
     virtual ~KPlusPlus(){};
 };
 
@@ -102,8 +102,8 @@ public:
 class OMPKPlusPlus : public TemplateKPlusPlus
 {
 public:
-    OMPKPlusPlus() : TemplateKPlusPlus(new SingleWeightedRandomSelector(), new ClosestClusterFinder(pClusters),
-                                       new ClusteringUpdater(pClustering, pClusterWeights)){};
+    OMPKPlusPlus() : TemplateKPlusPlus(new SingleWeightedRandomSelector(), new ClosestClusterFinder(&pClusters),
+                                       new ClusteringUpdater(&pClustering, &pClusterWeights)){};
     // OMPKPlusPlus(AbstractWeightedClusterSelection *selector, AbstractFindAndUpdate *finder) : TemplateKPlusPlus(selector, finder){};
 
     /**
