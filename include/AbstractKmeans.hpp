@@ -20,7 +20,7 @@ protected:
     AbstractKmeansMaximizer *maximizer;
     IDistanceFunctor *distanceFunc;
     ClusterData finalClusterData;
-    double error;
+    value_t error;
 
 public:
     /**
@@ -110,7 +110,7 @@ protected:
      */
     void compareResults(ClusterData *clusterData, std::vector<value_t> *distances)
     {
-        double currError = std::accumulate(distances->begin(), distances->end(), 0);
+        value_t currError = std::accumulate(distances->begin(), distances->end(), 0);
 
         if (error > currError || error < 0)
         {
