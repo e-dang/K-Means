@@ -23,14 +23,14 @@ void TemplateKPlusPlus::initialize(const float &seed)
     for (int i = 1; i < pClusters->getMaxNumData(); i++)
     {
         // find distance between each datapoint and nearest cluster, then update clustering assignment
-        findAndUpdateClosestCluster();
+        findAndUpdateClosestClusters();
 
         // select point to be next cluster center weighted by nearest distance squared
         weightedClusterSelection(floatDistr());
     }
 
     // find distance between each datapoint and nearest cluster, then update clustering assignment
-    findAndUpdateClosestCluster();
+    findAndUpdateClosestClusters();
 }
 
 void TemplateKPlusPlus::weightedClusterSelection(float randFrac)
@@ -40,24 +40,20 @@ void TemplateKPlusPlus::weightedClusterSelection(float randFrac)
     pClusters->appendDataPoint(pData->at(dataIdx));
 }
 
-void TemplateKPlusPlus::findAndUpdateClosestCluster()
+void TemplateKPlusPlus::findAndUpdateClosestClusters()
 {
     for (int i = 0; i < pData->getMaxNumData(); i++)
     {
-        auto closestCluster = pFinder->findClosestCluster(pData->at(i), pDistanceFunc);
-        pUpdater->update(i, closestCluster.clusterIdx, pWeights->at(i));
-        pDistances->at(i) = closestCluster.distance;
+        findAndUpdateClosestCluster(i);
     }
 }
 
-void OMPKPlusPlus::findAndUpdateClosestCluster()
+void OMPKPlusPlus::findAndUpdateClosestClusters()
 {
 #pragma omp parallel for schedule(static)
     for (int i = 0; i < pData->getMaxNumData(); i++)
     {
-        auto closestCluster = pFinder->findClosestCluster(pData->at(i), pDistanceFunc);
-        pUpdater->update(i, closestCluster.clusterIdx, pWeights->at(i));
-        pDistances->at(i) = closestCluster.distance;
+        findAndUpdateClosestCluster(i);
     }
 }
 

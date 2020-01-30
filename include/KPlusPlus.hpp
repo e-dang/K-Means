@@ -2,9 +2,6 @@
 
 #include "AbstractKmeansAlgorithms.hpp"
 #include "RandomSelector.hpp"
-#include "ClosestClusterFinder.hpp"
-#include "ClusteringUpdater.hpp"
-#include <memory>
 
 /**
  * @brief Implementation of a Kmeans++ initialization aglorithm. Selects datapoints to be new clusters at random
@@ -16,8 +13,6 @@ class TemplateKPlusPlus : public AbstractKmeansInitializer
 protected:
     // Member variables
     std::unique_ptr<AbstractWeightedRandomSelector> pSelector;
-    std::unique_ptr<AbstractClosestClusterFinder> pFinder;
-    std::unique_ptr<AbstractClusteringUpdater> pUpdater;
 
 public:
     /**
@@ -28,8 +23,7 @@ public:
      */
     TemplateKPlusPlus(AbstractWeightedRandomSelector *selector, AbstractClosestClusterFinder *finder,
                       AbstractClusteringUpdater *updater) : pSelector(selector),
-                                                            pFinder(finder),
-                                                            pUpdater(updater){};
+                                                            AbstractKmeansInitializer(finder, updater) {}
 
     /**
      * @brief Destroy the Serial KPlusPlus object
@@ -65,7 +59,7 @@ protected:
      *                    cluster.
      * @param distanceFunc - A functor that defines the distance metric.
      */
-    virtual void findAndUpdateClosestCluster();
+    virtual void findAndUpdateClosestClusters();
 };
 
 class KPlusPlus : public TemplateKPlusPlus
@@ -121,7 +115,7 @@ protected:
      *                    cluster.
      * @param distanceFunc - A functor that defines the distance metric.
      */
-    void findAndUpdateClosestCluster() override;
+    void findAndUpdateClosestClusters() override;
 };
 
 // /**

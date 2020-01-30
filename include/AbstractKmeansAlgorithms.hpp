@@ -3,6 +3,9 @@
 #include "Definitions.hpp"
 #include "DataClasses.hpp"
 #include "DistanceFunctors.hpp"
+#include "ClosestClusterFinder.hpp"
+#include "ClusteringUpdater.hpp"
+#include <memory>
 
 /**
  * @brief Abstract class that all Kmeans algorithms, such as initializers and maximizers will derive from. This class
@@ -28,7 +31,15 @@ protected:
     std::vector<int> *pLengths;
     std::vector<int> *pDisplacements;
 
+    // algorithms
+    std::unique_ptr<AbstractClosestClusterFinder> pFinder;
+    std::unique_ptr<AbstractClusteringUpdater> pUpdater;
+
 public:
+    AbstractKmeansAlgorithm() {}
+
+    AbstractKmeansAlgorithm(AbstractClosestClusterFinder *finder,
+                            AbstractClusteringUpdater *updater) : pFinder(finder), pUpdater(updater) {}
     /**
      * @brief Destroy the AbstractKmeansAlgorithm object
      */
@@ -87,15 +98,25 @@ public:
     //  * @return ClosestCluster - struct containing the cluster index of the closest cluster and the corresponding distance.
     //  */
     // ClosestCluster findClosestCluster(const int &dataIdx, IDistanceFunctor *distanceFunc);
+protected:
+    void findAndUpdateClosestCluster(const int &dataIdx)
+    {
+        auto closestCluster = pFinder->findClosestCluster(pData->at(dataIdx), pDistanceFunc);
+        pUpdater->update(dataIdx, closestCluster.clusterIdx, pWeights->at(dataIdx));
+        pDistances->at(dataIdx) = std::pow(closestCluster.distance, 2);
+    }
 };
 
 /**
  * @brief Abstract class that defines the interface for Kmeans initialization algorithms, such as K++ or random
  *        initialization.
  */
-class AbstractKmeansInitializer : public virtual AbstractKmeansAlgorithm
+class AbstractKmeansInitializer : public AbstractKmeansAlgorithm
 {
 public:
+    // AbstractKmeansInitializer() {}
+    AbstractKmeansInitializer(AbstractClosestClusterFinder *finder,
+                              AbstractClusteringUpdater *updater) : AbstractKmeansAlgorithm(finder, updater) {}
     /**
      * @brief Destroy the AbstractKmeansInitializer object
      */
@@ -116,13 +137,15 @@ public:
 /**
  * @brief Abstract class that defines the interface for Kmeans maximization algorithms, such as Lloyd's algorithm.
  */
-class AbstractKmeansMaximizer : public virtual AbstractKmeansAlgorithm
+class AbstractKmeansMaximizer : public AbstractKmeansAlgorithm
 {
 protected:
     // Constants
     const float MIN_PERCENT_CHANGED = 0.0001; // the % amount of data points allowed to changed before going to next
                                               // iteration
 public:
+    AbstractKmeansMaximizer(AbstractClosestClusterFinder *finder,
+                            AbstractClusteringUpdater *updater) : AbstractKmeansAlgorithm(finder, updater) {}
     /**
      * @brief Destroy the AbstractKmeansMaximizer object
      */
@@ -193,69 +216,69 @@ public:
 //     void bcastClusterData();
 // };
 
-class AbstractWeightedClusterSelection : public AbstractKmeansAlgorithm
-{
-protected:
-    // Member variables
-    AbstractKmeansInitializer *pAlg;
+// class AbstractWeightedClusterSelection : public AbstractKmeansAlgorithm
+// {
+// protected:
+//     // Member variables
+//     AbstractKmeansInitializer *pAlg;
 
-public:
-    AbstractWeightedClusterSelection(AbstractKmeansInitializer *alg) : pAlg(alg){};
-    /**
-     * @brief Destroy the AbstractWeightedClusterSelection object
-     *
-     */
-    virtual ~AbstractWeightedClusterSelection(){};
+// public:
+//     AbstractWeightedClusterSelection(AbstractKmeansInitializer *alg) : pAlg(alg){};
+//     /**
+//      * @brief Destroy the AbstractWeightedClusterSelection object
+//      *
+//      */
+//     virtual ~AbstractWeightedClusterSelection(){};
 
-    virtual void weightedClusterSelection(std::vector<value_t> *distances, float &randSumFrac) = 0;
-};
+//     virtual void weightedClusterSelection(std::vector<value_t> *distances, float &randSumFrac) = 0;
+// };
 
-class WeightedClusterSelection : public AbstractWeightedClusterSelection
-{
-public:
-    WeightedClusterSelection(AbstractKmeansInitializer *alg) : AbstractWeightedClusterSelection(alg){};
-    ~WeightedClusterSelection(){};
+// class WeightedClusterSelection : public AbstractWeightedClusterSelection
+// {
+// public:
+//     WeightedClusterSelection(AbstractKmeansInitializer *alg) : AbstractWeightedClusterSelection(alg){};
+//     ~WeightedClusterSelection(){};
 
-    void weightedClusterSelection(std::vector<value_t> *distances, float &randSumFrac) override;
-};
+//     void weightedClusterSelection(std::vector<value_t> *distances, float &randSumFrac) override;
+// };
 
-class AbstractFindAndUpdate : public AbstractKmeansAlgorithm
-{
-protected:
-    AbstractKmeansAlgorithm *pAlg;
+// class AbstractFindAndUpdate : public AbstractKmeansAlgorithm
+// {
+// protected:
+//     AbstractKmeansAlgorithm *pAlg;
 
-public:
-    AbstractFindAndUpdate(AbstractKmeansAlgorithm *alg) : pAlg(alg){};
-    virtual ~AbstractFindAndUpdate(){};
+// public:
+//     AbstractFindAndUpdate(AbstractKmeansAlgorithm *alg) : pAlg(alg){};
+//     virtual ~AbstractFindAndUpdate(){};
 
-    virtual void findAndUpdateClosestCluster(const int &dataIdx, std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) = 0;
-};
+//     virtual void findAndUpdateClosestCluster(const int &dataIdx, std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) = 0;
+// };
 
-class FindAndUpdateClosestCluster : public AbstractFindAndUpdate
-{
-public:
-    FindAndUpdateClosestCluster(AbstractKmeansAlgorithm *alg) : AbstractFindAndUpdate(alg){};
-    ~FindAndUpdateClosestCluster(){};
+// class FindAndUpdateClosestCluster : public AbstractFindAndUpdate
+// {
+// public:
+//     FindAndUpdateClosestCluster(AbstractKmeansAlgorithm *alg) : AbstractFindAndUpdate(alg){};
+//     ~FindAndUpdateClosestCluster(){};
 
-    void findAndUpdateClosestCluster(const int &dataIdx, std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
-};
+//     void findAndUpdateClosestCluster(const int &dataIdx, std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
+// };
 
-class OptFindAndUpdateClosestCluster : public AbstractFindAndUpdate
-{
-public:
-    OptFindAndUpdateClosestCluster(AbstractKmeansAlgorithm *alg) : AbstractFindAndUpdate(alg){};
-    ~OptFindAndUpdateClosestCluster(){};
+// class OptFindAndUpdateClosestCluster : public AbstractFindAndUpdate
+// {
+// public:
+//     OptFindAndUpdateClosestCluster(AbstractKmeansAlgorithm *alg) : AbstractFindAndUpdate(alg){};
+//     ~OptFindAndUpdateClosestCluster(){};
 
-    void findAndUpdateClosestCluster(const int &dataIdx, std::vector<value_t> *distances,
-                                     IDistanceFunctor *distanceFunc) override;
-};
+//     void findAndUpdateClosestCluster(const int &dataIdx, std::vector<value_t> *distances,
+//                                      IDistanceFunctor *distanceFunc) override;
+// };
 
-class ReassignmentClosestClusterFinder : public AbstractFindAndUpdate
-{
-public:
-    ReassignmentClosestClusterFinder(AbstractKmeansAlgorithm *alg) : AbstractFindAndUpdate(alg){};
-    ~ReassignmentClosestClusterFinder(){};
+// class ReassignmentClosestClusterFinder : public AbstractFindAndUpdate
+// {
+// public:
+//     ReassignmentClosestClusterFinder(AbstractKmeansAlgorithm *alg) : AbstractFindAndUpdate(alg){};
+//     ~ReassignmentClosestClusterFinder(){};
 
-    void findAndUpdateClosestCluster(const int &dataIdx, std::vector<value_t> *distances,
-                                     IDistanceFunctor *distanceFunc) override;
-};
+//     void findAndUpdateClosestCluster(const int &dataIdx, std::vector<value_t> *distances,
+//                                      IDistanceFunctor *distanceFunc) override;
+// };
