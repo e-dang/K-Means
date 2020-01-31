@@ -63,41 +63,7 @@ public:
         pClusterWeights = &clusterData->mClusterWeights;
         pDistances = distances;
     }
-    // /**
-    //  * @brief Set the clusters, clustering, and clusterWeights member variables using an instance of ClusterData.
-    //  *
-    //  * @param clusterData - A pointer to an instance of clusterData, where the clustering results will be stored.
-    //  */
-    // void setClusterData(ClusterData *clusterData);
 
-    // /**
-    //  * @brief Helper function that updates the clustering assignments and cluster weights given the index of the
-    //  *        datapoint whose clustering assignment has been changed and the index of the new cluster it is assigned to.
-    //  *
-    //  * @param dataIdx - The index of the datapoint whose clustering assignment needs to be updated.
-    //  * @param clusterIdx - The index of the cluster to which the datapoint is now assigned.
-    //  */
-    // virtual void updateClustering(const int &dataIdx, const int &clusterIdx);
-
-    // /**
-    //  * @brief Helper function that returns the current number of clusters stored in the clusters member variable. Since
-    //  *        the clusters are stored in a flattened array, the number of clusters is equal to the the size of the array
-    //  *        divided by the number of columns of the matrix.
-    //  *
-    //  * @return int - The current number of clusters.
-    //  */
-    // int getCurrentNumClusters();
-
-    // virtual value_t calcDistance(const int &dataIdx, const int &clusterIdx, IDistanceFunctor *distanceFunc);
-
-    // /**
-    //  * @brief Helper function that find the closest cluster and corresponding distance for a given datapoint.
-    //  *
-    //  * @param dataIdx - A the index of the datapoint that the function will find the closest cluster to.
-    //  * @param distanceFunc - A functor that defines the distance metric.
-    //  * @return ClosestCluster - struct containing the cluster index of the closest cluster and the corresponding distance.
-    //  */
-    // ClosestCluster findClosestCluster(const int &dataIdx, IDistanceFunctor *distanceFunc);
 protected:
     void findAndUpdateClosestCluster(const int &dataIdx)
     {
@@ -119,7 +85,6 @@ protected:
 class AbstractKmeansInitializer : public AbstractKmeansAlgorithm
 {
 public:
-    // AbstractKmeansInitializer() {}
     AbstractKmeansInitializer(AbstractClosestClusterFinder *finder,
                               AbstractClusteringUpdater *updater) : AbstractKmeansAlgorithm(finder, updater) {}
     /**
@@ -167,123 +132,3 @@ public:
      */
     virtual void maximize() = 0;
 };
-
-// /**
-//  * @brief An abstract class that should also be inherited along with AbstractKmeansAlgorithm for classes that use OMP
-//  *        thread level parallelism. This class offers an atomic version of functions that have race conditions.
-//  */
-// class AbstractOMPKmeansAlgorithm : public virtual AbstractKmeansAlgorithm
-// {
-// public:
-//     /**
-//      * @brief Destroy the AbstractOMPKmeansAlgorithm object.
-//      *
-//      */
-//     ~AbstractOMPKmeansAlgorithm(){};
-
-//     /**
-//      * @brief Atomic version of updateClustering for Kmeans algorithm classes who use OMP thread level parallelism.
-//      *
-//      * @param dataIdx - The index of the datapoint whose clustering assignment needs to be updated.
-//      * @param clusterIdx - The index of the cluster to which the datapoint is now assigned.
-//      */
-//     void updateClustering(const int &dataIdx, const int &clusterIdx) override;
-// };
-
-// class AbstractMPIKmeansAlgorithm : public virtual AbstractKmeansAlgorithm
-// {
-// protected:
-//     // Member variables
-//     int mRank;
-//     Matrix *pMatrixChunk;
-//     std::vector<int> *pLengths;
-//     std::vector<int> *pDisplacements;
-
-// public:
-//     /**
-//      * @brief Destroy the AbstractMPIKmeansAlgorithm object
-//      */
-//     virtual ~AbstractMPIKmeansAlgorithm(){};
-
-//     void setUp(BundledAlgorithmData *bundledData) override;
-
-//     value_t calcDistance(const int &dataIdx, const int &clusterIdx, IDistanceFunctor *distanceFunc) override;
-
-//     /**
-//      * @brief MPI version of updateClustering for Kmeans algorithm classes who use MPI process level parallelism.
-//      *
-//      * @param dataIdx - The index of the datapoint whose clustering assignment needs to be updated.
-//      * @param clusterIdx - The index of the cluster to which the datapoint is now assigned.
-//      */
-//     void updateClustering(const int &dataIdx, const int &clusterIdx) override;
-
-// protected:
-//     void bcastClusterData();
-// };
-
-// class AbstractWeightedClusterSelection : public AbstractKmeansAlgorithm
-// {
-// protected:
-//     // Member variables
-//     AbstractKmeansInitializer *pAlg;
-
-// public:
-//     AbstractWeightedClusterSelection(AbstractKmeansInitializer *alg) : pAlg(alg){};
-//     /**
-//      * @brief Destroy the AbstractWeightedClusterSelection object
-//      *
-//      */
-//     virtual ~AbstractWeightedClusterSelection(){};
-
-//     virtual void weightedClusterSelection(std::vector<value_t> *distances, float &randSumFrac) = 0;
-// };
-
-// class WeightedClusterSelection : public AbstractWeightedClusterSelection
-// {
-// public:
-//     WeightedClusterSelection(AbstractKmeansInitializer *alg) : AbstractWeightedClusterSelection(alg){};
-//     ~WeightedClusterSelection(){};
-
-//     void weightedClusterSelection(std::vector<value_t> *distances, float &randSumFrac) override;
-// };
-
-// class AbstractFindAndUpdate : public AbstractKmeansAlgorithm
-// {
-// protected:
-//     AbstractKmeansAlgorithm *pAlg;
-
-// public:
-//     AbstractFindAndUpdate(AbstractKmeansAlgorithm *alg) : pAlg(alg){};
-//     virtual ~AbstractFindAndUpdate(){};
-
-//     virtual void findAndUpdateClosestCluster(const int &dataIdx, std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) = 0;
-// };
-
-// class FindAndUpdateClosestCluster : public AbstractFindAndUpdate
-// {
-// public:
-//     FindAndUpdateClosestCluster(AbstractKmeansAlgorithm *alg) : AbstractFindAndUpdate(alg){};
-//     ~FindAndUpdateClosestCluster(){};
-
-//     void findAndUpdateClosestCluster(const int &dataIdx, std::vector<value_t> *distances, IDistanceFunctor *distanceFunc) override;
-// };
-
-// class OptFindAndUpdateClosestCluster : public AbstractFindAndUpdate
-// {
-// public:
-//     OptFindAndUpdateClosestCluster(AbstractKmeansAlgorithm *alg) : AbstractFindAndUpdate(alg){};
-//     ~OptFindAndUpdateClosestCluster(){};
-
-//     void findAndUpdateClosestCluster(const int &dataIdx, std::vector<value_t> *distances,
-//                                      IDistanceFunctor *distanceFunc) override;
-// };
-
-// class ReassignmentClosestClusterFinder : public AbstractFindAndUpdate
-// {
-// public:
-//     ReassignmentClosestClusterFinder(AbstractKmeansAlgorithm *alg) : AbstractFindAndUpdate(alg){};
-//     ~ReassignmentClosestClusterFinder(){};
-
-//     void findAndUpdateClosestCluster(const int &dataIdx, std::vector<value_t> *distances,
-//                                      IDistanceFunctor *distanceFunc) override;
-// };
