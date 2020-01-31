@@ -143,8 +143,8 @@ public:
     MPIKPlusPlus() : TemplateKPlusPlus(new SingleWeightedRandomSelector(),
                                        new ClosestClusterFinder(&pClusters),
                                        new DistributedClusteringUpdater(&pClustering, &pClusterWeights)){};
-    // MPIKPlusPlus(AbstractWeightedClusterSelection *selector, AbstractFindAndUpdate *finder) : TemplateKPlusPlus(
-    //                                                                                               selector, finder){};
+    MPIKPlusPlus(AbstractWeightedRandomSelector *selector, AbstractClosestClusterFinder *finder,
+                 AbstractClusteringUpdater *updater) : TemplateKPlusPlus(selector, finder, updater){};
     virtual ~MPIKPlusPlus(){};
 
 protected:
@@ -169,9 +169,11 @@ protected:
     void findAndUpdateClosestClusters() override;
 };
 
-// class MPIOptimizedKPlusPlus : public MPIKPlusPlus
-// {
-// public:
-//     MPIOptimizedKPlusPlus() : MPIKPlusPlus(new WeightedClusterSelection(this), new OptFindAndUpdateClosestCluster(this)){};
-//     virtual ~MPIOptimizedKPlusPlus(){};
-// };
+class MPIOptimizedKPlusPlus : public MPIKPlusPlus
+{
+public:
+    MPIOptimizedKPlusPlus() : MPIKPlusPlus(new SingleWeightedRandomSelector(),
+                                           new ClosestNewClusterFinder(&pClusters),
+                                           new DistributedClusteringUpdater(&pClustering, &pClusterWeights)){};
+    virtual ~MPIOptimizedKPlusPlus(){};
+};

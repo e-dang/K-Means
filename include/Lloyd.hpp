@@ -154,7 +154,8 @@ class MPILloyd : public TemplateLloyd
 public:
     MPILloyd() : TemplateLloyd(new WeightedMultiVectorAverager(), new ClosestClusterFinder(&pClusters),
                                new DistributedClusteringUpdater(&pClustering, &pClusterWeights)){};
-    // MPILloyd(AbstractFindAndUpdate *finder) : TemplateLloyd(finder){};
+    MPILloyd(AbstractWeightedAverager *averager, AbstractClosestClusterFinder *finder,
+             AbstractClusteringUpdater *updater) : TemplateLloyd(averager, finder, updater){};
     ~MPILloyd(){};
 
 protected:
@@ -165,28 +166,25 @@ protected:
      *        updated in the call to updateClusters(), and updates the clustering data if necessary. This function also
      *        keeps track of the number of datapoints that have changed cluster assignments and returns this value.
      *
-     * @param distances - A vector to store the square distances of each point to their assigned cluster.
-     * @param distanceFunc - The functor that defines the distance metric to use.
      * @return int - The number of datapoints whose cluster assignment has changed in the current iteration.
      */
     int reassignPoints() override;
 };
 
-// class MPIOptimizedLloyd : public MPILloyd
-// {
-// public:
-//     MPIOptimizedLloyd() : MPILloyd(new FindAndUpdateClosestCluster(this)){};
-//     ~MPIOptimizedLloyd(){};
+class MPIOptimizedLloyd : public MPILloyd
+{
+public:
+    MPIOptimizedLloyd() : MPILloyd(new WeightedMultiVectorAverager(), new ClosestClusterFinder(&pClusters),
+                                   new DistributedClusteringUpdater(&pClustering, &pClusterWeights)){};
+    ~MPIOptimizedLloyd(){};
 
-// protected:
-//     /**
-//      * @brief Helper function that checks if each point's closest cluster has changed after the clusters have been
-//      *        updated in the call to updateClusters(), and updates the clustering data if necessary. This function also
-//      *        keeps track of the number of datapoints that have changed cluster assignments and returns this value.
-//      *
-//      * @param distances - A vector to store the square distances of each point to their assigned cluster.
-//      * @param distanceFunc - The functor that defines the distance metric to use.
-//      * @return int - The number of datapoints whose cluster assignment has changed in the current iteration.
-//      */
-//     int reassignPoints() override;
-// };
+protected:
+    /**
+     * @brief Helper function that checks if each point's closest cluster has changed after the clusters have been
+     *        updated in the call to updateClusters(), and updates the clustering data if necessary. This function also
+     *        keeps track of the number of datapoints that have changed cluster assignments and returns this value.
+     *
+     * @return int - The number of datapoints whose cluster assignment has changed in the current iteration.
+     */
+    int reassignPoints() override;
+};

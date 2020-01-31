@@ -57,7 +57,8 @@ int OptimizedLloyd::reassignPoints()
     for (int i = 0; i < pData->getMaxNumData(); i++)
     {
         // check distance to previously closest cluster, if it increased then recalculate distances to all clusters
-        value_t dist = std::pow((*pDistanceFunc)(pData->at(i), pClusters->at(i), pData->getNumFeatures()), 2);
+        int clusterIdx = pClustering->at(pDisplacements->at(mRank) + i);
+        value_t dist = std::pow((*pDistanceFunc)(pData->at(i), pClusters->at(clusterIdx), pData->getNumFeatures()), 2);
         if (dist > pDistances->at(i) || pDistances->at(i) < 0)
         {
             int before = pClustering->at(i);
@@ -111,7 +112,8 @@ int OMPOptimizedLloyd::reassignPoints()
     for (int i = 0; i < pData->getMaxNumData(); i++)
     {
         // check distance to previously closest cluster, if it increased then recalculate distances to all clusters
-        value_t dist = std::pow((*pDistanceFunc)(pData->at(i), pClusters->at(i), pData->getNumFeatures()), 2);
+        int clusterIdx = pClustering->at(pDisplacements->at(mRank) + i);
+        value_t dist = std::pow((*pDistanceFunc)(pData->at(i), pClusters->at(clusterIdx), pData->getNumFeatures()), 2);
         if (dist > pDistances->at(i) || pDistances->at(i) < 0)
         {
             int before = pClustering->at(i);
@@ -187,38 +189,37 @@ int MPILloyd::reassignPoints()
     return changed;
 }
 
-// int MPIOptimizedLloyd::reassignPoints(std::vector<value_t> *distances, IDistanceFunctor *distanceFunc)
-// {
-//     int changed = 0, numData = pDataChunk->numRows;
+int MPIOptimizedLloyd::reassignPoints()
+{
+    int changed = 0;
+    for (int i = 0; i < pData->getMaxNumData(); i++)
+    {
+        int clusterIdx = pClustering->at(pDisplacements->at(mRank) + i);
+        value_t dist = std::pow((*pDistanceFunc)(pData->at(i), pClusters->at(clusterIdx), pData->getNumFeatures()), 2);
+        if (dist > pDistances->at(i) || pDistances->at(i) < 0)
+        {
+            int before = pClustering->at(i);
 
-//     for (int i = 0; i < numData; i++)
-//     {
+            // find closest cluster for each datapoint and update cluster assignment
+            findAndUpdateClosestCluster(i);
 
-//         value_t dist = std::pow(calcDistance(pDisplacements->at(mRank) + i, pClustering->at(i), distanceFunc), 2);
-//         if (dist > distances->at(i) || distances->at(i) < 0)
-//         {
-//             int before = pClustering->at(i);
+            // check if cluster assignments have changed
+            if (before != pClustering->at(i))
+            {
+                changed++;
+            }
+        }
+        else // distance is smaller, thus update the distances vector
+        {
+            pDistances->at(i) = dist;
+        }
+    }
 
-//             // find closest cluster for each datapoint and update cluster assignment
-//             pFinder->findAndUpdateClosestCluster(pDisplacements->at(mRank) + i, distances, distanceFunc);
+    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_INT, pClustering->data(),
+                   pLengths->data(), pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
+    MPI_Allreduce(MPI_IN_PLACE, &changed, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_INT, pDistances->data(),
+                   pLengths->data(), pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
 
-//             // check if cluster assignments have changed
-//             if (before != pClustering->at(i))
-//             {
-//                 changed++;
-//             }
-//         }
-//         else // distance is smaller, thus update the distances vector
-//         {
-//             distances->at(i) = dist;
-//         }
-//     }
-
-//     MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_INT, pClustering->data(),
-//                    pLengths->data(), pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
-//     MPI_Allreduce(MPI_IN_PLACE, &changed, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-//     MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_INT, distances->data(),
-//                    pLengths->data(), pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
-
-//     return changed;
-// }
+    return changed;
+}
