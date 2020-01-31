@@ -16,8 +16,8 @@ void Kmeans::fit(Matrix *data, int numClusters, int numRestarts, std::vector<val
 
     for (int i = 0; i < numRestarts; i++)
     {
-        std::vector<value_t> distances(data->getMaxNumData(), 1);
-        ClusterData clusterData(data->getMaxNumData(), data->getNumFeatures(), numClusters);
+        std::vector<value_t> distances(staticData.mTotalNumData, 1);
+        ClusterData clusterData(staticData.mTotalNumData, data->getNumFeatures(), numClusters);
 
         initializer->setDynamicData(&clusterData, &distances);
         maximizer->setDynamicData(&clusterData, &distances);
@@ -36,8 +36,8 @@ StaticData MPIKmeans::initStaticData(Matrix *data, std::vector<value_t> *weights
     MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
     // number of datapoints allocated for each process to compute
-    int chunk = data->getMaxNumData() / numProcs;
-    int scrap = chunk + (data->getMaxNumData() % numProcs);
+    int chunk = mTotalNumData / numProcs;
+    int scrap = chunk + (mTotalNumData % numProcs);
 
     std::vector<int> lengths(numProcs);       // size of each sub-array to gather
     std::vector<int> displacements(numProcs); // index of each sub-array to gather
@@ -72,8 +72,8 @@ void MPIKmeans::fit(Matrix *data, int numClusters, int numRestarts, std::vector<
 
     for (int i = 0; i < numRestarts; i++)
     {
-        std::vector<value_t> distances(data->getMaxNumData(), 1);
-        ClusterData clusterData(data->getMaxNumData(), data->getNumFeatures(), numClusters);
+        std::vector<value_t> distances(mTotalNumData, 1);
+        ClusterData clusterData(mTotalNumData, data->getNumFeatures(), numClusters);
 
         initializer->setDynamicData(&clusterData, &distances);
         maximizer->setDynamicData(&clusterData, &distances);

@@ -137,36 +137,37 @@ public:
     virtual ~OMPOptimizedKPlusPlus(){};
 };
 
-// class MPIKPlusPlus : public TemplateKPlusPlus
-// {
-// public:
-//     MPIKPlusPlus() : TemplateKPlusPlus(new WeightedClusterSelection(this), new FindAndUpdateClosestCluster(this)){};
-//     MPIKPlusPlus(AbstractWeightedClusterSelection *selector, AbstractFindAndUpdate *finder) : TemplateKPlusPlus(
-//                                                                                                   selector, finder){};
-//     virtual ~MPIKPlusPlus(){};
+class MPIKPlusPlus : public TemplateKPlusPlus
+{
+public:
+    MPIKPlusPlus() : TemplateKPlusPlus(new SingleWeightedRandomSelector(),
+                                       new ClosestClusterFinder(&pClusters),
+                                       new DistributedClusteringUpdater(&pClustering, &pClusterWeights)){};
+    // MPIKPlusPlus(AbstractWeightedClusterSelection *selector, AbstractFindAndUpdate *finder) : TemplateKPlusPlus(
+    //                                                                                               selector, finder){};
+    virtual ~MPIKPlusPlus(){};
 
-// protected:
-//     /**
-//      * @brief Helper function that selects a datapoint to be a new cluster center with a probability proportional to the
-//      *        square of the distance to its current closest cluster.
-//      *
-//      * @param distances - A pointer to a vector that stores the squared distances of each datapoint to its closest
-//      *                    cluster.
-//      * @param randFrac - A randomly generated float in the range of [0, 1) needed by weightedRandomSelection().
-//      */
-//     void weightedClusterSelection(Matrix *clusters, std::vector<value_t> *distances, float randFrac) override;
+protected:
+    /**
+     * @brief Helper function that selects a datapoint to be a new cluster center with a probability proportional to the
+     *        square of the distance to its current closest cluster.
+     *
+     * @param distances - A pointer to a vector that stores the squared distances of each datapoint to its closest
+     *                    cluster.
+     * @param randFrac - A randomly generated float in the range of [0, 1) needed by weightedRandomSelection().
+     */
+    void weightedClusterSelection(float randFrac) override;
 
-//     /**
-//      * @brief Helper function that wraps the functionality of findClosestCluster() and updateClustering() in order to
-//      *        find the closest cluster for each datapoint and update the clustering assignments.
-//      *
-//      * @param distances - A pointer to a vector that stores the squared distances of each datapoint to its closest
-//      *                    cluster.
-//      * @param distanceFunc - A functor that defines the distance metric.
-//      */
-//     void findAndUpdateClosestCluster(std::vector<int> *clustering, std::vector<value_t> *clusterWeights,
-//                                      std::vector<value_t> *distances) override;
-// };
+    /**
+     * @brief Helper function that wraps the functionality of findClosestCluster() and updateClustering() in order to
+     *        find the closest cluster for each datapoint and update the clustering assignments.
+     *
+     * @param distances - A pointer to a vector that stores the squared distances of each datapoint to its closest
+     *                    cluster.
+     * @param distanceFunc - A functor that defines the distance metric.
+     */
+    void findAndUpdateClosestClusters() override;
+};
 
 // class MPIOptimizedKPlusPlus : public MPIKPlusPlus
 // {

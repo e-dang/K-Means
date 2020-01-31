@@ -81,13 +81,19 @@ public:
         }
     }
 
-    void fill(const int val)
+    void fill(const int &val)
     {
         std::fill(mData.begin(), mData.end(), val);
     }
 
+    void resize(const int &val)
+    {
+        mData.resize(val * mNumCols);
+    }
+
     value_t *data() { return mData.data(); }
 
+    int size() { return mData.size(); }
     int getNumData() { return mData.size() / mNumCols; }
     int getMaxNumData() { return mNumRows; }
     int getNumFeatures() { return mNumCols; }

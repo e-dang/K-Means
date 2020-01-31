@@ -35,7 +35,7 @@ void TemplateKPlusPlus::initialize(const float &seed)
 
 void TemplateKPlusPlus::weightedClusterSelection(float randFrac)
 {
-    float randSumFrac = randFrac * std::accumulate(pDistances->begin(), pDistances->end(), 0);
+    value_t randSumFrac = randFrac * std::accumulate(pDistances->begin(), pDistances->end(), 0);
     int dataIdx = pSelector->select(pDistances, randSumFrac);
     pClusters->appendDataPoint(pData->at(dataIdx));
 }
@@ -57,44 +57,50 @@ void OMPKPlusPlus::findAndUpdateClosestClusters()
     }
 }
 
-// void MPIKPlusPlus::findAndUpdateClosestCluster(std::vector<int> *clustering, std::vector<value_t> *clusterWeights,
-//                                                std::vector<value_t> *distances)
-// {
-//     for (int i = 0; i < pData->getNumData(); i++)
-//     {
-//         pFinder->findAndUpdateClosestCluster(pDisplacements->at(mRank) + i, distances, distanceFunc);
-//     }
+void MPIKPlusPlus::weightedClusterSelection(float randFrac)
+{
+    int dataIdx;
+    if (mRank == 0)
+    {
+        value_t randSumFrac = randFrac * std::accumulate(pDistances->begin(), pDistances->end(), 0);
+        dataIdx = pSelector->select(pDistances, randSumFrac);
+    }
 
-//     MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_INT, pClustering->data(),
-//                    pLengths->data(), pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
-//     MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_FLOAT, distances->data(),
-//                    pLengths->data(), pDisplacements->data(), MPI_FLOAT, MPI_COMM_WORLD);
-// }
+    MPI_Bcast(&dataIdx, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-// void MPIKPlusPlus::weightedClusterSelection(Matrix *clusters, std::vector<value_t> *distances, float randFrac)
-// {
-//     // for (auto iter = distances->begin() + pDisplacements->at(mRank); iter != distances->begin() + pDisplacements->at(mRank) + pLengths->at(mRank); iter++)
-//     // {
-//     //     std::cout << *iter << " ";
-//     // }
-//     // std::cout << std::endl
-//     //           << std::endl;
-//     // auto start = distances->begin() + pDisplacements->at(mRank);
-//     // auto stop = start + pLengths->at(mRank);
-//     // float sum, localSum = std::accumulate(start, stop, 0);
-//     // std::vector<value_t> sums()
-//     // MPI_Reduce(&localSum, &sum, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+    // find which rank holds the selected datapoint
+    int rank, lengthSum = 0;
+    for (rank = 0; rank < pLengths->size(); rank++)
+    {
+        lengthSum += pLengths->at(rank);
+        if (lengthSum > dataIdx)
+        {
+            break;
+        }
+    }
 
-//     if (mRank == 0)
-//     {
-//         value_t sum = std::accumulate(distances->begin(), distances->end(), 0);
-//         float randSumFrac = sum * randFrac;
-//         pSelector->weightedClusterSelection(distances, randSumFrac);
-//     }
-//     else
-//     {
-//         pClusters->data.resize((getCurrentNumClusters() + 1) * pClusters->numCols);
-//     }
+    if (mRank == rank)
+    {
+        pClusters->appendDataPoint(pData->at(dataIdx - pDisplacements->at(mRank)));
+    }
+    else
+    {
+        pClusters->resize(pClusters->getNumData() + 1);
+    }
 
-//     bcastClusterData();
-// }
+    MPI_Bcast(pClustering->data(), pClustering->size(), MPI_INT, rank, MPI_COMM_WORLD);
+    MPI_Bcast(pClusters->data(), pClusters->size(), MPI_FLOAT, rank, MPI_COMM_WORLD);
+}
+
+void MPIKPlusPlus::findAndUpdateClosestClusters()
+{
+    for (int i = 0; i < pData->getMaxNumData(); i++)
+    {
+        findAndUpdateClosestCluster(i);
+    }
+
+    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_INT, pClustering->data(),
+                   pLengths->data(), pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_FLOAT, pDistances->data(),
+                   pLengths->data(), pDisplacements->data(), MPI_FLOAT, MPI_COMM_WORLD);
+}

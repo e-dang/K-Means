@@ -101,11 +101,13 @@ public:
 protected:
     void findAndUpdateClosestCluster(const int &dataIdx)
     {
+        int displacedDataIdx = pDisplacements->at(mRank) + dataIdx;
+
         auto closestCluster = pFinder->findClosestCluster(pData->at(dataIdx), pDistanceFunc);
-        if (pDistances->at(dataIdx) > closestCluster.distance || pDistances->at(dataIdx) < 0)
+        if (pDistances->at(displacedDataIdx) > closestCluster.distance || pDistances->at(displacedDataIdx) < 0)
         {
-            pUpdater->update(dataIdx, closestCluster.clusterIdx, pWeights->at(dataIdx));
-            pDistances->at(dataIdx) = closestCluster.distance;
+            pUpdater->update(displacedDataIdx, closestCluster.clusterIdx, pWeights->at(dataIdx));
+            pDistances->at(displacedDataIdx) = closestCluster.distance;
         }
     }
 };
