@@ -51,3 +51,17 @@ public:
 
     std::vector<value_t> getData() { return this->data; }
 };
+
+class MPIReader : public IReader
+{
+private:
+    std::vector<value_t> data;
+
+public:
+    MPIReader(){};
+    ~MPIReader(){};
+
+    void read(std::string filepath, int numData, int numFeatures) override;
+
+    std::vector<value_t> getData() { return this->data; }
+};
