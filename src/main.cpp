@@ -8,10 +8,6 @@
 #include <iostream>
 #include "Definitions.hpp"
 #include "mpi.h"
-// #include "boost/random.hpp"
-// #include "boost/generator_iterator.hpp"
-
-// typedef boost::mt19937 RNGType;
 
 int main(int argc, char *argv[])
 {
@@ -20,12 +16,17 @@ int main(int argc, char *argv[])
     int numFeatures = 2;
     int numClusters = 30;
 
-    std::vector<double> times;
+    int rank = 0, numProcs;
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
-    VectorReader reader;
+    // VectorReader reader;
+    MPIReader reader;
     std::string inFile = "../data/test_" + std::to_string(numData) + "_" + std::to_string(numFeatures) + ".txt";
     reader.read(inFile, numData, numFeatures);
-    Matrix matrix(reader.getData(), numData, numFeatures);
+    // Matrix matrix(reader.getData(), numData, numFeatures);
+    Matrix matrix(reader.getData(), numData / numProcs, numFeatures);
 
     // KPlusPlus kplusplus;
     // OptimizedKPlusPlus kplusplus;
@@ -40,14 +41,10 @@ int main(int argc, char *argv[])
     // MPILloyd lloyd;
     // MPIOptimizedLloyd lloyd;
     EuclideanDistance distanceFunc;
-    Kmeans kmeans(&kplusplus, &lloyd, &distanceFunc);
-    // MPIKmeans kmeans(&kplusplus, &lloyd, &distanceFunc);
-    int rank = 0;
-    // MPI_Init(&argc, &argv);
-    // int rank, numProcs;
-    // MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    // MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
-    // std::cout << matrix.data.size() << " " << rank << std::endl;
+    // Kmeans kmeans(&kplusplus, &lloyd, &distanceFunc);
+    MPIKmeans kmeans(numData, &kplusplus, &lloyd, &distanceFunc);
+
+    // std::cout << matrix.size() << " " << rank << std::endl;
     auto start = std::chrono::high_resolution_clock::now();
     kmeans.fit(&matrix, numClusters, numRestarts);
     auto stop = std::chrono::high_resolution_clock::now();
@@ -64,8 +61,10 @@ int main(int argc, char *argv[])
         std::cout << "Serial KPlusPlus Done! Error: " << kmeans.getError() << " Time: " << durationSerialKPP.count() << std::endl;
         auto clusterdata = kmeans.getClusterData();
         // std::cout << "Clustering" << std::endl;
-        // for (auto &val : clusterdata->clustering)
+        // int count = 0;
+        // for (auto &val : clusterdata.mClustering)
         // {
+        //     count++;
         //     std::cout << val << " ";
         // }
 
@@ -74,5 +73,5 @@ int main(int argc, char *argv[])
         std::cout << "Clusters" << std::endl;
         clusterdata.mClusters.display();
     }
-    // MPI_Finalize();
+    MPI_Finalize();
 }
