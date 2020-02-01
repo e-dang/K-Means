@@ -1,9 +1,10 @@
 #pragma once
 
-#include "Definitions.hpp"
-#include "DistanceFunctors.hpp"
 #include <iostream>
 #include <vector>
+
+#include "Definitions.hpp"
+#include "DistanceFunctors.hpp"
 
 /**
  * @brief Wrapper class around std::vector<value_t> that helps manipulate the vector as if it were a 2D nested vector.
@@ -14,20 +15,20 @@ class Matrix
 private:
     // Member variables
     std::vector<value_t> mData;
-    int mNumRows; // this is the number of datapoints in the matrix
-    int mNumCols; // this is the number of features of each datapoint in the matrix
+    int mNumRows;  // this is the number of datapoints in the matrix
+    int mNumCols;  // this is the number of features of each datapoint in the matrix
 
 public:
     Matrix() {}
 
-    Matrix(const int &numRows, const int &numCols)
+    Matrix(const int& numRows, const int& numCols)
     {
         mData.reserve(numRows * numCols);
         mNumRows = numRows;
         mNumCols = numCols;
     }
 
-    Matrix(std::vector<value_t> data, const int &numRows, const int &numCols)
+    Matrix(std::vector<value_t> data, const int& numRows, const int& numCols)
     {
         if (data.size() > numRows * numCols)
         {
@@ -52,10 +53,7 @@ public:
      * @param row - The number of the row to retrieve.
      * @return value_t *
      */
-    value_t *at(const int &row)
-    {
-        return mData.data() + (row * mNumCols);
-    }
+    value_t* at(const int& row) { return mData.data() + (row * mNumCols); }
 
     /**
      * @brief Function to access a specific value in the matrix.
@@ -64,12 +62,9 @@ public:
      * @param col - The column number that the value is in.
      * @return value_t&
      */
-    value_t &at(const int &row, const int &col)
-    {
-        return *(this->at(row) + col);
-    }
+    value_t& at(const int& row, const int& col) { return *(this->at(row) + col); }
 
-    void appendDataPoint(value_t *datapoint)
+    void appendDataPoint(value_t* datapoint)
     {
         if (getNumData() < mNumRows)
         {
@@ -81,33 +76,27 @@ public:
         }
     }
 
-    void fill(const int &val)
-    {
-        std::fill(mData.begin(), mData.end(), val);
-    }
+    void fill(const int& val) { std::fill(mData.begin(), mData.end(), val); }
 
-    void resize(const int &val)
-    {
-        mData.resize(val * mNumCols);
-    }
+    void resize(const int& val) { mData.resize(val * mNumCols); }
 
-    value_t *data() { return mData.data(); }
+    value_t* data() { return mData.data(); }
 
     int size() { return mData.size(); }
     int getNumData() { return mData.size() / mNumCols; }
     int getMaxNumData() { return mNumRows; }
     int getNumFeatures() { return mNumCols; }
 
-    void operator=(const Matrix &lhs)
+    void operator=(const Matrix& lhs)
     {
-        mData = std::move(lhs.mData);
+        mData    = std::move(lhs.mData);
         mNumRows = lhs.mNumRows;
         mNumCols = lhs.mNumCols;
     }
 
     void display()
     {
-        for (auto &val : mData)
+        for (auto& val : mData)
         {
             std::cout << val << " ";
         }
@@ -121,9 +110,9 @@ public:
 struct ClusterData
 {
     // Public member variables
-    Matrix mClusters;                     // the cluster centers
-    std::vector<int> mClustering;         // the cluster assignments of each datapoint
-    std::vector<value_t> mClusterWeights; // the sum of the weights of each datapoint assigned to a cluster
+    Matrix mClusters;                      // the cluster centers
+    std::vector<int> mClustering;          // the cluster assignments of each datapoint
+    std::vector<value_t> mClusterWeights;  // the sum of the weights of each datapoint assigned to a cluster
 
     /**
      * @brief Default constructor.
@@ -137,9 +126,10 @@ struct ClusterData
      * @param numFeatures - The number of features each datapoint has.
      * @param numClusters - The number of clusters that the data is being clustered into.
      */
-    ClusterData(const int &numData, const int &numFeatures, const int &numClusters) : mClusters(numClusters, numFeatures)
+    ClusterData(const int& numData, const int& numFeatures, const int& numClusters) :
+        mClusters(numClusters, numFeatures)
     {
-        mClustering = std::vector<int>(numData, -1);
+        mClustering     = std::vector<int>(numData, -1);
         mClusterWeights = std::vector<value_t>(numClusters, 0);
     }
 
@@ -153,10 +143,10 @@ struct ClusterData
      *
      * @param lhs - An instance of ClusterData that is to be copied into the calling instance of ClusterData.
      */
-    void operator=(const ClusterData &lhs)
+    void operator=(const ClusterData& lhs)
     {
-        mClusters = lhs.mClusters;
-        mClustering = std::move(lhs.mClustering);
+        mClusters       = lhs.mClusters;
+        mClustering     = std::move(lhs.mClustering);
         mClusterWeights = std::move(lhs.mClusterWeights);
     }
 };
@@ -175,13 +165,22 @@ struct ClosestCluster
 struct StaticData
 {
     // user data
-    Matrix *pData;
-    std::vector<value_t> *pWeights;
-    IDistanceFunctor *pDistanceFunc;
+    Matrix* pData;
+    std::vector<value_t>* pWeights;
+    IDistanceFunctor* pDistanceFunc;
 
     // chunk data
     int mRank;
     int mTotalNumData;
     std::vector<int> mLengths;
     std::vector<int> mDisplacements;
+};
+
+struct ClusterResults
+{
+    int mError;
+    ClusterData mClusterData;
+    std::vector<value_t> mSqDistances;
+
+    ClusterResults() : mError(-1) {}
 };
