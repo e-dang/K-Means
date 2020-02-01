@@ -12,7 +12,7 @@ class TemplateKPlusPlus : public AbstractKmeansInitializer
 {
 protected:
     // Member variables
-    std::unique_ptr<AbstractWeightedRandomSelector> pSelector;
+    std::unique_ptr<IWeightedRandomSelector> pSelector;
 
 public:
     /**
@@ -21,9 +21,11 @@ public:
      * @param selector
      * @param finder
      */
-    TemplateKPlusPlus(AbstractWeightedRandomSelector *selector, AbstractClosestClusterFinder *finder,
-                      AbstractClusteringUpdater *updater) : pSelector(selector),
-                                                            AbstractKmeansInitializer(finder, updater) {}
+    TemplateKPlusPlus(IWeightedRandomSelector* selector, AbstractClosestClusterFinder* finder,
+                      AbstractClusteringUpdater* updater) :
+        pSelector(selector), AbstractKmeansInitializer(finder, updater)
+    {
+    }
 
     /**
      * @brief Destroy the Serial KPlusPlus object
@@ -38,7 +40,7 @@ public:
      * @param distanceFunc - The functor that defines the distance metric to use.
      * @param seed - The seed for the RNG.
      */
-    void initialize(const float &seed) override;
+    void initialize(const float& seed) override;
 
 protected:
     /**
@@ -65,8 +67,10 @@ protected:
 class KPlusPlus : public TemplateKPlusPlus
 {
 public:
-    KPlusPlus() : TemplateKPlusPlus(new SingleWeightedRandomSelector(), new ClosestClusterFinder(&pClusters),
-                                    new ClusteringUpdater(&pClustering, &pClusterWeights)){};
+    KPlusPlus() :
+        TemplateKPlusPlus(new SingleWeightedRandomSelector(), new ClosestClusterFinder(&pClusters),
+                          new ClusteringUpdater(&pClustering, &pClusterWeights)){};
+
     virtual ~KPlusPlus(){};
 };
 
@@ -81,9 +85,9 @@ public:
 class OptimizedKPlusPlus : public TemplateKPlusPlus
 {
 public:
-    OptimizedKPlusPlus() : TemplateKPlusPlus(new SingleWeightedRandomSelector(),
-                                             new ClosestNewClusterFinder(&pClusters),
-                                             new ClusteringUpdater(&pClustering, &pClusterWeights)){};
+    OptimizedKPlusPlus() :
+        TemplateKPlusPlus(new SingleWeightedRandomSelector(), new ClosestNewClusterFinder(&pClusters),
+                          new ClusteringUpdater(&pClustering, &pClusterWeights)){};
 
     /**
      * @brief Destroy the OptimizedKPlusPlus object
@@ -98,9 +102,11 @@ public:
 class OMPKPlusPlus : public TemplateKPlusPlus
 {
 public:
-    OMPKPlusPlus() : TemplateKPlusPlus(new SingleWeightedRandomSelector(), new ClosestClusterFinder(&pClusters),
-                                       new AtomicClusteringUpdater(&pClustering, &pClusterWeights)){};
-    // OMPKPlusPlus(AbstractWeightedClusterSelection *selector, AbstractFindAndUpdate *finder) : TemplateKPlusPlus(selector, finder){};
+    OMPKPlusPlus() :
+        TemplateKPlusPlus(new SingleWeightedRandomSelector(), new ClosestClusterFinder(&pClusters),
+                          new AtomicClusteringUpdater(&pClustering, &pClusterWeights)){};
+    // OMPKPlusPlus(AbstractWeightedClusterSelection *selector, AbstractFindAndUpdate *finder) :
+    // TemplateKPlusPlus(selector, finder){};
 
     /**
      * @brief Destroy the OMPKPlusPlus object
@@ -127,9 +133,9 @@ protected:
 class OMPOptimizedKPlusPlus : public TemplateKPlusPlus
 {
 public:
-    OMPOptimizedKPlusPlus() : TemplateKPlusPlus(new SingleWeightedRandomSelector(),
-                                                new ClosestNewClusterFinder(&pClusters),
-                                                new AtomicClusteringUpdater(&pClustering, &pClusterWeights)){};
+    OMPOptimizedKPlusPlus() :
+        TemplateKPlusPlus(new SingleWeightedRandomSelector(), new ClosestNewClusterFinder(&pClusters),
+                          new AtomicClusteringUpdater(&pClustering, &pClusterWeights)){};
 
     /**
      * @brief Destroy the OptimizedKPlusPlus object
@@ -140,11 +146,12 @@ public:
 class MPIKPlusPlus : public TemplateKPlusPlus
 {
 public:
-    MPIKPlusPlus() : TemplateKPlusPlus(new SingleWeightedRandomSelector(),
-                                       new ClosestClusterFinder(&pClusters),
-                                       new DistributedClusteringUpdater(&pClustering, &pClusterWeights)){};
-    MPIKPlusPlus(AbstractWeightedRandomSelector *selector, AbstractClosestClusterFinder *finder,
-                 AbstractClusteringUpdater *updater) : TemplateKPlusPlus(selector, finder, updater){};
+    MPIKPlusPlus() :
+        TemplateKPlusPlus(new SingleWeightedRandomSelector(), new ClosestClusterFinder(&pClusters),
+                          new DistributedClusteringUpdater(&pClustering, &pClusterWeights)){};
+    MPIKPlusPlus(IWeightedRandomSelector* selector, AbstractClosestClusterFinder* finder,
+                 AbstractClusteringUpdater* updater) :
+        TemplateKPlusPlus(selector, finder, updater){};
     virtual ~MPIKPlusPlus(){};
 
 protected:
@@ -172,8 +179,8 @@ protected:
 class MPIOptimizedKPlusPlus : public MPIKPlusPlus
 {
 public:
-    MPIOptimizedKPlusPlus() : MPIKPlusPlus(new SingleWeightedRandomSelector(),
-                                           new ClosestNewClusterFinder(&pClusters),
-                                           new DistributedClusteringUpdater(&pClustering, &pClusterWeights)){};
+    MPIOptimizedKPlusPlus() :
+        MPIKPlusPlus(new SingleWeightedRandomSelector(), new ClosestNewClusterFinder(&pClusters),
+                     new DistributedClusteringUpdater(&pClustering, &pClusterWeights)){};
     virtual ~MPIOptimizedKPlusPlus(){};
 };

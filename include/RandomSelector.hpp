@@ -5,13 +5,13 @@
 
 #include "Definitions.hpp"
 
-class AbstractWeightedRandomSelector
+class IWeightedRandomSelector
 {
 public:
     virtual int select(std::vector<value_t>* weights, value_t randomSumFrac) = 0;
 };
 
-class SingleWeightedRandomSelector : public AbstractWeightedRandomSelector
+class SingleWeightedRandomSelector : public IWeightedRandomSelector
 {
 public:
     /**
@@ -34,6 +34,11 @@ public:
     virtual std::vector<int> select(std::vector<value_t>* weights, const int& sampleSize) = 0;
 };
 
+/**
+ * @brief Class to perform random weighted selection from a list without replacement. This algorithm was taken from
+ *        https://stackoverflow.com/questions/53632441/c-sampling-from-discrete-distribution-without-replacement
+ *
+ */
 class MultiWeightedRandomSelector : public IMultiWeightedRandomSelector
 {
 public:
