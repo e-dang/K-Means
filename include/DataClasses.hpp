@@ -186,3 +186,9 @@ struct ClusterResults
 
     ~ClusterResults() {}
 };
+
+struct Coreset
+{
+    Matrix data;
+    std::vector<value_t> weights;
+};
