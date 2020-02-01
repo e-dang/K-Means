@@ -1,35 +1,47 @@
 #include "Kmeans.hpp"
-#include "mpi.h"
+
 #include <ctime>
 
-void Kmeans::fit(Matrix *data, int numClusters, int numRestarts)
-{
-    std::vector<value_t> weights(data->getMaxNumData(), 1);
-    fit(data, numClusters, numRestarts, &weights);
-}
+#include "mpi.h"
 
-void Kmeans::fit(Matrix *data, int numClusters, int numRestarts, std::vector<value_t> *weights)
+ClusterResults AbstractKmeans::run(Matrix* data, const int& numClusters, const int& numRestarts, StaticData* staticData)
 {
-    auto staticData = initStaticData(data, weights);
-    initializer->setStaticData(&staticData);
-    maximizer->setStaticData(&staticData);
+    ClusterResults clusterResults;
+
+    pInitializer->setStaticData(staticData);
+    pMaximizer->setStaticData(staticData);
 
     for (int i = 0; i < numRestarts; i++)
     {
-        std::vector<value_t> distances(staticData.mTotalNumData, 1);
-        ClusterData clusterData(staticData.mTotalNumData, data->getNumFeatures(), numClusters);
+        std::vector<value_t> distances(staticData->mTotalNumData, 1);
+        ClusterData clusterData(staticData->mTotalNumData, data->getNumFeatures(), numClusters);
 
-        initializer->setDynamicData(&clusterData, &distances);
-        maximizer->setDynamicData(&clusterData, &distances);
+        pInitializer->setDynamicData(&clusterData, &distances);
+        pMaximizer->setDynamicData(&clusterData, &distances);
 
-        initializer->initialize(time(NULL) * (float)i);
-        maximizer->maximize();
+        pInitializer->initialize(time(NULL) * (float)i);
+        pMaximizer->maximize();
 
-        compareResults(&clusterData, &distances);
+        compareResults(&clusterData, &distances, &clusterResults);
     }
+
+    return clusterResults;
 }
 
-StaticData MPIKmeans::initStaticData(Matrix *data, std::vector<value_t> *weights)
+ClusterResults AbstractKmeans::fit(Matrix* data, const int& numClusters, const int& numRestarts)
+{
+    std::vector<value_t> weights(data->getMaxNumData(), 1);
+    return fit(data, numClusters, numRestarts, &weights);
+}
+
+ClusterResults AbstractKmeans::fit(Matrix* data, const int& numClusters, const int& numRestarts,
+                                   std::vector<value_t>* weights)
+{
+    auto staticData = initStaticData(data, weights);
+    return run(data, numClusters, numRestarts, &staticData);
+}
+
+StaticData MPIKmeans::initStaticData(Matrix* data, std::vector<value_t>* weights)
 {
     int rank, numProcs;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -39,48 +51,14 @@ StaticData MPIKmeans::initStaticData(Matrix *data, std::vector<value_t> *weights
     int chunk = mTotalNumData / numProcs;
     int scrap = chunk + (mTotalNumData % numProcs);
 
-    std::vector<int> lengths(numProcs);       // size of each sub-array to gather
-    std::vector<int> displacements(numProcs); // index of each sub-array to gather
+    std::vector<int> lengths(numProcs);        // size of each sub-array to gather
+    std::vector<int> displacements(numProcs);  // index of each sub-array to gather
     for (int i = 0; i < numProcs; i++)
     {
-        lengths[i] = chunk;
+        lengths[i]       = chunk;
         displacements[i] = i * chunk;
     }
     lengths[numProcs - 1] = scrap;
 
-    return StaticData{data,
-                      weights,
-                      distanceFunc,
-                      rank,
-                      mTotalNumData,
-                      lengths,
-                      displacements};
-}
-
-void MPIKmeans::fit(Matrix *data, int numClusters, int numRestarts)
-{
-    std::vector<value_t> weights(data->getMaxNumData(), 1);
-    fit(data, numClusters, numRestarts, &weights);
-}
-
-void MPIKmeans::fit(Matrix *data, int numClusters, int numRestarts, std::vector<value_t> *weights)
-{
-    auto staticData = initStaticData(data, weights);
-
-    initializer->setStaticData(&staticData);
-    maximizer->setStaticData(&staticData);
-
-    for (int i = 0; i < numRestarts; i++)
-    {
-        std::vector<value_t> distances(mTotalNumData, 1);
-        ClusterData clusterData(mTotalNumData, data->getNumFeatures(), numClusters);
-
-        initializer->setDynamicData(&clusterData, &distances);
-        maximizer->setDynamicData(&clusterData, &distances);
-
-        initializer->initialize(time(NULL) * (float)i);
-        maximizer->maximize();
-
-        compareResults(&clusterData, &distances);
-    }
+    return StaticData{ data, weights, pDistanceFunc, rank, mTotalNumData, lengths, displacements };
 }
