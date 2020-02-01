@@ -1,18 +1,19 @@
-#include "KPlusPlus.hpp"
-#include "Lloyd.hpp"
+#include <chrono>
+#include <iostream>
+
+#include "Definitions.hpp"
 #include "DistanceFunctors.hpp"
+#include "KPlusPlus.hpp"
+#include "Kmeans.hpp"
+#include "Lloyd.hpp"
 #include "Reader.hpp"
 #include "Writer.hpp"
-#include <chrono>
-#include "Kmeans.hpp"
-#include <iostream>
-#include "Definitions.hpp"
 #include "mpi.h"
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
     int numRestarts = 5;
-    int numData = 100000;
+    int numData     = 100000;
     int numFeatures = 2;
     int numClusters = 30;
 
@@ -31,14 +32,14 @@ int main(int argc, char *argv[])
     // KPlusPlus kplusplus;
     // OptimizedKPlusPlus kplusplus;
     // OMPKPlusPlus kplusplus;
-    OMPOptimizedKPlusPlus kplusplus;
-    // MPIKPlusPlus kplusplus;
+    // OMPOptimizedKPlusPlus kplusplus;
+    MPIKPlusPlus kplusplus;
     // MPIOptimizedKPlusPlus kplusplus;
     // Lloyd lloyd;
     // OptimizedLloyd lloyd;
     // OMPLloyd lloyd;
-    OMPOptimizedLloyd lloyd;
-    // MPILloyd lloyd;
+    // OMPOptimizedLloyd lloyd;
+    MPILloyd lloyd;
     // MPIOptimizedLloyd lloyd;
     EuclideanDistance distanceFunc;
     // Kmeans kmeans(&kplusplus, &lloyd, &distanceFunc);
@@ -47,18 +48,21 @@ int main(int argc, char *argv[])
     // std::cout << matrix.size() << " " << rank << std::endl;
     auto start = std::chrono::high_resolution_clock::now();
     kmeans.fit(&matrix, numClusters, numRestarts);
-    auto stop = std::chrono::high_resolution_clock::now();
+    auto stop              = std::chrono::high_resolution_clock::now();
     auto durationSerialKPP = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
 
     if (rank == 0)
     {
         ClusterDataWriter writer(kmeans.getClusterData(), numData, numFeatures);
-        std::string serialKppClustersFile = "../data/clusters_serial_kpp_" + std::to_string(numData) + "_" + std::to_string(numFeatures) + ".txt";
-        std::string serialKppClusteringFile = "../data/clustering_serial_kpp_" + std::to_string(numData) + "_" + std::to_string(numFeatures) + ".txt";
+        std::string serialKppClustersFile =
+          "../data/clusters_serial_kpp_" + std::to_string(numData) + "_" + std::to_string(numFeatures) + ".txt";
+        std::string serialKppClusteringFile =
+          "../data/clustering_serial_kpp_" + std::to_string(numData) + "_" + std::to_string(numFeatures) + ".txt";
         writer.writeClusters(serialKppClustersFile);
         writer.writeClustering(serialKppClusteringFile);
 
-        std::cout << "Serial KPlusPlus Done! Error: " << kmeans.getError() << " Time: " << durationSerialKPP.count() << std::endl;
+        std::cout << "Serial KPlusPlus Done! Error: " << kmeans.getError() << " Time: " << durationSerialKPP.count()
+                  << std::endl;
         auto clusterdata = kmeans.getClusterData();
         // std::cout << "Clustering" << std::endl;
         // int count = 0;
@@ -68,8 +72,7 @@ int main(int argc, char *argv[])
         //     std::cout << val << " ";
         // }
 
-        std::cout << std::endl
-                  << std::endl;
+        std::cout << std::endl << std::endl;
         std::cout << "Clusters" << std::endl;
         clusterdata.mClusters.display();
     }
