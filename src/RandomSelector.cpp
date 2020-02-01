@@ -1,6 +1,6 @@
 #include "RandomSelector.hpp"
 
-int SingleWeightedRandomSelector::select(std::vector<value_t> *weights, value_t randomSumFrac)
+int SingleWeightedRandomSelector::select(std::vector<value_t>* weights, value_t randomSumFrac)
 {
     int maxIdx = weights->size();
 
@@ -14,4 +14,32 @@ int SingleWeightedRandomSelector::select(std::vector<value_t> *weights, value_t 
     }
 
     return maxIdx - 1;
+}
+
+std::vector<int> MultiWeightedRandomSelector::select(std::vector<value_t>* weights, const int& sampleSize)
+{
+    static boost::random::uniform_01<> dist;
+    static boost::random::mt19937 gen(time(NULL));
+
+    std::vector<double> vals;
+    for (auto& val : *weights)
+    {
+        vals.push_back(std::pow(dist(gen), 1. / val));
+    }
+
+    std::vector<std::pair<int, value_t>> valsWithIndices;
+    for (size_t i = 0; i < vals.size(); i++)
+    {
+        valsWithIndices.emplace_back(i, vals[i]);
+    }
+    std::sort(valsWithIndices.begin(), valsWithIndices.end(),
+              [](std::pair<int, value_t> x, std::pair<int, value_t> y) { return x.second > y.second; });
+
+    std::vector<int> samples;
+    for (int i = 0; i < sampleSize; i++)
+    {
+        samples.push_back(valsWithIndices[i].first);
+    }
+
+    return samples;
 }
