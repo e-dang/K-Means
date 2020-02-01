@@ -183,4 +183,6 @@ struct ClusterResults
     std::vector<value_t> mSqDistances;
 
     ClusterResults() : mError(-1) {}
+
+    ~ClusterResults() {}
 };
