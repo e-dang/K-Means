@@ -1,8 +1,9 @@
 #pragma once
 
+#include <memory>
+
 #include "AbstractKmeansAlgorithms.hpp"
 #include "Averager.hpp"
-#include <memory>
 
 /**
  * @brief Implementation of a Kmeans maximization algorithm. Given a set of initialized clusters, this class will
@@ -14,8 +15,9 @@ protected:
     std::unique_ptr<AbstractWeightedAverager> pAverager;
 
 public:
-    TemplateLloyd(AbstractWeightedAverager *averager, AbstractClosestClusterFinder *finder,
-                  AbstractClusteringUpdater *updater) : pAverager(averager), AbstractKmeansMaximizer(finder, updater){};
+    TemplateLloyd(AbstractWeightedAverager* averager, AbstractClosestClusterFinder* finder,
+                  AbstractClusteringUpdater* updater) :
+        pAverager(averager), AbstractKmeansMaximizer(finder, updater){};
 
     /**
      * @brief Destroy the SerialLloyd object
@@ -54,9 +56,11 @@ protected:
 class Lloyd : public TemplateLloyd
 {
 public:
-    Lloyd() : TemplateLloyd(new WeightedMultiVectorAverager(), new ClosestClusterFinder(&pClusters),
-                            new ClusteringUpdater(&pClustering, &pClusterWeights)){};
-    ~Lloyd(){};
+    Lloyd() :
+        TemplateLloyd(new WeightedMultiVectorAverager(), new ClosestClusterFinder(&pClusters),
+                      new ClusteringUpdater(&pClustering, &pClusterWeights)){};
+
+    virtual ~Lloyd(){};
 };
 
 /**
@@ -71,13 +75,14 @@ public:
 class OptimizedLloyd : public TemplateLloyd
 {
 public:
-    OptimizedLloyd() : TemplateLloyd(new WeightedMultiVectorAverager(), new ClosestClusterFinder(&pClusters),
-                                     new ClusteringUpdater(&pClustering, &pClusterWeights)){};
+    OptimizedLloyd() :
+        TemplateLloyd(new WeightedMultiVectorAverager(), new ClosestClusterFinder(&pClusters),
+                      new ClusteringUpdater(&pClustering, &pClusterWeights)){};
 
     /**
      * @brief Destroy the OptimizedSerialLloyd object
      */
-    ~OptimizedLloyd(){};
+    virtual ~OptimizedLloyd(){};
 
 protected:
     /**
@@ -99,8 +104,9 @@ protected:
 class OMPLloyd : public TemplateLloyd
 {
 public:
-    OMPLloyd() : TemplateLloyd(new OMPWeightedMultiVectorAverager(), new ClosestClusterFinder(&pClusters),
-                               new AtomicClusteringUpdater(&pClustering, &pClusterWeights)){};
+    OMPLloyd() :
+        TemplateLloyd(new OMPWeightedMultiVectorAverager(), new ClosestClusterFinder(&pClusters),
+                      new AtomicClusteringUpdater(&pClustering, &pClusterWeights)){};
 
     /**
      * @brief Destroy the OMPLloyd object
@@ -129,12 +135,13 @@ protected:
 class OMPOptimizedLloyd : public TemplateLloyd
 {
 public:
-    OMPOptimizedLloyd() : TemplateLloyd(new OMPWeightedMultiVectorAverager(), new ClosestClusterFinder(&pClusters),
-                                        new AtomicClusteringUpdater(&pClustering, &pClusterWeights)){};
+    OMPOptimizedLloyd() :
+        TemplateLloyd(new OMPWeightedMultiVectorAverager(), new ClosestClusterFinder(&pClusters),
+                      new AtomicClusteringUpdater(&pClustering, &pClusterWeights)){};
     /**
      * @brief Destroy the OptimizedSerialLloyd object
      */
-    ~OMPOptimizedLloyd(){};
+    virtual ~OMPOptimizedLloyd(){};
 
 protected:
     /**
@@ -152,11 +159,13 @@ protected:
 class MPILloyd : public TemplateLloyd
 {
 public:
-    MPILloyd() : TemplateLloyd(new WeightedMultiVectorAverager(), new ClosestClusterFinder(&pClusters),
-                               new DistributedClusteringUpdater(&pClustering, &pClusterWeights)){};
-    MPILloyd(AbstractWeightedAverager *averager, AbstractClosestClusterFinder *finder,
-             AbstractClusteringUpdater *updater) : TemplateLloyd(averager, finder, updater){};
-    ~MPILloyd(){};
+    MPILloyd() :
+        TemplateLloyd(new WeightedMultiVectorAverager(), new ClosestClusterFinder(&pClusters),
+                      new DistributedClusteringUpdater(&pClustering, &pClusterWeights)){};
+    MPILloyd(AbstractWeightedAverager* averager, AbstractClosestClusterFinder* finder,
+             AbstractClusteringUpdater* updater) :
+        TemplateLloyd(averager, finder, updater){};
+    virtual ~MPILloyd(){};
 
 protected:
     void calcClusterSums() override;
@@ -174,9 +183,52 @@ protected:
 class MPIOptimizedLloyd : public MPILloyd
 {
 public:
-    MPIOptimizedLloyd() : MPILloyd(new WeightedMultiVectorAverager(), new ClosestClusterFinder(&pClusters),
-                                   new DistributedClusteringUpdater(&pClustering, &pClusterWeights)){};
-    ~MPIOptimizedLloyd(){};
+    MPIOptimizedLloyd() :
+        MPILloyd(new WeightedMultiVectorAverager(), new ClosestClusterFinder(&pClusters),
+                 new DistributedClusteringUpdater(&pClustering, &pClusterWeights)){};
+    virtual ~MPIOptimizedLloyd(){};
+
+protected:
+    /**
+     * @brief Helper function that checks if each point's closest cluster has changed after the clusters have been
+     *        updated in the call to updateClusters(), and updates the clustering data if necessary. This function also
+     *        keeps track of the number of datapoints that have changed cluster assignments and returns this value.
+     *
+     * @return int - The number of datapoints whose cluster assignment has changed in the current iteration.
+     */
+    int reassignPoints() override;
+};
+
+class HybridLloyd : public MPILloyd
+{
+public:
+    HybridLloyd() :
+        MPILloyd(new OMPWeightedMultiVectorAverager(), new ClosestClusterFinder(&pClusters),
+                 new AtomicDistributedClusteringUpdater(&pClustering, &pClusterWeights))
+    {
+    }
+    virtual ~HybridLloyd() {}
+
+protected:
+    /**
+     * @brief Helper function that checks if each point's closest cluster has changed after the clusters have been
+     *        updated in the call to updateClusters(), and updates the clustering data if necessary. This function also
+     *        keeps track of the number of datapoints that have changed cluster assignments and returns this value.
+     *
+     * @return int - The number of datapoints whose cluster assignment has changed in the current iteration.
+     */
+    int reassignPoints() override;
+};
+
+class HybridOptimizedLloyd : public MPILloyd
+{
+public:
+    HybridOptimizedLloyd() :
+        MPILloyd(new OMPWeightedMultiVectorAverager(), new ClosestClusterFinder(&pClusters),
+                 new AtomicDistributedClusteringUpdater(&pClustering, &pClusterWeights))
+    {
+    }
+    virtual ~HybridOptimizedLloyd() {}
 
 protected:
     /**

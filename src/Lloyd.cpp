@@ -131,7 +131,6 @@ int OMPOptimizedLloyd::reassignPoints()
 
 void MPILloyd::calcClusterSums()
 {
-    // TemplateLloyd::calcClusterSums();
     for (int i = 0; i < pData->getNumData(); i++)
     {
         for (int j = 0; j < pData->getNumFeatures(); j++)
@@ -185,6 +184,71 @@ int MPILloyd::reassignPoints()
 int MPIOptimizedLloyd::reassignPoints()
 {
     int changed = 0;
+    for (int i = 0; i < pData->getMaxNumData(); i++)
+    {
+        int clusterIdx = pClustering->at(pDisplacements->at(mRank) + i);
+        value_t dist = std::pow((*pDistanceFunc)(pData->at(i), pClusters->at(clusterIdx), pData->getNumFeatures()), 2);
+        if (dist > pDistances->at(i) || pDistances->at(i) < 0)
+        {
+            int before = pClustering->at(i);
+
+            // find closest cluster for each datapoint and update cluster assignment
+            findAndUpdateClosestCluster(i);
+
+            // check if cluster assignments have changed
+            if (before != pClustering->at(i))
+            {
+                changed++;
+            }
+        }
+        else  // distance is smaller, thus update the distances vector
+        {
+            pDistances->at(i) = dist;
+        }
+    }
+
+    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_INT, pClustering->data(), pLengths->data(),
+                   pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
+    MPI_Allreduce(MPI_IN_PLACE, &changed, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_FLOAT, pDistances->data(), pLengths->data(),
+                   pDisplacements->data(), MPI_FLOAT, MPI_COMM_WORLD);
+
+    return changed;
+}
+
+int HybridLloyd::reassignPoints()
+{
+    int changed = 0;
+
+#pragma omp parallel for schedule(static), reduction(+ : changed)
+    for (int i = 0; i < pData->getMaxNumData(); i++)
+    {
+        // find closest cluster for each datapoint and update cluster assignment
+        int before = pClustering->at(i);
+
+        findAndUpdateClosestCluster(i);
+
+        // check if cluster assignments have changed
+        if (before != pClustering->at(i))
+        {
+            changed++;
+        }
+    }
+
+    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_INT, pClustering->data(), pLengths->data(),
+                   pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
+    MPI_Allreduce(MPI_IN_PLACE, &changed, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_FLOAT, pDistances->data(), pLengths->data(),
+                   pDisplacements->data(), MPI_FLOAT, MPI_COMM_WORLD);
+
+    return changed;
+}
+
+int HybridOptimizedLloyd::reassignPoints()
+{
+    int changed = 0;
+
+#pragma omp parallel for schedule(static), reduction(+ : changed)
     for (int i = 0; i < pData->getMaxNumData(); i++)
     {
         int clusterIdx = pClustering->at(pDisplacements->at(mRank) + i);
