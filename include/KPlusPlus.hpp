@@ -184,3 +184,37 @@ public:
                      new DistributedClusteringUpdater(&pClustering, &pClusterWeights)){};
     virtual ~MPIOptimizedKPlusPlus(){};
 };
+
+class HybridKPlusPlus : public MPIKPlusPlus
+{
+public:
+    HybridKPlusPlus() :
+        MPIKPlusPlus(new SingleWeightedRandomSelector(), new ClosestClusterFinder(&pClusters),
+                     new AtomicDistributedClusteringUpdater(&pClustering, &pClusterWeights)){};
+
+    HybridKPlusPlus(IWeightedRandomSelector* selector, AbstractClosestClusterFinder* finder,
+                    AbstractClusteringUpdater* updater) :
+        MPIKPlusPlus(selector, finder, updater){};
+
+    virtual ~HybridKPlusPlus(){};
+
+    /**
+     * @brief Helper function that wraps the functionality of findClosestCluster() and updateClustering() in order to
+     *        find the closest cluster for each datapoint and update the clustering assignments.
+     *
+     * @param distances - A pointer to a vector that stores the squared distances of each datapoint to its closest
+     *                    cluster.
+     * @param distanceFunc - A functor that defines the distance metric.
+     */
+    void findAndUpdateClosestClusters() override;
+};
+
+class HybridOptimizedKPlusPlus : public HybridKPlusPlus
+{
+public:
+    HybridOptimizedKPlusPlus() :
+        HybridKPlusPlus(new SingleWeightedRandomSelector(), new ClosestNewClusterFinder(&pClusters),
+                        new AtomicDistributedClusteringUpdater(&pClustering, &pClusterWeights)){};
+
+    virtual ~HybridOptimizedKPlusPlus(){};
+};

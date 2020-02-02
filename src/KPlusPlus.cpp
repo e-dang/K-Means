@@ -98,3 +98,17 @@ void MPIKPlusPlus::findAndUpdateClosestClusters()
     MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_FLOAT, pDistances->data(), pLengths->data(),
                    pDisplacements->data(), MPI_FLOAT, MPI_COMM_WORLD);
 }
+
+void HybridKPlusPlus::findAndUpdateClosestClusters()
+{
+#pragma omp parallel for schedule(static)
+    for (int i = 0; i < pData->getMaxNumData(); i++)
+    {
+        findAndUpdateClosestCluster(i);
+    }
+
+    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_INT, pClustering->data(), pLengths->data(),
+                   pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_FLOAT, pDistances->data(), pLengths->data(),
+                   pDisplacements->data(), MPI_FLOAT, MPI_COMM_WORLD);
+}
