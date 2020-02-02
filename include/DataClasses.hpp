@@ -202,3 +202,11 @@ struct Coreset
     Matrix data;
     std::vector<value_t> weights;
 };
+
+struct MPIData
+{
+    int rank;
+    int numProcs;
+    std::vector<int> lengths;
+    std::vector<int> displacements;
+};
