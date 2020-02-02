@@ -53,13 +53,13 @@ ClusterResults CoresetKmeans::fit(Matrix* data, const int& numClusters, const in
     coresetWeights.reserve(mSampleSize);
     Coreset coreset{ Matrix(mSampleSize, data->getNumFeatures()), coresetWeights };
 
-    pCreator->createCoreset(data, &coreset, pDistanceFunc);
+    pCreator->createCoreset(data, &coreset);
 
     auto clusterResults = pKmeans->fit(&coreset.data, numClusters, numRestarts, &coreset.weights);
     clusterResults.mClusterData.mClustering.resize(mTotalNumData);
     clusterResults.mSqDistances.resize(mTotalNumData);
 
-    pCreator->finishClustering(data, &clusterResults, pDistanceFunc);
+    pCreator->finishClustering(data, &clusterResults);
 
     return clusterResults;
 }

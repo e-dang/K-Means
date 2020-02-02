@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <memory>
 #include <vector>
 
 #include "Definitions.hpp"
@@ -177,7 +178,7 @@ struct StaticData
     // user data
     Matrix* pData;
     std::vector<value_t>* pWeights;
-    IDistanceFunctor* pDistanceFunc;
+    std::shared_ptr<IDistanceFunctor> pDistanceFunc;
 
     // chunk data
     int mRank;

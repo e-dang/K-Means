@@ -18,7 +18,7 @@ protected:
     // user data
     Matrix* pData;
     std::vector<value_t>* pWeights;
-    IDistanceFunctor* pDistanceFunc;
+    std::shared_ptr<IDistanceFunctor> pDistanceFunc;
 
     // cluster data
     Matrix* pClusters;

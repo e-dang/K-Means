@@ -1,6 +1,7 @@
 #include "ClosestClusterFinder.hpp"
 
-ClosestCluster ClosestClusterFinder::findClosestCluster(value_t *datapoint, IDistanceFunctor *distanceFunc)
+ClosestCluster ClosestClusterFinder::findClosestCluster(value_t* datapoint,
+                                                        std::shared_ptr<IDistanceFunctor> distanceFunc)
 {
     int clusterIdx, numExistingClusters = (*ppClusters)->getNumData();
     value_t minDistance = -1;
@@ -11,14 +12,15 @@ ClosestCluster ClosestClusterFinder::findClosestCluster(value_t *datapoint, IDis
         if (minDistance > tempDistance || minDistance < 0)
         {
             minDistance = tempDistance;
-            clusterIdx = i;
+            clusterIdx  = i;
         }
     }
 
-    return ClosestCluster{clusterIdx, std::pow(minDistance, 2)};
+    return ClosestCluster{ clusterIdx, std::pow(minDistance, 2) };
 }
 
-ClosestCluster ClosestNewClusterFinder::findClosestCluster(value_t *datapoint, IDistanceFunctor *distanceFunc)
+ClosestCluster ClosestNewClusterFinder::findClosestCluster(value_t* datapoint,
+                                                           std::shared_ptr<IDistanceFunctor> distanceFunc)
 {
     static int prevNumClusters, intermediate;
     int clusterIdx, numExistingClusters = (*ppClusters)->getNumData();
@@ -27,7 +29,7 @@ ClosestCluster ClosestNewClusterFinder::findClosestCluster(value_t *datapoint, I
     if (numExistingClusters == 1)
     {
         prevNumClusters = 0;
-        intermediate = 1;
+        intermediate    = 1;
     }
 
     for (int i = prevNumClusters; i < numExistingClusters; i++)
@@ -37,15 +39,15 @@ ClosestCluster ClosestNewClusterFinder::findClosestCluster(value_t *datapoint, I
         if (minDistance > tempDistance || minDistance < 0)
         {
             minDistance = tempDistance;
-            clusterIdx = i;
+            clusterIdx  = i;
         }
     }
 
     if (intermediate != numExistingClusters)
     {
         prevNumClusters = intermediate;
-        intermediate = numExistingClusters;
+        intermediate    = numExistingClusters;
     }
 
-    return ClosestCluster{clusterIdx, std::pow(minDistance, 2)};
+    return ClosestCluster{ clusterIdx, std::pow(minDistance, 2) };
 }

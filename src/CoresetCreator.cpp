@@ -2,7 +2,7 @@
 
 #include "omp.h"
 
-void AbstractCoresetCreator::createCoreset(Matrix* data, Coreset* coreset, IDistanceFunctor* distanceFunc)
+void AbstractCoresetCreator::createCoreset(Matrix* data, Coreset* coreset)
 {
     std::vector<value_t> mean(data->getNumFeatures());
     std::vector<value_t> sqDistances(data->getNumData());
@@ -10,7 +10,7 @@ void AbstractCoresetCreator::createCoreset(Matrix* data, Coreset* coreset, IDist
 
     calcMean(data, &mean);
 
-    value_t distanceSum = calcDistsFromMean(data, &mean, &sqDistances, distanceFunc);
+    value_t distanceSum = calcDistsFromMean(data, &mean, &sqDistances);
 
     calcDistribution(&sqDistances, distanceSum, &distribution);
 
@@ -23,12 +23,12 @@ void AbstractCoresetCreator::calcMean(Matrix* data, std::vector<value_t>* mean)
 }
 
 value_t AbstractCoresetCreator::calcDistsFromMean(Matrix* data, std::vector<value_t>* mean,
-                                                  std::vector<value_t>* sqDistances, IDistanceFunctor* distanceFunc)
+                                                  std::vector<value_t>* sqDistances)
 {
     value_t distanceSum = 0;
     for (int i = 0; i < data->getNumData(); i++)
     {
-        sqDistances->at(i) = std::pow((*distanceFunc)(data->at(i), mean->data(), mean->size()), 2);
+        sqDistances->at(i) = std::pow((*pDistanceFunc)(data->at(i), mean->data(), mean->size()), 2);
         distanceSum += sqDistances->at(i);
     }
 
@@ -56,13 +56,13 @@ void AbstractCoresetCreator::sampleDistribution(Matrix* data, std::vector<value_
 }
 
 value_t OMPCoresetCreator::calcDistsFromMean(Matrix* data, std::vector<value_t>* mean,
-                                             std::vector<value_t>* sqDistances, IDistanceFunctor* distanceFunc)
+                                             std::vector<value_t>* sqDistances)
 {
     value_t distanceSum = 0;
-#pragma omp parallel for shared(data, mean, sqDistances, distanceFunc), schedule(static), reduction(+ : distanceSum)
+#pragma omp parallel for shared(data, mean, sqDistances, pDistanceFunc), schedule(static), reduction(+ : distanceSum)
     for (int i = 0; i < data->getNumData(); i++)
     {
-        sqDistances->at(i) = std::pow((*distanceFunc)(data->at(i), mean->data(), mean->size()), 2);
+        sqDistances->at(i) = std::pow((*pDistanceFunc)(data->at(i), mean->data(), mean->size()), 2);
         distanceSum += sqDistances->at(i);
     }
 
@@ -101,13 +101,13 @@ void MPICoresetCreator::calcMean(Matrix* data, std::vector<value_t>* mean)
 }
 
 value_t MPICoresetCreator::calcDistsFromMean(Matrix* data, std::vector<value_t>* mean,
-                                             std::vector<value_t>* sqDistances, IDistanceFunctor* distanceFunc)
+                                             std::vector<value_t>* sqDistances)
 {
     // calculate local quantization errors
     value_t localDistanceSum = 0;
     for (int i = 0; i < data->getNumData(); i++)
     {
-        sqDistances->at(i) += std::pow((*distanceFunc)(data->at(i), mean->data(), mean->size()), 2);
+        sqDistances->at(i) += std::pow((*pDistanceFunc)(data->at(i), mean->data(), mean->size()), 2);
         localDistanceSum += sqDistances->at(i);
     }
 
@@ -162,20 +162,19 @@ void MPICoresetCreator::appendDataToCoreset(Matrix* data, Coreset* coreset, std:
     }
 }
 
-void AbstractCoresetCreator::finishClustering(Matrix* data, ClusterResults* clusterResults,
-                                              IDistanceFunctor* distanceFunc)
+void AbstractCoresetCreator::finishClustering(Matrix* data, ClusterResults* clusterResults)
 {
     for (int i = 0; i < data->getNumData(); i++)
     {
         // auto closestCluster =
-        //   pFinder->findClosestCluster(data->at(i), clusterResults->mClusterData.mClusters, pDistanceFunc);
+        //   pFinder->findClosestCluster(data->at(i), clusterResults->mClusterData.mClusters, ppDistanceFunc);
 
         int clusterIdx;
         value_t minDistance = -1;
         auto& clusters      = clusterResults->mClusterData.mClusters;
         for (int j = 0; j < clusters.getNumData(); j++)
         {
-            value_t tempDistance = (*distanceFunc)(data->at(i), clusters.at(j), clusters.getNumFeatures());
+            value_t tempDistance = (*pDistanceFunc)(data->at(i), clusters.at(j), clusters.getNumFeatures());
             if (minDistance > tempDistance || minDistance < 0)
             {
                 minDistance = tempDistance;
@@ -190,19 +189,19 @@ void AbstractCoresetCreator::finishClustering(Matrix* data, ClusterResults* clus
       std::accumulate(clusterResults->mSqDistances.begin(), clusterResults->mSqDistances.end(), 0);
 }
 
-void MPICoresetCreator::finishClustering(Matrix* data, ClusterResults* clusterResults, IDistanceFunctor* distanceFunc)
+void MPICoresetCreator::finishClustering(Matrix* data, ClusterResults* clusterResults)
 {
     for (int i = 0; i < data->getNumData(); i++)
     {
         // auto closestCluster =
-        //   pFinder->findClosestCluster(data->at(i), clusterResults->mClusterData.mClusters, pDistanceFunc);
+        //   pFinder->findClosestCluster(data->at(i), clusterResults->mClusterData.mClusters, ppDistanceFunc);
 
         int clusterIdx;
         value_t minDistance = -1;
         auto& clusters      = clusterResults->mClusterData.mClusters;
         for (int j = 0; j < clusters.getNumData(); j++)
         {
-            value_t tempDistance = (*distanceFunc)(data->at(i), clusters.at(j), clusters.getNumFeatures());
+            value_t tempDistance = (*pDistanceFunc)(data->at(i), clusters.at(j), clusters.getNumFeatures());
             if (minDistance > tempDistance || minDistance < 0)
             {
                 minDistance = tempDistance;

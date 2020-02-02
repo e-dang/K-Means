@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <numeric>
 
 #include "AbstractKmeansAlgorithms.hpp"
@@ -18,9 +19,9 @@ class AbstractKmeans
 {
 protected:
     // Member variables
-    AbstractKmeansInitializer* pInitializer;
-    AbstractKmeansMaximizer* pMaximizer;
-    IDistanceFunctor* pDistanceFunc;
+    std::unique_ptr<AbstractKmeansInitializer> pInitializer;
+    std::unique_ptr<AbstractKmeansMaximizer> pMaximizer;
+    std::shared_ptr<IDistanceFunctor> pDistanceFunc;
 
 public:
     AbstractKmeans(IDistanceFunctor* distanceFunc) : pDistanceFunc(distanceFunc) {}
@@ -67,26 +68,26 @@ public:
     virtual ClusterResults fit(Matrix* matrix, const int& numClusters, const int& numRestarts,
                                std::vector<value_t>* weights);
 
-    /**
-     * @brief Set the initializer member variable.
-     *
-     * @param initializer - A pointer to an implementation of the AbstractKmeansInitializer class.
-     */
-    void setInitializer(AbstractKmeansInitializer* initializer) { pInitializer = initializer; }
+    // /**
+    //  * @brief Set the initializer member variable.
+    //  *
+    //  * @param initializer - A pointer to an implementation of the AbstractKmeansInitializer class.
+    //  */
+    // void setInitializer(AbstractKmeansInitializer* initializer) { pInitializer = initializer; }
 
-    /**
-     * @brief Set the maximizer member variable.
-     *
-     * @param maximizer - A pointer to an implementation of the AbstractKmeansMaximizer class.
-     */
-    void setMaximizer(AbstractKmeansMaximizer* maximizer) { pMaximizer = maximizer; }
+    // /**
+    //  * @brief Set the maximizer member variable.
+    //  *
+    //  * @param maximizer - A pointer to an implementation of the AbstractKmeansMaximizer class.
+    //  */
+    // void setMaximizer(AbstractKmeansMaximizer* maximizer) { pMaximizer = maximizer; }
 
     /**
      * @brief Set the distanceFunc member variable.
      *
      * @param distanceFunc - A pointer to an implementation of the IDistanceFunctor class.
      */
-    void setDistanceFunc(IDistanceFunctor* distanceFunc) { pDistanceFunc = distanceFunc; }
+    void setDistanceFunc(IDistanceFunctor* distanceFunc) { pDistanceFunc.reset(distanceFunc); }
 
 protected:
     ClusterResults run(Matrix* matrix, const int& numClusters, const int& numRestarts, StaticData* staticData);
