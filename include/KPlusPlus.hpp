@@ -40,7 +40,7 @@ public:
      * @param distanceFunc - The functor that defines the distance metric to use.
      * @param seed - The seed for the RNG.
      */
-    void initialize(const float& seed) override;
+    void initialize() override;
 
 protected:
     /**
@@ -51,7 +51,7 @@ protected:
      *                    cluster.
      * @param randFrac - A randomly generated float in the range of [0, 1) needed by weightedRandomSelection().
      */
-    virtual void weightedClusterSelection(float randFrac);
+    virtual void weightedClusterSelection();
 
     /**
      * @brief Helper function that wraps the functionality of findClosestCluster() and updateClustering() in order to
@@ -163,7 +163,7 @@ protected:
      *                    cluster.
      * @param randFrac - A randomly generated float in the range of [0, 1) needed by weightedRandomSelection().
      */
-    void weightedClusterSelection(float randFrac) override;
+    void weightedClusterSelection() override;
 
     /**
      * @brief Helper function that wraps the functionality of findClosestCluster() and updateClustering() in order to

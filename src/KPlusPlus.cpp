@@ -2,21 +2,13 @@
 
 #include <omp.h>
 
-#include "boost/generator_iterator.hpp"
-#include "boost/random.hpp"
+#include "Utils.hpp"
 #include "mpi.h"
 
-typedef boost::mt19937 RNGType;
-
-void TemplateKPlusPlus::initialize(const float& seed)
+void TemplateKPlusPlus::initialize()
 {
-    // initialize RNG
-    RNGType rng(seed);
-    boost::uniform_real<> floatRange(0, 1);
-    boost::variate_generator<RNGType, boost::uniform_real<>> floatDistr(rng, floatRange);
-
     // initialize first cluster uniformly at random. Thus distances should be filled with same number i.e. 1
-    weightedClusterSelection(floatDistr());
+    weightedClusterSelection();
 
     // change fill distances vector with -1 so values aren't confused with actual distances
     std::fill(pDistances->begin(), pDistances->end(), -1);
@@ -28,16 +20,16 @@ void TemplateKPlusPlus::initialize(const float& seed)
         findAndUpdateClosestClusters();
 
         // select point to be next cluster center weighted by nearest distance squared
-        weightedClusterSelection(floatDistr());
+        weightedClusterSelection();
     }
 
     // find distance between each datapoint and nearest cluster, then update clustering assignment
     findAndUpdateClosestClusters();
 }
 
-void TemplateKPlusPlus::weightedClusterSelection(float randFrac)
+void TemplateKPlusPlus::weightedClusterSelection()
 {
-    value_t randSumFrac = randFrac * std::accumulate(pDistances->begin(), pDistances->end(), 0);
+    value_t randSumFrac = getRandFloat01() * std::accumulate(pDistances->begin(), pDistances->end(), 0);
     int dataIdx         = pSelector->select(pDistances, randSumFrac);
     pClusters->appendDataPoint(pData->at(dataIdx));
 }
@@ -59,12 +51,12 @@ void OMPKPlusPlus::findAndUpdateClosestClusters()
     }
 }
 
-void MPIKPlusPlus::weightedClusterSelection(float randFrac)
+void MPIKPlusPlus::weightedClusterSelection()
 {
     int dataIdx;
     if (mRank == 0)
     {
-        value_t randSumFrac = randFrac * std::accumulate(pDistances->begin(), pDistances->end(), 0);
+        value_t randSumFrac = getRandFloat01MPI() * std::accumulate(pDistances->begin(), pDistances->end(), 0);
         dataIdx             = pSelector->select(pDistances, randSumFrac);
     }
 

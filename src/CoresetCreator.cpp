@@ -3,12 +3,14 @@
 #include <iostream>
 #include <numeric>
 
-#include "boost/generator_iterator.hpp"
-#include "boost/random.hpp"
+#include "Utils.hpp"
+
+// #include "boost/generator_iterator.hpp"
+// #include "boost/random.hpp"
 #include "mpi.h"
 #include "omp.h"
 
-typedef boost::mt19937 RNGType;
+// typedef boost::mt19937 RNGType;
 
 void AbstractCoresetCreator::createCoreset(Matrix* data, const int& sampleSize, Coreset* coreset,
                                            IDistanceFunctor* distanceFunc)
@@ -137,17 +139,13 @@ void MPICoresetCreator::calcDistribution(std::vector<value_t>* sqDistances, cons
 
     if (mRank == 0)
     {
-        RNGType rng(time(NULL));
-        boost::uniform_real<> floatRange(0, 1);
-        boost::variate_generator<RNGType, boost::uniform_real<>> floatDistr(rng, floatRange);
-
         totalDistanceSums = std::accumulate(mDistanceSums.begin(), mDistanceSums.end(), 0);
         for (int i = 0; i < mSampleSize; i++)
         {
-            value_t randNum = floatDistr();
+            value_t randNum = getRandFloat01MPI();
             if (randNum > 0.5)
             {
-                randNum           = floatDistr() * mTotalNumData;
+                randNum           = getRandFloat01MPI() * mTotalNumData;
                 int cumulativeSum = 0;
                 for (int j = 0; j < mNumProcs; j++)
                 {
@@ -161,7 +159,7 @@ void MPICoresetCreator::calcDistribution(std::vector<value_t>* sqDistances, cons
             }
             else
             {
-                randNum               = floatDistr() * totalDistanceSums;
+                randNum               = getRandFloat01MPI() * totalDistanceSums;
                 value_t cumulativeSum = 0;
                 for (int j = 0; j < mNumProcs; j++)
                 {

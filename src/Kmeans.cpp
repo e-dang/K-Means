@@ -1,7 +1,5 @@
 #include "Kmeans.hpp"
 
-#include <ctime>
-
 #include "mpi.h"
 
 ClusterResults AbstractKmeans::run(Matrix* data, const int& numClusters, const int& numRestarts, StaticData* staticData)
@@ -19,7 +17,7 @@ ClusterResults AbstractKmeans::run(Matrix* data, const int& numClusters, const i
         pInitializer->setDynamicData(&clusterData, &distances);
         pMaximizer->setDynamicData(&clusterData, &distances);
 
-        pInitializer->initialize(time(NULL) * (float)i);
+        pInitializer->initialize();
         pMaximizer->maximize();
 
         compareResults(&clusterData, &distances, &clusterResults);
