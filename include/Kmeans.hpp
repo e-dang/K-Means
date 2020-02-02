@@ -3,6 +3,7 @@
 #include <numeric>
 
 #include "AbstractKmeansAlgorithms.hpp"
+#include "CoresetCreator.hpp"
 #include "DataClasses.hpp"
 #include "Definitions.hpp"
 #include "DistanceFunctors.hpp"
@@ -22,6 +23,8 @@ protected:
     IDistanceFunctor* pDistanceFunc;
 
 public:
+    AbstractKmeans(IDistanceFunctor* distanceFunc) : pDistanceFunc(distanceFunc) {}
+
     /**
      * @brief Constructor for AbstractKmeans.
      *
@@ -173,4 +176,33 @@ public:
 
 protected:
     StaticData initStaticData(Matrix* data, std::vector<value_t>* weights) override;
+};
+
+class CoresetKmeans : public AbstractKmeans
+{
+private:
+    int mTotalNumData;
+    int mSampleSize;
+    std::unique_ptr<AbstractKmeans> pKmeans;
+    std::unique_ptr<AbstractCoresetCreator> pCreator;
+    std::unique_ptr<AbstractClosestClusterFinder> pFinder;
+
+public:
+    CoresetKmeans(const int& totalNumData, const int& sampleSize, AbstractKmeans* kmeans,
+                  AbstractCoresetCreator* creator, AbstractClosestClusterFinder* finder,
+                  IDistanceFunctor* distanceFunc) :
+        mTotalNumData(totalNumData),
+        mSampleSize(sampleSize),
+        pKmeans(kmeans),
+        pCreator(creator),
+        pFinder(finder),
+        AbstractKmeans(distanceFunc)
+    {
+    }
+
+    ClusterResults fit(Matrix* data, const int& numClusters, const int& numRestarts) override;
+
+private:
+    ClusterResults fit(Matrix* data, const int& numClusters, const int& numRestarts,
+                       std::vector<value_t>* weights) override;
 };

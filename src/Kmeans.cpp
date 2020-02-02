@@ -62,3 +62,27 @@ StaticData MPIKmeans::initStaticData(Matrix* data, std::vector<value_t>* weights
 
     return StaticData{ data, weights, pDistanceFunc, rank, mTotalNumData, lengths, displacements };
 }
+
+ClusterResults CoresetKmeans::fit(Matrix* data, const int& numClusters, const int& numRestarts)
+{
+    std::vector<value_t> coresetWeights;
+    coresetWeights.reserve(mSampleSize);
+    Coreset coreset{ Matrix(mSampleSize, data->getNumFeatures()), coresetWeights };
+
+    pCreator->createCoreset(data, mSampleSize, &coreset, pDistanceFunc);
+
+    auto clusterResults = pKmeans->fit(&coreset.data, numClusters, numRestarts, &coreset.weights);
+    clusterResults.mClusterData.mClustering.resize(mTotalNumData);
+    clusterResults.mSqDistances.resize(mTotalNumData);
+
+    pCreator->finishClustering(data, &clusterResults, pDistanceFunc);
+
+    return clusterResults;
+}
+
+ClusterResults CoresetKmeans::fit(Matrix* data, const int& numClusters, const int& numRestarts,
+                                  std::vector<value_t>* weights)
+{
+    throw std::runtime_error("Should not be calling this func.");
+    return ClusterResults{};
+}
