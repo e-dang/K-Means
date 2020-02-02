@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "Definitions.hpp"
 
 class IWeightedRandomSelector
