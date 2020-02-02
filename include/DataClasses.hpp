@@ -78,7 +78,17 @@ public:
 
     void fill(const int& val) { std::fill(mData.begin(), mData.end(), val); }
 
-    void resize(const int& val) { mData.resize(val * mNumCols); }
+    void resize(const int& val)
+    {
+        mData.resize(val * mNumCols);
+        mNumRows = val;
+    }
+
+    void reserve(const int& val)
+    {
+        mData.resize(val * mNumCols);
+        if (val > mNumRows) mNumRows = val;
+    }
 
     value_t* data() { return mData.data(); }
 

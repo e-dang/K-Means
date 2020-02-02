@@ -1,12 +1,14 @@
 #include "KPlusPlus.hpp"
-#include "boost/random.hpp"
-#include "boost/generator_iterator.hpp"
-#include "mpi.h"
+
 #include <omp.h>
+
+#include "boost/generator_iterator.hpp"
+#include "boost/random.hpp"
+#include "mpi.h"
 
 typedef boost::mt19937 RNGType;
 
-void TemplateKPlusPlus::initialize(const float &seed)
+void TemplateKPlusPlus::initialize(const float& seed)
 {
     // initialize RNG
     RNGType rng(seed);
@@ -36,7 +38,7 @@ void TemplateKPlusPlus::initialize(const float &seed)
 void TemplateKPlusPlus::weightedClusterSelection(float randFrac)
 {
     value_t randSumFrac = randFrac * std::accumulate(pDistances->begin(), pDistances->end(), 0);
-    int dataIdx = pSelector->select(pDistances, randSumFrac);
+    int dataIdx         = pSelector->select(pDistances, randSumFrac);
     pClusters->appendDataPoint(pData->at(dataIdx));
 }
 
@@ -63,7 +65,7 @@ void MPIKPlusPlus::weightedClusterSelection(float randFrac)
     if (mRank == 0)
     {
         value_t randSumFrac = randFrac * std::accumulate(pDistances->begin(), pDistances->end(), 0);
-        dataIdx = pSelector->select(pDistances, randSumFrac);
+        dataIdx             = pSelector->select(pDistances, randSumFrac);
     }
 
     MPI_Bcast(&dataIdx, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -85,7 +87,7 @@ void MPIKPlusPlus::weightedClusterSelection(float randFrac)
     }
     else
     {
-        pClusters->resize(pClusters->getNumData() + 1);
+        pClusters->reserve(pClusters->getNumData() + 1);
     }
 
     MPI_Bcast(pClustering->data(), pClustering->size(), MPI_INT, rank, MPI_COMM_WORLD);
@@ -99,8 +101,8 @@ void MPIKPlusPlus::findAndUpdateClosestClusters()
         findAndUpdateClosestCluster(i);
     }
 
-    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_INT, pClustering->data(),
-                   pLengths->data(), pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
-    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_FLOAT, pDistances->data(),
-                   pLengths->data(), pDisplacements->data(), MPI_FLOAT, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_INT, pClustering->data(), pLengths->data(),
+                   pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_FLOAT, pDistances->data(), pLengths->data(),
+                   pDisplacements->data(), MPI_FLOAT, MPI_COMM_WORLD);
 }
