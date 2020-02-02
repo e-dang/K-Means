@@ -17,6 +17,6 @@ include_directories(./include)
 # target
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
-    add_executable(kmeans ./src/main.cpp ./src/Kmeans.cpp ./src/Lloyd.cpp ./src/KPlusPlus.cpp ./src/Reader.cpp ./src/Writer.cpp ./include/DistanceFunctors.hpp ./src/ClusteringUpdater.cpp ./src/ClosestClusterFinder.cpp ./src/RandomSelector.cpp ./src/Averager.cpp)
+    add_executable(kmeans ./src/main.cpp ./src/Kmeans.cpp ./src/Lloyd.cpp ./src/KPlusPlus.cpp ./src/Reader.cpp ./src/Writer.cpp ./include/DistanceFunctors.hpp ./src/ClusteringUpdater.cpp ./src/ClosestClusterFinder.cpp ./src/RandomSelector.cpp ./src/Averager.cpp ./src/CoresetCreator.cpp)
     target_link_libraries(kmeans ${Boost_LIBRARIES})
 endif()
