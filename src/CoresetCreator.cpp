@@ -1,19 +1,8 @@
 #include "CoresetCreator.hpp"
 
-#include <iostream>
-#include <numeric>
-
-#include "Utils.hpp"
-
-// #include "boost/generator_iterator.hpp"
-// #include "boost/random.hpp"
-#include "mpi.h"
 #include "omp.h"
 
-// typedef boost::mt19937 RNGType;
-
-void AbstractCoresetCreator::createCoreset(Matrix* data, const int& sampleSize, Coreset* coreset,
-                                           IDistanceFunctor* distanceFunc)
+void AbstractCoresetCreator::createCoreset(Matrix* data, Coreset* coreset, IDistanceFunctor* distanceFunc)
 {
     std::vector<value_t> mean(data->getNumFeatures());
     std::vector<value_t> sqDistances(data->getNumData());
@@ -25,8 +14,7 @@ void AbstractCoresetCreator::createCoreset(Matrix* data, const int& sampleSize, 
 
     calcDistribution(&sqDistances, distanceSum, &distribution);
 
-    sampleDistribution(data, &distribution, sampleSize, coreset);
-    // sleep(5);
+    sampleDistribution(data, &distribution, coreset);
 }
 
 void AbstractCoresetCreator::calcMean(Matrix* data, std::vector<value_t>* mean)
@@ -50,21 +38,20 @@ value_t AbstractCoresetCreator::calcDistsFromMean(Matrix* data, std::vector<valu
 void AbstractCoresetCreator::calcDistribution(std::vector<value_t>* sqDistances, const value_t& distanceSum,
                                               std::vector<value_t>* distribution)
 {
-    value_t partOne = 0.5 * (1.0 / sqDistances->size());  // portion of distribution calculation that is constant
+    value_t partialQ = 0.5 * (1.0 / sqDistances->size());  // portion of distribution calculation that is constant
     for (int i = 0; i < sqDistances->size(); i++)
     {
-        distribution->at(i) = partOne + 0.5 * sqDistances->at(i) / distanceSum;
+        distribution->at(i) = partialQ + 0.5 * sqDistances->at(i) / distanceSum;
     }
 }
 
-void AbstractCoresetCreator::sampleDistribution(Matrix* data, std::vector<value_t>* distribution, const int& sampleSize,
-                                                Coreset* coreset)
+void AbstractCoresetCreator::sampleDistribution(Matrix* data, std::vector<value_t>* distribution, Coreset* coreset)
 {
-    auto selectedIdxs = pSelector->select(distribution, sampleSize);
+    auto selectedIdxs = pSelector->select(distribution, mSampleSize);
     for (auto& idx : selectedIdxs)
     {
         coreset->data.appendDataPoint(data->at(idx));
-        coreset->weights.push_back(1.0 / (sampleSize * distribution->at(idx)));
+        coreset->weights.push_back(1.0 / (mSampleSize * distribution->at(idx)));
     }
 }
 
@@ -85,11 +72,11 @@ value_t OMPCoresetCreator::calcDistsFromMean(Matrix* data, std::vector<value_t>*
 void OMPCoresetCreator::calcDistribution(std::vector<value_t>* sqDistances, const value_t& distanceSum,
                                          std::vector<value_t>* distribution)
 {
-    value_t partOne = 0.5 * (1.0 / sqDistances->size());  // portion of distribution calculation that is constant
-#pragma omp parallel for shared(sqDistances, distanceSum, distribution, partOne), schedule(static)
+    value_t partialQ = 0.5 * (1.0 / sqDistances->size());  // portion of distribution calculation that is constant
+#pragma omp parallel for shared(sqDistances, distanceSum, distribution, partialQ), schedule(static)
     for (int i = 0; i < sqDistances->size(); i++)
     {
-        distribution->at(i) = partOne + 0.5 * sqDistances->at(i) / distanceSum;
+        distribution->at(i) = partialQ + 0.5 * sqDistances->at(i) / distanceSum;
     }
 }
 
@@ -105,7 +92,7 @@ void MPICoresetCreator::calcMean(Matrix* data, std::vector<value_t>* mean)
     if (mRank == 0)
     {
         std::fill(mean->begin(), mean->end(), 0);
-        int numData = std::accumulate(mDataPerProc.begin(), mDataPerProc.end(), 0);
+        int numData = std::accumulate(mLengths.begin(), mLengths.end(), 0);
         pAverager->calculateSum(&chunkMeans, mean);
         pAverager->normalizeSum(mean, numData);
     }
@@ -140,42 +127,10 @@ void MPICoresetCreator::calcDistribution(std::vector<value_t>* sqDistances, cons
     if (mRank == 0)
     {
         totalDistanceSums = std::accumulate(mDistanceSums.begin(), mDistanceSums.end(), 0);
-        for (int i = 0; i < mSampleSize; i++)
-        {
-            value_t randNum = getRandFloat01MPI();
-            if (randNum > 0.5)
-            {
-                randNum           = getRandFloat01MPI() * mTotalNumData;
-                int cumulativeSum = 0;
-                for (int j = 0; j < mNumProcs; j++)
-                {
-                    cumulativeSum += mDataPerProc[j];
-                    if (cumulativeSum >= randNum)
-                    {
-                        uniformSampleCounts.at(j)++;
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                randNum               = getRandFloat01MPI() * totalDistanceSums;
-                value_t cumulativeSum = 0;
-                for (int j = 0; j < mNumProcs; j++)
-                {
-                    cumulativeSum += mDistanceSums.at(j);
-                    if (cumulativeSum >= randNum)
-                    {
-                        nonUniformSampleCounts.at(j)++;
-                        break;
-                    }
-                }
-            }
-        }
+        calculateSamplingStrategy(&uniformSampleCounts, &nonUniformSampleCounts, totalDistanceSums);
     }
 
     MPI_Bcast(&totalDistanceSums, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
-
     MPI_Scatter(uniformSampleCounts.data(), 1, MPI_INT, &mNumUniformSamples, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Scatter(nonUniformSampleCounts.data(), 1, MPI_INT, &mNumNonUniformSamples, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
@@ -185,76 +140,26 @@ void MPICoresetCreator::calcDistribution(std::vector<value_t>* sqDistances, cons
     }
 }
 
-void MPICoresetCreator::sampleDistribution(Matrix* data, std::vector<value_t>* distribution, const int& sampleSize,
-                                           Coreset* coreset)
+void MPICoresetCreator::sampleDistribution(Matrix* data, std::vector<value_t>* distribution, Coreset* coreset)
 {
-    RNGType rng(time(NULL));
-    boost::uniform_real<> floatRange(0, 1);
-    boost::variate_generator<RNGType, boost::uniform_real<>> floatDistr(rng, floatRange);
-
     std::vector<value_t> uniformWeights(distribution->size(), 1.0 / mTotalNumData);
-    std::vector<int> uniformSelectedIdxs = pSelector->select(&uniformWeights, mNumUniformSamples);
+
+    appendDataToCoreset(data, coreset, &uniformWeights, distribution, mNumUniformSamples);
+    appendDataToCoreset(data, coreset, distribution, distribution, mNumNonUniformSamples);
+
+    distributeCoreset(coreset);
+}
+
+void MPICoresetCreator::appendDataToCoreset(Matrix* data, Coreset* coreset, std::vector<value_t>* weights,
+                                            std::vector<value_t>* distribution, const int& numSamples)
+{
+    value_t partialQ         = 0.5 * (1.0 / mTotalNumData);
+    auto uniformSelectedIdxs = pSelector->select(weights, numSamples);
     for (auto& idx : uniformSelectedIdxs)
     {
         coreset->data.appendDataPoint(data->at(idx));
-        coreset->weights.push_back(1.0 / (sampleSize * distribution->at(idx)));
+        coreset->weights.push_back(1.0 / (mSampleSize * (partialQ + 0.5 * distribution->at(idx))));
     }
-
-    std::vector<int> nonUniformSelectedIdxs = pSelector->select(distribution, mNumNonUniformSamples);
-    for (auto& idx : nonUniformSelectedIdxs)
-    {
-        coreset->data.appendDataPoint(data->at(idx));
-        coreset->weights.push_back(1.0 / (sampleSize * distribution->at(idx)));
-    }
-
-    int numCoresetData = coreset->weights.size();
-    std::vector<int> coresetNumDataPerProc(mNumProcs);
-    MPI_Allgather(&numCoresetData, 1, MPI_INT, coresetNumDataPerProc.data(), 1, MPI_INT, MPI_COMM_WORLD);
-
-    std::vector<int> lengths(mNumProcs);
-    std::vector<int> matrixDisplacements(mNumProcs, 0);
-    std::vector<int> vectorDisplacements(mNumProcs, 0);
-    for (int i = 0; i < mNumProcs; i++)
-    {
-        lengths.at(i) = coresetNumDataPerProc.at(i) * data->getNumFeatures();
-        if (i != 0)
-        {
-            matrixDisplacements.at(i) = matrixDisplacements.at(i - 1) + lengths.at(i - 1);
-            vectorDisplacements.at(i) = vectorDisplacements.at(i - 1) + coresetNumDataPerProc.at(i - 1);
-        }
-    }
-    Coreset fullCoreset{ Matrix(mSampleSize, data->getNumFeatures()), std::vector<value_t>(mSampleSize) };
-    fullCoreset.data.resize(mSampleSize);
-
-    MPI_Gatherv(coreset->data.data(), coreset->data.size(), MPI_FLOAT, fullCoreset.data.data(), lengths.data(),
-                matrixDisplacements.data(), MPI_FLOAT, 0, MPI_COMM_WORLD);
-    MPI_Gatherv(coreset->weights.data(), coreset->weights.size(), MPI_FLOAT, fullCoreset.weights.data(),
-                coresetNumDataPerProc.data(), vectorDisplacements.data(), MPI_FLOAT, 0, MPI_COMM_WORLD);
-
-    int chunk = mSampleSize / mNumProcs;
-    int scrap = chunk + (mSampleSize % mNumProcs);
-    for (int i = 0; i < mNumProcs; i++)
-    {
-        lengths.at(i)             = chunk;
-        vectorDisplacements.at(i) = i * chunk;
-    }
-    lengths.at(mNumProcs - 1) = scrap;
-
-    coreset->data.resize(lengths.at(mRank));
-    coreset->weights.resize(lengths.at(mRank));
-
-    MPI_Scatterv(fullCoreset.weights.data(), lengths.data(), vectorDisplacements.data(), MPI_FLOAT,
-                 coreset->weights.data(), coreset->weights.size(), MPI_FLOAT, 0, MPI_COMM_WORLD);
-    for (int i = 0; i < mNumProcs; i++)
-    {
-        lengths.at(i) *= data->getNumFeatures();
-        if (i != 0)
-        {
-            matrixDisplacements.at(i) = matrixDisplacements.at(i - 1) + lengths.at(i - 1);
-        }
-    }
-    MPI_Scatterv(fullCoreset.data.data(), lengths.data(), matrixDisplacements.data(), MPI_FLOAT, coreset->data.data(),
-                 lengths.at(mRank), MPI_FLOAT, 0, MPI_COMM_WORLD);
 }
 
 void AbstractCoresetCreator::finishClustering(Matrix* data, ClusterResults* clusterResults,
@@ -310,9 +215,109 @@ void MPICoresetCreator::finishClustering(Matrix* data, ClusterResults* clusterRe
     }
     clusterResults->mError =
       std::accumulate(clusterResults->mSqDistances.begin(), clusterResults->mSqDistances.end(), 0);
-    MPI_Allgatherv(MPI_IN_PLACE, mDataPerProc.at(mRank), MPI_INT, clusterResults->mClusterData.mClustering.data(),
-                   mDataPerProc.data(), mDisplacements.data(), MPI_INT, MPI_COMM_WORLD);
-    MPI_Allgatherv(MPI_IN_PLACE, mDataPerProc.at(mRank), MPI_FLOAT, clusterResults->mSqDistances.data(),
-                   mDataPerProc.data(), mDisplacements.data(), MPI_FLOAT, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, mLengths.at(mRank), MPI_INT, clusterResults->mClusterData.mClustering.data(),
+                   mLengths.data(), mDisplacements.data(), MPI_INT, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, mLengths.at(mRank), MPI_FLOAT, clusterResults->mSqDistances.data(), mLengths.data(),
+                   mDisplacements.data(), MPI_FLOAT, MPI_COMM_WORLD);
     MPI_Allreduce(MPI_IN_PLACE, &clusterResults->mError, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+}
+
+void MPICoresetCreator::calculateSamplingStrategy(std::vector<int>* uniformSampleCounts,
+                                                  std::vector<int>* nonUniformSampleCounts,
+                                                  const value_t& totalDistanceSums)
+{
+    for (int i = 0; i < mSampleSize; i++)
+    {
+        value_t randNum = getRandFloat01MPI();
+        if (randNum >= 0.5)
+        {
+            updateUniformSampleCounts(uniformSampleCounts);
+        }
+        else
+        {
+            updateNonUniformSampleCounts(nonUniformSampleCounts, totalDistanceSums);
+        }
+    }
+}
+
+void MPICoresetCreator::updateUniformSampleCounts(std::vector<int>* uniformSampleCounts)
+{
+    float randNum     = getRandFloat01MPI() * mTotalNumData;
+    int cumulativeSum = 0;
+    for (int j = 0; j < mNumProcs; j++)
+    {
+        cumulativeSum += mLengths[j];
+        if (cumulativeSum >= randNum)
+        {
+            uniformSampleCounts->at(j)++;
+            break;
+        }
+    }
+}
+
+void MPICoresetCreator::updateNonUniformSampleCounts(std::vector<int>* nonUniformSampleCounts,
+                                                     const value_t& totalDistanceSums)
+{
+    float randNum         = getRandFloat01MPI() * totalDistanceSums;
+    value_t cumulativeSum = 0;
+    for (int j = 0; j < mNumProcs; j++)
+    {
+        cumulativeSum += mDistanceSums.at(j);
+        if (cumulativeSum >= randNum)
+        {
+            nonUniformSampleCounts->at(j)++;
+            break;
+        }
+    }
+}
+
+void MPICoresetCreator::distributeCoreset(Coreset* coreset)
+{
+    // get the number of datapoints in each process' coreset
+    int numCoresetData = coreset->weights.size();
+    std::vector<int> numCoresetDataPerProc(mNumProcs);
+    MPI_Allgather(&numCoresetData, 1, MPI_INT, numCoresetDataPerProc.data(), 1, MPI_INT, MPI_COMM_WORLD);
+
+    // create length and displacement vectors for transfer of coreset data
+    std::vector<int> matrixLengths(mNumProcs);
+    std::vector<int> matrixDisplacements(mNumProcs, 0);
+    std::vector<int> vectorDisplacements(mNumProcs, 0);
+    for (int i = 0; i < mNumProcs; i++)
+    {
+        matrixLengths.at(i) = numCoresetDataPerProc.at(i) * coreset->data.getNumFeatures();
+        if (i != 0)
+        {
+            matrixDisplacements.at(i) = matrixDisplacements.at(i - 1) + matrixLengths.at(i - 1);
+            vectorDisplacements.at(i) = vectorDisplacements.at(i - 1) + numCoresetDataPerProc.at(i - 1);
+        }
+    }
+
+    // create and fill temporary coreset with data at root
+    Coreset fullCoreset{ Matrix(mSampleSize, coreset->data.getNumFeatures()), std::vector<value_t>(mSampleSize) };
+    fullCoreset.data.resize(mSampleSize);
+    MPI_Gatherv(coreset->data.data(), coreset->data.size(), MPI_FLOAT, fullCoreset.data.data(), matrixLengths.data(),
+                matrixDisplacements.data(), MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Gatherv(coreset->weights.data(), coreset->weights.size(), MPI_FLOAT, fullCoreset.weights.data(),
+                numCoresetDataPerProc.data(), vectorDisplacements.data(), MPI_FLOAT, 0, MPI_COMM_WORLD);
+
+    // get lengths and displacements for evenly distributing coreset data amoung processes
+    auto mpiData        = getMPIData(mSampleSize);
+    auto& vectorLengths = mpiData.lengths;
+    vectorDisplacements = mpiData.displacements;
+    for (int i = 0; i < mNumProcs; i++)
+    {
+        matrixLengths.at(i) = vectorLengths.at(i) * coreset->data.getNumFeatures();
+        if (i != 0)
+        {
+            matrixDisplacements.at(i) = matrixDisplacements.at(i - 1) + matrixLengths.at(i - 1);
+        }
+    }
+
+    // resize and distribute coreset data
+    coreset->data.resize(vectorLengths.at(mRank));
+    coreset->weights.resize(vectorLengths.at(mRank));
+    MPI_Scatterv(fullCoreset.weights.data(), vectorLengths.data(), vectorDisplacements.data(), MPI_FLOAT,
+                 coreset->weights.data(), coreset->weights.size(), MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Scatterv(fullCoreset.data.data(), matrixLengths.data(), matrixDisplacements.data(), MPI_FLOAT,
+                 coreset->data.data(), matrixLengths.at(mRank), MPI_FLOAT, 0, MPI_COMM_WORLD);
 }

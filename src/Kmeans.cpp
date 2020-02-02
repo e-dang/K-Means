@@ -41,24 +41,10 @@ ClusterResults AbstractKmeans::fit(Matrix* data, const int& numClusters, const i
 
 StaticData MPIKmeans::initStaticData(Matrix* data, std::vector<value_t>* weights)
 {
-    int rank, numProcs;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
-
-    // number of datapoints allocated for each process to compute
-    int chunk = mTotalNumData / numProcs;
-    int scrap = chunk + (mTotalNumData % numProcs);
-
-    std::vector<int> lengths(numProcs);        // size of each sub-array to gather
-    std::vector<int> displacements(numProcs);  // index of each sub-array to gather
-    for (int i = 0; i < numProcs; i++)
-    {
-        lengths[i]       = chunk;
-        displacements[i] = i * chunk;
-    }
-    lengths[numProcs - 1] = scrap;
-
-    return StaticData{ data, weights, pDistanceFunc, rank, mTotalNumData, lengths, displacements };
+    auto mpiData = getMPIData(mTotalNumData);
+    return StaticData{
+        data, weights, pDistanceFunc, mpiData.rank, mTotalNumData, mpiData.lengths, mpiData.displacements
+    };
 }
 
 ClusterResults CoresetKmeans::fit(Matrix* data, const int& numClusters, const int& numRestarts)
@@ -67,7 +53,7 @@ ClusterResults CoresetKmeans::fit(Matrix* data, const int& numClusters, const in
     coresetWeights.reserve(mSampleSize);
     Coreset coreset{ Matrix(mSampleSize, data->getNumFeatures()), coresetWeights };
 
-    pCreator->createCoreset(data, mSampleSize, &coreset, pDistanceFunc);
+    pCreator->createCoreset(data, &coreset, pDistanceFunc);
 
     auto clusterResults = pKmeans->fit(&coreset.data, numClusters, numRestarts, &coreset.weights);
     clusterResults.mClusterData.mClustering.resize(mTotalNumData);

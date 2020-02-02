@@ -1,27 +1,27 @@
 #pragma once
 
-#include <algorithm>
 #include <memory>
 
 #include "Averager.hpp"
 #include "RandomSelector.hpp"
-#include "mpi.h"
+#include "Utils.hpp"
 
 class AbstractCoresetCreator
 {
 protected:
+    int mSampleSize;
     std::unique_ptr<IMultiWeightedRandomSelector> pSelector;
     std::unique_ptr<AbstractAverager> pAverager;
 
 public:
-    AbstractCoresetCreator(IMultiWeightedRandomSelector* selector, AbstractAverager* averager) :
-        pSelector(selector), pAverager(averager)
+    AbstractCoresetCreator(const int& sampleSize, IMultiWeightedRandomSelector* selector, AbstractAverager* averager) :
+        mSampleSize(sampleSize), pSelector(selector), pAverager(averager)
     {
     }
 
     virtual ~AbstractCoresetCreator() {}
 
-    virtual void createCoreset(Matrix* data, const int& sampleSize, Coreset* coreset, IDistanceFunctor* distanceFunc);
+    virtual void createCoreset(Matrix* data, Coreset* coreset, IDistanceFunctor* distanceFunc);
 
     virtual void finishClustering(Matrix* data, ClusterResults* clusterResults, IDistanceFunctor* distanceFunc);
 
@@ -33,15 +33,14 @@ public:
     virtual void calcDistribution(std::vector<value_t>* sqDistances, const value_t& distanceSum,
                                   std::vector<value_t>* distribution);
 
-    virtual void sampleDistribution(Matrix* data, std::vector<value_t>* distribution, const int& sampleSize,
-                                    Coreset* coreset);
+    virtual void sampleDistribution(Matrix* data, std::vector<value_t>* distribution, Coreset* coreset);
 };
 
 class SerialCoresetCreator : public AbstractCoresetCreator
 {
 public:
-    SerialCoresetCreator(IMultiWeightedRandomSelector* selector, AbstractAverager* averager) :
-        AbstractCoresetCreator(selector, averager)
+    SerialCoresetCreator(const int& sampleSize, IMultiWeightedRandomSelector* selector, AbstractAverager* averager) :
+        AbstractCoresetCreator(sampleSize, selector, averager)
     {
     }
 
@@ -51,8 +50,8 @@ public:
 class OMPCoresetCreator : public AbstractCoresetCreator
 {
 public:
-    OMPCoresetCreator(IMultiWeightedRandomSelector* selector, AbstractAverager* averager) :
-        AbstractCoresetCreator(selector, averager)
+    OMPCoresetCreator(const int& sampleSize, IMultiWeightedRandomSelector* selector, AbstractAverager* averager) :
+        AbstractCoresetCreator(sampleSize, selector, averager)
     {
     }
 
@@ -69,39 +68,26 @@ class MPICoresetCreator : public AbstractCoresetCreator
 {
 private:
     Matrix chunkMeans;
-    std::vector<int> mDataPerProc;
+    std::vector<int> mLengths;
     std::vector<int> mDisplacements;
     std::vector<value_t> mDistanceSums;
     int mRank;
     int mNumProcs;
-    int mSampleSize;
     int mTotalNumData;
     int mNumUniformSamples;
     int mNumNonUniformSamples;
     value_t mTotalDistanceSum;
 
 public:
-    MPICoresetCreator(const int& sampleSize, const int& totalNumData, IMultiWeightedRandomSelector* selector,
+    MPICoresetCreator(const int& totalNumData, const int& sampleSize, IMultiWeightedRandomSelector* selector,
                       AbstractAverager* averager) :
-        mSampleSize(sampleSize), mTotalNumData(totalNumData), AbstractCoresetCreator(selector, averager)
+        mTotalNumData(totalNumData), AbstractCoresetCreator(sampleSize, selector, averager)
     {
-        // auto mpiChunks = getMPIChunks(totalNumData);
-        // mDataPerProc   = mpiChunks.dataPerProc;
-        // mRank          = mpiChunk.rank;
-        // mNumProcs      = mpiChunks.numProcs;
-
-        MPI_Comm_rank(MPI_COMM_WORLD, &mRank);
-        MPI_Comm_size(MPI_COMM_WORLD, &mNumProcs);
-
-        // number of datapoints allocated for each process to compute
-        int chunk = mTotalNumData / mNumProcs;
-        int scrap = chunk + (mTotalNumData % mNumProcs);
-        for (int i = 0; i < mNumProcs; i++)
-        {
-            mDataPerProc.push_back(chunk);
-            mDisplacements.push_back(i * chunk);
-        }
-        mDataPerProc.at(mNumProcs - 1) = scrap;
+        auto mpiData   = getMPIData(totalNumData);
+        mRank          = mpiData.rank;
+        mNumProcs      = mpiData.numProcs;
+        mLengths       = mpiData.lengths;
+        mDisplacements = mpiData.displacements;
     }
 
     virtual ~MPICoresetCreator() {}
@@ -114,8 +100,17 @@ public:
     void calcDistribution(std::vector<value_t>* sqDistances, const value_t& distanceSum,
                           std::vector<value_t>* distribution) override;
 
-    void sampleDistribution(Matrix* data, std::vector<value_t>* distribution, const int& sampleSize,
-                            Coreset* coreset) override;
+    void sampleDistribution(Matrix* data, std::vector<value_t>* distribution, Coreset* coreset) override;
 
     void finishClustering(Matrix* data, ClusterResults* clusterResults, IDistanceFunctor* distanceFunc) override;
+
+    void calculateSamplingStrategy(std::vector<int>* uniformSampleCounts, std::vector<int>* nonUniformSampleCounts,
+                                   const value_t& totalDistanceSums);
+    void updateUniformSampleCounts(std::vector<int>* uniformSampleCounts);
+    void updateNonUniformSampleCounts(std::vector<int>* nonUniformSampleCounts, const value_t& totalDistanceSums);
+
+    void appendDataToCoreset(Matrix* data, Coreset* coreset, std::vector<value_t>* weights,
+                             std::vector<value_t>* distribution, const int& numSamples);
+
+    void distributeCoreset(Coreset* coreset);
 };

@@ -1,11 +1,12 @@
 #pragma once
 
-#include "Definitions.hpp"
-#include "DataClasses.hpp"
-#include "DistanceFunctors.hpp"
+#include <memory>
+
 #include "ClosestClusterFinder.hpp"
 #include "ClusteringUpdater.hpp"
-#include <memory>
+#include "DataClasses.hpp"
+#include "Definitions.hpp"
+#include "DistanceFunctors.hpp"
 
 /**
  * @brief Abstract class that all Kmeans algorithms, such as initializers and maximizers will derive from. This class
@@ -15,21 +16,21 @@ class AbstractKmeansAlgorithm
 {
 protected:
     // user data
-    Matrix *pData;
-    std::vector<value_t> *pWeights;
-    IDistanceFunctor *pDistanceFunc;
+    Matrix* pData;
+    std::vector<value_t>* pWeights;
+    IDistanceFunctor* pDistanceFunc;
 
     // cluster data
-    Matrix *pClusters;
-    std::vector<int> *pClustering;
-    std::vector<value_t> *pClusterWeights;
-    std::vector<value_t> *pDistances;
+    Matrix* pClusters;
+    std::vector<int>* pClustering;
+    std::vector<value_t>* pClusterWeights;
+    std::vector<value_t>* pDistances;
 
     // chunk data
     int mRank;
     int mTotalNumData;
-    std::vector<int> *pLengths;
-    std::vector<int> *pDisplacements;
+    std::vector<int>* pLengths;
+    std::vector<int>* pDisplacements;
 
     // algorithms
     std::unique_ptr<AbstractClosestClusterFinder> pFinder;
@@ -38,34 +39,36 @@ protected:
 public:
     AbstractKmeansAlgorithm() {}
 
-    AbstractKmeansAlgorithm(AbstractClosestClusterFinder *finder,
-                            AbstractClusteringUpdater *updater) : pFinder(finder), pUpdater(updater) {}
+    AbstractKmeansAlgorithm(AbstractClosestClusterFinder* finder, AbstractClusteringUpdater* updater) :
+        pFinder(finder), pUpdater(updater)
+    {
+    }
     /**
      * @brief Destroy the AbstractKmeansAlgorithm object
      */
     virtual ~AbstractKmeansAlgorithm(){};
 
-    void setStaticData(StaticData *staticData)
+    void setStaticData(StaticData* staticData)
     {
-        pData = staticData->pData;
-        pWeights = staticData->pWeights;
-        pLengths = &staticData->mLengths;
+        pData          = staticData->pData;
+        pWeights       = staticData->pWeights;
+        pLengths       = &staticData->mLengths;
         pDisplacements = &staticData->mDisplacements;
-        pDistanceFunc = staticData->pDistanceFunc;
-        mRank = staticData->mRank;
-        mTotalNumData = staticData->mTotalNumData;
+        pDistanceFunc  = staticData->pDistanceFunc;
+        mRank          = staticData->mRank;
+        mTotalNumData  = staticData->mTotalNumData;
     }
 
-    void setDynamicData(ClusterData *clusterData, std::vector<value_t> *distances)
+    void setDynamicData(ClusterData* clusterData, std::vector<value_t>* distances)
     {
-        pClustering = &clusterData->mClustering;
-        pClusters = &clusterData->mClusters;
+        pClustering     = &clusterData->mClustering;
+        pClusters       = &clusterData->mClusters;
         pClusterWeights = &clusterData->mClusterWeights;
-        pDistances = distances;
+        pDistances      = distances;
     }
 
 protected:
-    void findAndUpdateClosestCluster(const int &dataIdx)
+    void findAndUpdateClosestCluster(const int& dataIdx)
     {
         int displacedDataIdx = pDisplacements->at(mRank) + dataIdx;
 
@@ -85,8 +88,10 @@ protected:
 class AbstractKmeansInitializer : public AbstractKmeansAlgorithm
 {
 public:
-    AbstractKmeansInitializer(AbstractClosestClusterFinder *finder,
-                              AbstractClusteringUpdater *updater) : AbstractKmeansAlgorithm(finder, updater) {}
+    AbstractKmeansInitializer(AbstractClosestClusterFinder* finder, AbstractClusteringUpdater* updater) :
+        AbstractKmeansAlgorithm(finder, updater)
+    {
+    }
     /**
      * @brief Destroy the AbstractKmeansInitializer object
      */
@@ -101,7 +106,7 @@ public:
      *                       IDistanceFunctor.
      * @param seed - The number to seed the RNG.
      */
-    virtual void initialize(const float &seed) = 0;
+    virtual void initialize() = 0;
 };
 
 /**
@@ -111,11 +116,13 @@ class AbstractKmeansMaximizer : public AbstractKmeansAlgorithm
 {
 protected:
     // Constants
-    const float MIN_PERCENT_CHANGED = 0.0001; // the % amount of data points allowed to changed before going to next
-                                              // iteration
+    const float MIN_PERCENT_CHANGED = 0.0001;  // the % amount of data points allowed to changed before going to next
+                                               // iteration
 public:
-    AbstractKmeansMaximizer(AbstractClosestClusterFinder *finder,
-                            AbstractClusteringUpdater *updater) : AbstractKmeansAlgorithm(finder, updater) {}
+    AbstractKmeansMaximizer(AbstractClosestClusterFinder* finder, AbstractClusteringUpdater* updater) :
+        AbstractKmeansAlgorithm(finder, updater)
+    {
+    }
     /**
      * @brief Destroy the AbstractKmeansMaximizer object
      */
