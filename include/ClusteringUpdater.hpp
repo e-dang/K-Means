@@ -51,3 +51,16 @@ public:
 
     void update(const int& dataIdx, const int& clusterIdx, const value_t& weight) override;
 };
+
+class AtomicDistributedClusteringUpdater : public AbstractClusteringUpdater
+{
+public:
+    AtomicDistributedClusteringUpdater(std::vector<int>** clustering, std::vector<value_t>** clusterWeights) :
+        AbstractClusteringUpdater(clustering, clusterWeights)
+    {
+    }
+
+    ~AtomicDistributedClusteringUpdater() {}
+
+    void update(const int& dataIdx, const int& clusterIdx, const value_t& weight) override;
+};
