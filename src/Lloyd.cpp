@@ -1,7 +1,9 @@
 
 #include "Lloyd.hpp"
-#include "mpi.h"
+
 #include <iostream>
+
+#include "mpi.h"
 
 void TemplateLloyd::maximize()
 {
@@ -18,25 +20,18 @@ void TemplateLloyd::maximize()
 
         changed = reassignPoints();
 
-    } while (changed > (mTotalNumData * MIN_PERCENT_CHANGED)); // do until 99.9% of data doesnt change
+    } while (changed > (mTotalNumData * MIN_PERCENT_CHANGED));  // do until 99.9% of data doesnt change
 }
 
-void TemplateLloyd::calcClusterSums()
-{
-    pAverager->calculateSum(pData, pClusters, pClustering, pWeights);
-}
+void TemplateLloyd::calcClusterSums() { pAverager->calculateSum(pData, pClusters, pClustering, pWeights); }
 
-void TemplateLloyd::averageClusterSums()
-{
-    pAverager->normalizeSum(pClusters, pClusterWeights);
-}
+void TemplateLloyd::averageClusterSums() { pAverager->normalizeSum(pClusters, pClusterWeights); }
 
 int TemplateLloyd::reassignPoints()
 {
     int changed = 0;
     for (int i = 0; i < pData->getMaxNumData(); i++)
     {
-
         // find closest cluster for each datapoint and update cluster assignment
         int before = pClustering->at(i);
         findAndUpdateClosestCluster(i);
@@ -72,7 +67,7 @@ int OptimizedLloyd::reassignPoints()
                 changed++;
             }
         }
-        else // distance is smaller, thus update the distances vector
+        else  // distance is smaller, thus update the distances vector
         {
             pDistances->at(i) = dist;
         }
@@ -85,8 +80,7 @@ int OMPLloyd::reassignPoints()
 {
     int changed = 0;
 
-#pragma omp parallel for schedule(static), reduction(+ \
-                                                     : changed)
+#pragma omp parallel for schedule(static), reduction(+ : changed)
     for (int i = 0; i < pData->getMaxNumData(); i++)
     {
         int before = pClustering->at(i);
@@ -107,8 +101,7 @@ int OMPOptimizedLloyd::reassignPoints()
 {
     int changed = 0;
 
-#pragma omp parallel for schedule(static), reduction(+ \
-                                                     : changed)
+#pragma omp parallel for schedule(static), reduction(+ : changed)
     for (int i = 0; i < pData->getMaxNumData(); i++)
     {
         // check distance to previously closest cluster, if it increased then recalculate distances to all clusters
@@ -127,7 +120,7 @@ int OMPOptimizedLloyd::reassignPoints()
                 changed++;
             }
         }
-        else // distance is smaller, thus update the distances vector
+        else  // distance is smaller, thus update the distances vector
         {
             pDistances->at(i) = dist;
         }
@@ -180,11 +173,11 @@ int MPILloyd::reassignPoints()
         }
     }
 
-    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_INT, pClustering->data(),
-                   pLengths->data(), pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_INT, pClustering->data(), pLengths->data(),
+                   pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
     MPI_Allreduce(MPI_IN_PLACE, &changed, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_INT, pDistances->data(),
-                   pLengths->data(), pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_FLOAT, pDistances->data(), pLengths->data(),
+                   pDisplacements->data(), MPI_FLOAT, MPI_COMM_WORLD);
 
     return changed;
 }
@@ -209,17 +202,17 @@ int MPIOptimizedLloyd::reassignPoints()
                 changed++;
             }
         }
-        else // distance is smaller, thus update the distances vector
+        else  // distance is smaller, thus update the distances vector
         {
             pDistances->at(i) = dist;
         }
     }
 
-    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_INT, pClustering->data(),
-                   pLengths->data(), pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_INT, pClustering->data(), pLengths->data(),
+                   pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
     MPI_Allreduce(MPI_IN_PLACE, &changed, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_INT, pDistances->data(),
-                   pLengths->data(), pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_FLOAT, pDistances->data(), pLengths->data(),
+                   pDisplacements->data(), MPI_FLOAT, MPI_COMM_WORLD);
 
     return changed;
 }
