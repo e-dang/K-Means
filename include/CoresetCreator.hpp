@@ -27,6 +27,7 @@ public:
 
     virtual void finishClustering(Matrix* data, ClusterResults* clusterResults);
 
+protected:
     virtual void calcMean(Matrix* data, std::vector<value_t>* mean);
 
     virtual value_t calcDistsFromMean(Matrix* data, std::vector<value_t>* mean, std::vector<value_t>* sqDistances);
@@ -40,9 +41,8 @@ public:
 class SerialCoresetCreator : public AbstractCoresetCreator
 {
 public:
-    SerialCoresetCreator(const int& sampleSize, IMultiWeightedRandomSelector* selector, AbstractAverager* averager,
-                         IDistanceFunctor* distanceFunc) :
-        AbstractCoresetCreator(sampleSize, selector, averager, distanceFunc)
+    SerialCoresetCreator(const int& sampleSize, IDistanceFunctor* distanceFunc) :
+        AbstractCoresetCreator(sampleSize, new MultiWeightedRandomSelector(), new VectorAverager(), distanceFunc)
     {
     }
 
@@ -52,14 +52,14 @@ public:
 class OMPCoresetCreator : public AbstractCoresetCreator
 {
 public:
-    OMPCoresetCreator(const int& sampleSize, IMultiWeightedRandomSelector* selector, AbstractAverager* averager,
-                      IDistanceFunctor* distanceFunc) :
-        AbstractCoresetCreator(sampleSize, selector, averager, distanceFunc)
+    OMPCoresetCreator(const int& sampleSize, IDistanceFunctor* distanceFunc) :
+        AbstractCoresetCreator(sampleSize, new MultiWeightedRandomSelector(), new OMPVectorAverager(), distanceFunc)
     {
     }
 
     virtual ~OMPCoresetCreator() {}
 
+protected:
     value_t calcDistsFromMean(Matrix* data, std::vector<value_t>* mean, std::vector<value_t>* sqDistances) override;
 
     void calcDistribution(std::vector<value_t>* sqDistances, const value_t& distanceSum,
@@ -68,7 +68,7 @@ public:
 
 class MPICoresetCreator : public AbstractCoresetCreator
 {
-private:
+protected:
     Matrix chunkMeans;
     std::vector<int> mLengths;
     std::vector<int> mDisplacements;
@@ -92,8 +92,17 @@ public:
         mDisplacements = mpiData.displacements;
     }
 
+    MPICoresetCreator(const int& totalNumData, const int& sampleSize, IDistanceFunctor* distanceFunc) :
+        MPICoresetCreator(totalNumData, sampleSize, new MultiWeightedRandomSelector(), new VectorAverager(),
+                          distanceFunc)
+    {
+    }
+
     virtual ~MPICoresetCreator() {}
 
+    void finishClustering(Matrix* data, ClusterResults* clusterResults) override;
+
+protected:
     void calcMean(Matrix* data, std::vector<value_t>* mean) override;
 
     value_t calcDistsFromMean(Matrix* data, std::vector<value_t>* mean, std::vector<value_t>* sqDistances) override;
@@ -103,15 +112,30 @@ public:
 
     void sampleDistribution(Matrix* data, std::vector<value_t>* distribution, Coreset* coreset) override;
 
-    void finishClustering(Matrix* data, ClusterResults* clusterResults) override;
-
     void calculateSamplingStrategy(std::vector<int>* uniformSampleCounts, std::vector<int>* nonUniformSampleCounts,
                                    const value_t& totalDistanceSums);
+
     void updateUniformSampleCounts(std::vector<int>* uniformSampleCounts);
+
     void updateNonUniformSampleCounts(std::vector<int>* nonUniformSampleCounts, const value_t& totalDistanceSums);
 
     void appendDataToCoreset(Matrix* data, Coreset* coreset, std::vector<value_t>* weights,
                              std::vector<value_t>* distribution, const int& numSamples);
 
     void distributeCoreset(Coreset* coreset);
+};
+
+class HybridCoresetCreator : public MPICoresetCreator
+{
+public:
+    HybridCoresetCreator(const int& totalNumData, const int& sampleSize, IDistanceFunctor* distanceFunc) :
+        MPICoresetCreator(totalNumData, sampleSize, new MultiWeightedRandomSelector(), new OMPVectorAverager(),
+                          distanceFunc)
+    {
+    }
+
+    ~HybridCoresetCreator(){};
+
+protected:
+    value_t calcDistsFromMean(Matrix* data, std::vector<value_t>* mean, std::vector<value_t>* sqDistances) override;
 };

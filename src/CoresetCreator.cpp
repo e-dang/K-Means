@@ -320,3 +320,21 @@ void MPICoresetCreator::distributeCoreset(Coreset* coreset)
     MPI_Scatterv(fullCoreset.data.data(), matrixLengths.data(), matrixDisplacements.data(), MPI_FLOAT,
                  coreset->data.data(), matrixLengths.at(mRank), MPI_FLOAT, 0, MPI_COMM_WORLD);
 }
+
+value_t HybridCoresetCreator::calcDistsFromMean(Matrix* data, std::vector<value_t>* mean,
+                                                std::vector<value_t>* sqDistances)
+{
+    value_t localDistanceSum = 0;
+
+#pragma omp parallel for schedule(static), reduction(+ : localDistanceSum)
+    for (int i = 0; i < data->getNumData(); i++)
+    {
+        sqDistances->at(i) += std::pow((*pDistanceFunc)(data->at(i), mean->data(), mean->size()), 2);
+        localDistanceSum += sqDistances->at(i);
+    }
+
+    MPI_Gather(&localDistanceSum, 1, MPI_FLOAT, mDistanceSums.data(), 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Allreduce(&localDistanceSum, &mTotalDistanceSum, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+
+    return localDistanceSum;
+}
