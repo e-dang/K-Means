@@ -65,9 +65,9 @@ def plot_data(data, clusters, clustering):
     plt.show()
 
 
-NUM_DATA = 100000
-NUM_FEATURES = 2
-NUM_CLUSTERS = 30
+NUM_DATA = 1000000
+NUM_FEATURES = 3
+NUM_CLUSTERS = 100
 CLUSTER_STD = 1
 BOX = (-100, 100)
 # data = generate_data(NUM_DATA, NUM_FEATURES, NUM_CLUSTERS, CLUSTER_STD, BOX,
@@ -77,10 +77,4 @@ BOX = (-100, 100)
 data = read_data('../data/test_100000_2.txt', 100000, 2)
 clusters = read_data('../data/clusters_serial_kpp_100000_2.txt', 100000, 2)
 clustering = read_clustering('../data/clustering_serial_kpp_100000_2.txt')
-# clusters = read_data('clusters_omp_kpp_100000_2.txt', 100000, 2)
-# clustering = read_clustering('clustering_omp_kpp_100000_2.txt')
-# clusters = read_data('clusters_mpi_scaleable.txt', 10000, 2)
-# clustering = read_clustering('clustering_mpi_scaleable.txt')
-# clusters = read_data('clusters_coreset_kpp.txt', 10000, 2)
-# clustering = read_clustering('clustering_coreset_mpi.txt')
 plot_data(data, clusters, clustering)
