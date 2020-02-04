@@ -9,6 +9,7 @@ ClosestCluster ClosestClusterFinder::findClosestCluster(value_t* datapoint,
     for (int i = 0; i < numExistingClusters; i++)
     {
         value_t tempDistance = (*distanceFunc)(datapoint, (*ppClusters)->at(i), (*ppClusters)->getNumFeatures());
+
         if (minDistance > tempDistance || minDistance < 0)
         {
             minDistance = tempDistance;

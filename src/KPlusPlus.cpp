@@ -29,7 +29,7 @@ void TemplateKPlusPlus::initialize()
 
 void TemplateKPlusPlus::weightedClusterSelection()
 {
-    value_t randSumFrac = getRandFloat01() * std::accumulate(pDistances->begin(), pDistances->end(), 0);
+    value_t randSumFrac = getRandFloat01() * std::accumulate(pDistances->begin(), pDistances->end(), 0.0);
     int dataIdx         = pSelector->select(pDistances, randSumFrac);
     pClusters->appendDataPoint(pData->at(dataIdx));
 }
@@ -56,7 +56,7 @@ void MPIKPlusPlus::weightedClusterSelection()
     int dataIdx;
     if (mRank == 0)
     {
-        value_t randSumFrac = getRandFloat01MPI() * std::accumulate(pDistances->begin(), pDistances->end(), 0);
+        value_t randSumFrac = getRandFloat01MPI() * std::accumulate(pDistances->begin(), pDistances->end(), 0.0);
         dataIdx             = pSelector->select(pDistances, randSumFrac);
     }
 
