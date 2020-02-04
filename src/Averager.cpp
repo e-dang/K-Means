@@ -75,7 +75,7 @@ void OMPVectorAverager::calculateSum(Matrix* data, std::vector<value_t>* avgCont
     std::vector<value_t> copyContainer(avgContainer->size(), 0);
     auto copyContainerData = copyContainer.data();
 
-#pragma omp parallel for shared(data, avgContainer), schedule(static), reduction(+ : copyContainerData[:data->getNumFeatures()])
+#pragma omp parallel for shared(data, avgContainer), schedule(static), collapse(2), reduction(+ : copyContainerData[:data->getNumFeatures()])
     for (int i = 0; i < data->getNumData(); i++)
     {
         for (int j = 0; j < data->getNumFeatures(); j++)
