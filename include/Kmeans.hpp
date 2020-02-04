@@ -102,7 +102,7 @@ protected:
      */
     void compareResults(ClusterData* clusterData, std::vector<value_t>* distances, ClusterResults* clusterResults)
     {
-        value_t currError = std::accumulate(distances->begin(), distances->end(), 0);
+        value_t currError = std::accumulate(distances->begin(), distances->end(), 0.0);
 
         if (clusterResults->mError > currError || clusterResults->mError < 0)
         {
@@ -127,7 +127,7 @@ protected:
 /**
  * @brief Implementation of AbstractKmeans that can take serialized or threaded implementations of KmeansAlgorithms.
  */
-class Kmeans : public AbstractKmeans
+class SharedMemoryKmeans : public AbstractKmeans
 {
 public:
     /**
@@ -138,7 +138,8 @@ public:
      * @param distanceFunc - A pointer to a functor class used to calculate the distance between points, such as the
      *                       euclidean distance.
      */
-    Kmeans(AbstractKmeansInitializer* initializer, AbstractKmeansMaximizer* maximizer, IDistanceFunctor* distanceFunc) :
+    SharedMemoryKmeans(AbstractKmeansInitializer* initializer, AbstractKmeansMaximizer* maximizer,
+                       IDistanceFunctor* distanceFunc) :
         AbstractKmeans(initializer, maximizer, distanceFunc)
     {
     }
@@ -146,7 +147,7 @@ public:
     /**
      * @brief Destroy the Kmeans object.
      */
-    virtual ~Kmeans(){};
+    virtual ~SharedMemoryKmeans(){};
 };
 
 class MPIKmeans : public AbstractKmeans
