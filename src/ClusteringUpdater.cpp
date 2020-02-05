@@ -1,64 +1,95 @@
 #include "ClusteringUpdater.hpp"
 
-void ClusteringUpdater::update(const int& dataIdx, const int& clusterIdx, const value_t& weight)
+void ClusteringUpdater::update(const int& dataIdx, const ClosestCluster& closestCluster, KmeansData* const kmeansData)
 {
-    int& clusterAssignment = (*ppClustering)->at(dataIdx);
+    int displacedDataIdx   = kmeansData->mDisplacements.at(dataIdx) + dataIdx;
+    int& clusterAssignment = kmeansData->pClustering->at(displacedDataIdx);
+    value_t weight         = kmeansData->pWeights->at(dataIdx);
 
-    // only go through this update if the cluster assignment is going to change
-    if (clusterAssignment != clusterIdx)
+    if (kmeansData->pSqDistances->at(displacedDataIdx) > closestCluster.distance ||
+        kmeansData->pSqDistances->at(displacedDataIdx) < 0)
     {
-        // cluster assignments are initialized to -1, so ignore decrement if datapoint has yet to be assigned
-        if (clusterAssignment >= 0 && (*ppClusterWeights)->at(clusterAssignment) > 0)
-            (*ppClusterWeights)->at(clusterAssignment) -= weight;
-        (*ppClusterWeights)->at(clusterIdx) += weight;
-        clusterAssignment = clusterIdx;
+        // only go through this update if the cluster assignment is going to change
+        if (clusterAssignment != closestCluster.clusterIdx)
+        {
+            // cluster assignments are initialized to -1, so ignore decrement if datapoint has yet to be assigned
+            if (clusterAssignment >= 0 && kmeansData->pClusterWeights->at(clusterAssignment) > 0)
+                kmeansData->pClusterWeights->at(clusterAssignment) -= weight;
+            kmeansData->pClusterWeights->at(closestCluster.clusterIdx) += weight;
+            clusterAssignment = closestCluster.clusterIdx;
+        }
+        kmeansData->pSqDistances->at(displacedDataIdx) = closestCluster.distance;
     }
 }
 
-void AtomicClusteringUpdater::update(const int& dataIdx, const int& clusterIdx, const value_t& weight)
+void AtomicClusteringUpdater::update(const int& dataIdx, const ClosestCluster& closestCluster,
+                                     KmeansData* const kmeansData)
 {
-    int& clusterAssignment = (*ppClustering)->at(dataIdx);
+    int displacedDataIdx   = kmeansData->mDisplacements.at(dataIdx) + dataIdx;
+    int& clusterAssignment = kmeansData->pClustering->at(displacedDataIdx);
+    value_t weight         = kmeansData->pWeights->at(dataIdx);
 
-    // only go through this update if the cluster assignment is going to change
-    if (clusterAssignment != clusterIdx)
+    if (kmeansData->pSqDistances->at(displacedDataIdx) > closestCluster.distance ||
+        kmeansData->pSqDistances->at(displacedDataIdx) < 0)
     {
-        // cluster assignments are initialized to -1, so ignore decrement if datapoint has yet to be assigned
-        if (clusterAssignment >= 0 && (*ppClusterWeights)->at(clusterAssignment) > 0)
+        // only go through this update if the cluster assignment is going to change
+        if (clusterAssignment != closestCluster.clusterIdx)
+        {
+            // cluster assignments are initialized to -1, so ignore decrement if datapoint has yet to be assigned
+            if (clusterAssignment >= 0 && kmeansData->pClusterWeights->at(clusterAssignment) > 0)
 #pragma omp atomic
-            (*ppClusterWeights)->at(clusterAssignment) -= weight;
+                kmeansData->pClusterWeights->at(clusterAssignment) -= weight;
 #pragma omp atomic
-        (*ppClusterWeights)->at(clusterIdx) += weight;
-        clusterAssignment = clusterIdx;
+            kmeansData->pClusterWeights->at(closestCluster.clusterIdx) += weight;
+            clusterAssignment = closestCluster.clusterIdx;
+        }
+        kmeansData->pSqDistances->at(displacedDataIdx) = closestCluster.distance;
     }
 }
 
-void DistributedClusteringUpdater::update(const int& dataIdx, const int& clusterIdx, const value_t& weight)
+void DistributedClusteringUpdater::update(const int& dataIdx, const ClosestCluster& closestCluster,
+                                          KmeansData* const kmeansData)
 {
-    int& clusterAssignment = (*ppClustering)->at(dataIdx);
+    int displacedDataIdx   = kmeansData->mDisplacements.at(dataIdx) + dataIdx;
+    int& clusterAssignment = kmeansData->pClustering->at(displacedDataIdx);
+    value_t weight         = kmeansData->pWeights->at(dataIdx);
 
-    // only go through this update if the cluster assignment is going to change
-    if (clusterAssignment != clusterIdx)
+    if (kmeansData->pSqDistances->at(displacedDataIdx) > closestCluster.distance ||
+        kmeansData->pSqDistances->at(displacedDataIdx) < 0)
     {
-        // cluster assignments are initialized to -1, so ignore decrement if datapoint has yet to be assigned
-        if (clusterAssignment >= 0) (*ppClusterWeights)->at(clusterAssignment) -= weight;
-        (*ppClusterWeights)->at(clusterIdx) += weight;
-        clusterAssignment = clusterIdx;
+        // only go through this update if the cluster assignment is going to change
+        if (clusterAssignment != closestCluster.clusterIdx)
+        {
+            // cluster assignments are initialized to -1, so ignore decrement if datapoint has yet to be assigned
+            if (clusterAssignment >= 0) kmeansData->pClusterWeights->at(clusterAssignment) -= weight;
+            kmeansData->pClusterWeights->at(closestCluster.clusterIdx) += weight;
+            clusterAssignment = closestCluster.clusterIdx;
+        }
+        kmeansData->pSqDistances->at(displacedDataIdx) = closestCluster.distance;
     }
 }
 
-void AtomicDistributedClusteringUpdater::update(const int& dataIdx, const int& clusterIdx, const value_t& weight)
+void AtomicDistributedClusteringUpdater::update(const int& dataIdx, const ClosestCluster& closestCluster,
+                                                KmeansData* const kmeansData)
 {
-    int& clusterAssignment = (*ppClustering)->at(dataIdx);
+    int displacedDataIdx   = kmeansData->mDisplacements.at(dataIdx) + dataIdx;
+    int& clusterAssignment = kmeansData->pClustering->at(displacedDataIdx);
+    value_t weight         = kmeansData->pWeights->at(dataIdx);
 
-    // only go through this update if the cluster assignment is going to change
-    if (clusterAssignment != clusterIdx)
+    if (kmeansData->pSqDistances->at(displacedDataIdx) > closestCluster.distance ||
+        kmeansData->pSqDistances->at(displacedDataIdx) < 0)
     {
-        // cluster assignments are initialized to -1, so ignore decrement if datapoint has yet to be assigned
-        if (clusterAssignment >= 0)
+        // only go through this update if the cluster assignment is going to change
+        if (clusterAssignment != closestCluster.clusterIdx)
+        {
+            // cluster assignments are initialized to -1, so ignore decrement if datapoint has yet to be assigned
+            if (clusterAssignment >= 0)
 #pragma omp atomic
-            (*ppClusterWeights)->at(clusterAssignment) -= weight;
+                kmeansData->pClusterWeights->at(clusterAssignment) -= weight;
 #pragma omp atomic
-        (*ppClusterWeights)->at(clusterIdx) += weight;
-        clusterAssignment = clusterIdx;
+            kmeansData->pClusterWeights->at(closestCluster.clusterIdx) += weight;
+            clusterAssignment = closestCluster.clusterIdx;
+        }
+        kmeansData->pSqDistances->at(displacedDataIdx) = closestCluster.distance;
     }
 }

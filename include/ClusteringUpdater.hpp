@@ -2,65 +2,45 @@
 
 #include <vector>
 
+#include "DataClasses.hpp"
 #include "Definitions.hpp"
 
-class AbstractClusteringUpdater
+class IClusteringUpdater
 {
-protected:
-    std::vector<int>** ppClustering;
-    std::vector<value_t>** ppClusterWeights;
-
 public:
-    AbstractClusteringUpdater(std::vector<int>** clustering, std::vector<value_t>** clusterWeights) :
-        ppClustering(clustering), ppClusterWeights(clusterWeights)
-    {
-    }
+    virtual ~IClusteringUpdater(){};
 
-    virtual void update(const int& dataIdx, const int& clusterIdx, const value_t& weight) = 0;
+    virtual void update(const int& dataIdx, const ClosestCluster& closestCluster, KmeansData* const kmeansData) = 0;
 };
 
-class ClusteringUpdater : public AbstractClusteringUpdater
+class ClusteringUpdater : public IClusteringUpdater
 {
 public:
-    ClusteringUpdater(std::vector<int>** clustering, std::vector<value_t>** clusterWeights) :
-        AbstractClusteringUpdater(clustering, clusterWeights)
-    {
-    }
+    ~ClusteringUpdater() {}
 
-    void update(const int& dataIdx, const int& clusterIdx, const value_t& weight) override;
+    void update(const int& dataIdx, const ClosestCluster& closestCluster, KmeansData* const kmeansData) override;
 };
 
-class AtomicClusteringUpdater : public AbstractClusteringUpdater
+class AtomicClusteringUpdater : public IClusteringUpdater
 {
 public:
-    AtomicClusteringUpdater(std::vector<int>** clustering, std::vector<value_t>** clusterWeights) :
-        AbstractClusteringUpdater(clustering, clusterWeights)
-    {
-    }
+    ~AtomicClusteringUpdater() {}
 
-    void update(const int& dataIdx, const int& clusterIdx, const value_t& weight) override;
+    void update(const int& dataIdx, const ClosestCluster& closestCluster, KmeansData* const kmeansData) override;
 };
 
-class DistributedClusteringUpdater : public AbstractClusteringUpdater
+class DistributedClusteringUpdater : public IClusteringUpdater
 {
 public:
-    DistributedClusteringUpdater(std::vector<int>** clustering, std::vector<value_t>** clusterWeights) :
-        AbstractClusteringUpdater(clustering, clusterWeights)
-    {
-    }
+    ~DistributedClusteringUpdater() {}
 
-    void update(const int& dataIdx, const int& clusterIdx, const value_t& weight) override;
+    void update(const int& dataIdx, const ClosestCluster& closestCluster, KmeansData* const kmeansData) override;
 };
 
-class AtomicDistributedClusteringUpdater : public AbstractClusteringUpdater
+class AtomicDistributedClusteringUpdater : public IClusteringUpdater
 {
 public:
-    AtomicDistributedClusteringUpdater(std::vector<int>** clustering, std::vector<value_t>** clusterWeights) :
-        AbstractClusteringUpdater(clustering, clusterWeights)
-    {
-    }
-
     ~AtomicDistributedClusteringUpdater() {}
 
-    void update(const int& dataIdx, const int& clusterIdx, const value_t& weight) override;
+    void update(const int& dataIdx, const ClosestCluster& closestCluster, KmeansData* const kmeansData) override;
 };
