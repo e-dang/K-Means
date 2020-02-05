@@ -2,11 +2,11 @@
 
 #include <memory>
 
-#include "ClosestClusterFinder.hpp"
-#include "ClusteringUpdater.hpp"
+#include "ClosestClusterUpdater.hpp"
 #include "DataClasses.hpp"
 #include "Definitions.hpp"
 #include "DistanceFunctors.hpp"
+#include "PointReassigner.hpp"
 
 /**
  * @brief Abstract class that all Kmeans algorithms, such as initializers and maximizers will derive from. This class
@@ -15,69 +15,44 @@
 class AbstractKmeansAlgorithm
 {
 protected:
+    KmeansData* pKmeansData;  // useful for passing data to strategy pattern algorithms
+
     // user data
-    Matrix* pData;
-    std::vector<value_t>* pWeights;
+    const Matrix* pData;
+    const std::vector<value_t>* pWeights;
     std::shared_ptr<IDistanceFunctor> pDistanceFunc;
 
     // cluster data
-    Matrix* pClusters;
-    std::vector<int>* pClustering;
-    std::vector<value_t>* pClusterWeights;
-    std::vector<value_t>* pDistances;
+    Matrix** ppClusters;
+    std::vector<int>** ppClustering;
+    std::vector<value_t>** ppClusterWeights;
+    std::vector<value_t>** ppSqDistances;
 
     // chunk data
-    int mRank;
-    int mTotalNumData;
-    std::vector<int>* pLengths;
-    std::vector<int>* pDisplacements;
-
-    // algorithms
-    std::unique_ptr<AbstractClosestClusterFinder> pFinder;
-    std::unique_ptr<AbstractClusteringUpdater> pUpdater;
+    const int* pRank;
+    const int* pTotalNumData;
+    const std::vector<int>* pLengths;
+    const std::vector<int>* pDisplacements;
 
 public:
-    AbstractKmeansAlgorithm() {}
+    AbstractKmeansAlgorithm(){};
 
-    AbstractKmeansAlgorithm(AbstractClosestClusterFinder* finder, AbstractClusteringUpdater* updater) :
-        pFinder(finder), pUpdater(updater)
-    {
-    }
-    /**
-     * @brief Destroy the AbstractKmeansAlgorithm object
-     */
     virtual ~AbstractKmeansAlgorithm(){};
 
-    void setStaticData(StaticData* staticData)
+    void setKmeansData(KmeansData* kmeansData)
     {
-        pData          = staticData->pData;
-        pWeights       = staticData->pWeights;
-        pLengths       = &staticData->mLengths;
-        pDisplacements = &staticData->mDisplacements;
-        pDistanceFunc  = staticData->pDistanceFunc;
-        mRank          = staticData->mRank;
-        mTotalNumData  = staticData->mTotalNumData;
-    }
-
-    void setDynamicData(ClusterData* clusterData, std::vector<value_t>* distances)
-    {
-        pClustering     = &clusterData->mClustering;
-        pClusters       = &clusterData->mClusters;
-        pClusterWeights = &clusterData->mClusterWeights;
-        pDistances      = distances;
-    }
-
-protected:
-    void findAndUpdateClosestCluster(const int& dataIdx)
-    {
-        int displacedDataIdx = pDisplacements->at(mRank) + dataIdx;
-
-        auto closestCluster = pFinder->findClosestCluster(pData->at(dataIdx), pDistanceFunc);
-        if (pDistances->at(displacedDataIdx) > closestCluster.distance || pDistances->at(displacedDataIdx) < 0)
-        {
-            pUpdater->update(displacedDataIdx, closestCluster.clusterIdx, pWeights->at(dataIdx));
-            pDistances->at(displacedDataIdx) = closestCluster.distance;
-        }
+        pKmeansData      = kmeansData;
+        pData            = kmeansData->pData;
+        pWeights         = kmeansData->pWeights;
+        ppClusters       = &kmeansData->pClusters;
+        ppClustering     = &kmeansData->pClustering;
+        ppClusterWeights = &kmeansData->pClusterWeights;
+        ppSqDistances    = &kmeansData->pSqDistances;
+        pLengths         = &kmeansData->mLengths;
+        pRank            = &kmeansData->mRank;
+        pTotalNumData    = &kmeansData->mTotalNumData;
+        pDisplacements   = &kmeansData->mDisplacements;
+        pDistanceFunc    = kmeansData->pDistanceFunc;
     }
 };
 
@@ -87,24 +62,16 @@ protected:
  */
 class AbstractKmeansInitializer : public AbstractKmeansAlgorithm
 {
+protected:
+    std::unique_ptr<AbstractClosestClusterUpdater> pUpdater;
+
 public:
-    AbstractKmeansInitializer(AbstractClosestClusterFinder* finder, AbstractClusteringUpdater* updater) :
-        AbstractKmeansAlgorithm(finder, updater)
-    {
-    }
-    /**
-     * @brief Destroy the AbstractKmeansInitializer object
-     */
+    AbstractKmeansInitializer(AbstractClosestClusterUpdater* updater) : pUpdater(updater) {}
+
     virtual ~AbstractKmeansInitializer(){};
 
     /**
      * @brief Interface that Kmeans initialization algorithms must follow for initializing the clusters.
-     *
-     * @param distances - A pointer to a vector that stores the squared distances of each datapoint to its closest
-     *                    cluster.
-     * @param distanceFunc - A pointer to a class that calculates distances between points and is an implementation of
-     *                       IDistanceFunctor.
-     * @param seed - The number to seed the RNG.
      */
     virtual void initialize() = 0;
 };
@@ -115,27 +82,19 @@ public:
 class AbstractKmeansMaximizer : public AbstractKmeansAlgorithm
 {
 protected:
-    // Constants
     const float MIN_PERCENT_CHANGED = 0.0001;  // the % amount of data points allowed to changed before going to next
                                                // iteration
+
+    std::unique_ptr<AbstractPointReassigner> pPointReassigner;
+
 public:
-    AbstractKmeansMaximizer(AbstractClosestClusterFinder* finder, AbstractClusteringUpdater* updater) :
-        AbstractKmeansAlgorithm(finder, updater)
-    {
-    }
-    /**
-     * @brief Destroy the AbstractKmeansMaximizer object
-     */
+    AbstractKmeansMaximizer(AbstractPointReassigner* pointReassigner) : pPointReassigner(pointReassigner){};
+
     virtual ~AbstractKmeansMaximizer(){};
 
     /**
      * @brief Interface that Kmeans maximization algorithms must follow for finding the best clustering given a set of
      *        pre-initialized clusters.
-     *
-     * @param distances - A pointer to a vector that stores the squared distances of each datapoint to its closest
-     *                    cluster.
-     * @param distanceFunc - A pointer to a class that calculates distances between points and is an implementation of
-     *                       IDistanceFunctor.
      */
     virtual void maximize() = 0;
 };
