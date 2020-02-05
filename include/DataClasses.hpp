@@ -65,7 +65,11 @@ public:
      */
     value_t& at(const int& row, const int& col) { return *(this->at(row) + col); }
 
-    void appendDataPoint(value_t* datapoint)
+    const value_t at(const int& row, const int& col) const { return *(this->at(row) + col); }
+
+    const value_t* at(const int& row) const { return mData.data() + (row * mNumCols); }
+
+    void appendDataPoint(const value_t* datapoint)
     {
         if (getNumData() < mNumRows)
         {
@@ -93,10 +97,10 @@ public:
 
     value_t* data() { return mData.data(); }
 
-    int size() { return mData.size(); }
-    int getNumData() { return mData.size() / mNumCols; }
-    int getMaxNumData() { return mNumRows; }
-    int getNumFeatures() { return mNumCols; }
+    int size() const { return mData.size(); }
+    int getNumData() const { return mData.size() / mNumCols; }
+    int getMaxNumData() const { return mNumRows; }
+    int getNumFeatures() const { return mNumCols; }
 
     void operator=(const Matrix& lhs)
     {
@@ -162,6 +166,43 @@ struct ClusterData
     }
 };
 
+struct KmeansData
+{
+    const int mRank;
+    const int mTotalNumData;
+    const std::vector<int> mLengths;
+    const std::vector<int> mDisplacements;
+
+    const Matrix* const pData;
+    const std::vector<value_t>* const pWeights;
+    const std::shared_ptr<IDistanceFunctor> pDistanceFunc;
+
+    // dynamic data that changes each repeat
+    Matrix* pClusters;
+    std::vector<int>* pClustering;
+    std::vector<value_t>* pClusterWeights;
+    std::vector<value_t>* pSqDistances;
+
+    KmeansData(Matrix* data, std::vector<value_t>* weights, std::shared_ptr<IDistanceFunctor> distanceFunc,
+               const int& rank, const int& totalNumData, std::vector<int> lengths, std::vector<int> displacements) :
+        pData(data),
+        pWeights(weights),
+        pDistanceFunc(distanceFunc),
+        mRank(rank),
+        mTotalNumData(totalNumData),
+        mLengths(lengths),
+        mDisplacements(displacements){};
+
+    void setClusterData(ClusterData* clusterData)
+    {
+        pClusters       = &clusterData->mClusters;
+        pClustering     = &clusterData->mClustering;
+        pClusterWeights = &clusterData->mClusterWeights;
+    }
+
+    void setSqDistances(std::vector<value_t>* sqDistances) { pSqDistances = sqDistances; }
+};
+
 /**
  * @brief A return structure that couples the distance between a point and its closest cluster and the index of that
  *        cluster together.
@@ -171,20 +212,6 @@ struct ClosestCluster
     // Public member variables
     int clusterIdx;
     value_t distance;
-};
-
-struct StaticData
-{
-    // user data
-    Matrix* pData;
-    std::vector<value_t>* pWeights;
-    std::shared_ptr<IDistanceFunctor> pDistanceFunc;
-
-    // chunk data
-    int mRank;
-    int mTotalNumData;
-    std::vector<int> mLengths;
-    std::vector<int> mDisplacements;
 };
 
 struct ClusterResults
