@@ -3,11 +3,11 @@
 #include <memory>
 #include <numeric>
 
-#include "AbstractKmeansAlgorithms.hpp"
 #include "CoresetCreator.hpp"
 #include "DataClasses.hpp"
 #include "Definitions.hpp"
 #include "DistanceFunctors.hpp"
+#include "KmeansAlgorithms.hpp"
 
 /**
  * @brief Abstract class that defines the interface for using a Kmeans class, which wraps an initialization and

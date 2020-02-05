@@ -1,6 +1,6 @@
 #pragma once
 
-#include "AbstractKmeansAlgorithms.hpp"
+#include "KmeansAlgorithms.hpp"
 #include "RandomSelector.hpp"
 
 /**

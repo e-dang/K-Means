@@ -1,7 +1,7 @@
 #pragma once
 
-#include "AbstractKmeansAlgorithms.hpp"
 #include "Averager.hpp"
+#include "KmeansAlgorithms.hpp"
 #include "PointReassigner.hpp"
 
 /**
