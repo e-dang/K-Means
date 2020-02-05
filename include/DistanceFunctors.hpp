@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Definitions.hpp"
 #include <math.h>
+
+#include "Definitions.hpp"
 
 /**
  * @brief An interface for functor classes that calculate distances between points.
@@ -9,7 +10,6 @@
 class IDistanceFunctor
 {
 public:
-
     /**
      * @brief Overloaded function call operator.
      *
@@ -18,9 +18,8 @@ public:
      * @param numFeatures - The number of features in each datapoint.
      * @return value_t - The distance between each point.
      */
-    virtual value_t operator()(value_t *point1, value_t *point2, int numFeatures) = 0;
+    virtual value_t operator()(const value_t* point1, const value_t* point2, const int& numFeatures) = 0;
 };
-
 
 /**
  * @brief Implementation of IDistanceFunctor that calculates the Euclidean distance between two points.
@@ -36,7 +35,7 @@ public:
      * @param numFeatures - The number of features in each datapoint.
      * @return value_t
      */
-    value_t operator()(value_t *point1, value_t *point2, int numFeatures)
+    value_t operator()(const value_t* point1, const value_t* point2, const int& numFeatures)
     {
         value_t sum = 0;
         for (int i = 0; i < numFeatures; i++)
