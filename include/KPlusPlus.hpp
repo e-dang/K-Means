@@ -55,6 +55,7 @@ public:
 
     ~SharedMemoryKPlusPlus(){};
 
+protected:
     void weightedClusterSelection() override;
 
     void findAndUpdateClosestClusters() override;
