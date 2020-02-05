@@ -51,21 +51,21 @@ public:
      *        the fit() function that takes weights as parameter, but the specific implementation is left up to the
      *        concretion of this class.
      *
-     * @param matrix - The data to be clustered.
+     * @param data - The data to be clustered.
      * @param numClusters - The number of clusters to cluster the data into.
      * @param numRestarts - The number of times to repeat the clustering process.
      */
-    virtual ClusterResults fit(Matrix* matrix, const int& numClusters, const int& numRestarts);
+    virtual ClusterResults fit(Matrix* data, const int& numClusters, const int& numRestarts);
 
     /**
      * @brief Interface for the top level function that initiates the clustering process.
      *
-     * @param matrix - The data to be clustered.
+     * @param data - The data to be clustered.
      * @param numClusters - The number of clusters to cluster the data into.
      * @param numRestarts - The number of times to repeat the clustering process.
      * @param weights - The weights for each datapoint in the matrix.
      */
-    virtual ClusterResults fit(Matrix* matrix, const int& numClusters, const int& numRestarts,
+    virtual ClusterResults fit(Matrix* data, const int& numClusters, const int& numRestarts,
                                std::vector<value_t>* weights);
 
     // /**
@@ -90,7 +90,7 @@ public:
     void setDistanceFunc(IDistanceFunctor* distanceFunc) { pDistanceFunc.reset(distanceFunc); }
 
 protected:
-    ClusterResults run(Matrix* matrix, const int& numClusters, const int& numRestarts, KmeansData* kmeansData);
+    ClusterResults run(Matrix* data, const int& numClusters, const int& numRestarts, KmeansData* kmeansData);
 
     /**
      * @brief Helper function that takes in the resulting clusterData and squared distances of each datapoint to their
@@ -98,17 +98,17 @@ protected:
      *        clusterData from the current run is stored in finalClusterData.
      *
      * @param clusterData - The clusterData from the current run.
-     * @param distances - The square distances from each to point to their assigned cluster.
+     * @param sqDistances - The square distances from each to point to their assigned cluster.
      */
-    void compareResults(ClusterData* clusterData, std::vector<value_t>* distances, ClusterResults* clusterResults)
+    void compareResults(ClusterData* clusterData, std::vector<value_t>* sqDistances, ClusterResults* clusterResults)
     {
-        value_t currError = std::accumulate(distances->begin(), distances->end(), 0.0);
+        value_t currError = std::accumulate(sqDistances->begin(), sqDistances->end(), 0.0);
 
         if (clusterResults->mError > currError || clusterResults->mError < 0)
         {
             clusterResults->mError       = currError;
             clusterResults->mClusterData = *clusterData;
-            clusterResults->mSqDistances = *distances;
+            clusterResults->mSqDistances = *sqDistances;
         }
     }
 
