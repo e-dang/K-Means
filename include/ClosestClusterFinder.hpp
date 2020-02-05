@@ -2,31 +2,25 @@
 
 #include "DataClasses.hpp"
 #include "Definitions.hpp"
-#include "DistanceFunctors.hpp"
 
-class AbstractClosestClusterFinder
+class IClosestClusterFinder
 {
-protected:
-    Matrix** ppClusters;
-
 public:
-    AbstractClosestClusterFinder(Matrix** clusters) : ppClusters(clusters) {}
+    virtual ~IClosestClusterFinder(){};
 
-    virtual ClosestCluster findClosestCluster(value_t* datapoint, std::shared_ptr<IDistanceFunctor> distanceFunc) = 0;
+    virtual ClosestCluster findClosestCluster(const int& dataIdx, KmeansData* const kmeansData) = 0;
 };
 
-class ClosestClusterFinder : public AbstractClosestClusterFinder
+class ClosestClusterFinder : public IClosestClusterFinder
 {
 public:
-    ClosestClusterFinder(Matrix** clusters) : AbstractClosestClusterFinder(clusters) {}
-
-    ClosestCluster findClosestCluster(value_t* datapoint, std::shared_ptr<IDistanceFunctor> distanceFunc) override;
+    ~ClosestClusterFinder(){};
+    ClosestCluster findClosestCluster(const int& dataIdx, KmeansData* const kmeansData) override;
 };
 
-class ClosestNewClusterFinder : public AbstractClosestClusterFinder
+class ClosestNewClusterFinder : public IClosestClusterFinder
 {
 public:
-    ClosestNewClusterFinder(Matrix** clusters) : AbstractClosestClusterFinder(clusters) {}
-
-    ClosestCluster findClosestCluster(value_t* datapoint, std::shared_ptr<IDistanceFunctor> distanceFunc) override;
+    ~ClosestNewClusterFinder(){};
+    ClosestCluster findClosestCluster(const int& dataIdx, KmeansData* const kmeansData) override;
 };
