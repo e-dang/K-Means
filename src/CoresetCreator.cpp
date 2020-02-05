@@ -162,72 +162,13 @@ void MPICoresetCreator::appendDataToCoreset(Matrix* data, Coreset* coreset, std:
     }
 }
 
-void AbstractCoresetCreator::finishClustering(Matrix* data, ClusterResults* clusterResults)
-{
-    for (int i = 0; i < data->getNumData(); i++)
-    {
-        // auto closestCluster =
-        //   pFinder->findClosestCluster(data->at(i), clusterResults->mClusterData.mClusters, ppDistanceFunc);
-
-        int clusterIdx;
-        value_t minDistance = -1.0;
-        auto& clusters      = clusterResults->mClusterData.mClusters;
-        for (int j = 0; j < clusters.getNumData(); j++)
-        {
-            value_t tempDistance = (*pDistanceFunc)(data->at(i), clusters.at(j), clusters.getNumFeatures());
-            if (minDistance > tempDistance || minDistance < 0)
-            {
-                minDistance = tempDistance;
-                clusterIdx  = j;
-            }
-        }
-
-        clusterResults->mSqDistances.at(i)             = std::pow(minDistance, 2);
-        clusterResults->mClusterData.mClustering.at(i) = clusterIdx;
-    }
-    clusterResults->mError =
-      std::accumulate(clusterResults->mSqDistances.begin(), clusterResults->mSqDistances.end(), 0.0);
-}
-
-void MPICoresetCreator::finishClustering(Matrix* data, ClusterResults* clusterResults)
-{
-    for (int i = 0; i < data->getNumData(); i++)
-    {
-        // auto closestCluster =
-        //   pFinder->findClosestCluster(data->at(i), clusterResults->mClusterData.mClusters, ppDistanceFunc);
-
-        int clusterIdx;
-        value_t minDistance = -1.0;
-        auto& clusters      = clusterResults->mClusterData.mClusters;
-        for (int j = 0; j < clusters.getNumData(); j++)
-        {
-            value_t tempDistance = (*pDistanceFunc)(data->at(i), clusters.at(j), clusters.getNumFeatures());
-            if (minDistance > tempDistance || minDistance < 0)
-            {
-                minDistance = tempDistance;
-                clusterIdx  = j;
-            }
-        }
-
-        clusterResults->mSqDistances.at(mDisplacements.at(mRank) + i)             = std::pow(minDistance, 2);
-        clusterResults->mClusterData.mClustering.at(mDisplacements.at(mRank) + i) = clusterIdx;
-    }
-    clusterResults->mError =
-      std::accumulate(clusterResults->mSqDistances.begin(), clusterResults->mSqDistances.end(), 0.0);
-    MPI_Allgatherv(MPI_IN_PLACE, mLengths.at(mRank), MPI_INT, clusterResults->mClusterData.mClustering.data(),
-                   mLengths.data(), mDisplacements.data(), MPI_INT, MPI_COMM_WORLD);
-    MPI_Allgatherv(MPI_IN_PLACE, mLengths.at(mRank), MPI_FLOAT, clusterResults->mSqDistances.data(), mLengths.data(),
-                   mDisplacements.data(), MPI_FLOAT, MPI_COMM_WORLD);
-    MPI_Allreduce(MPI_IN_PLACE, &clusterResults->mError, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
-}
-
 void MPICoresetCreator::calculateSamplingStrategy(std::vector<int>* uniformSampleCounts,
                                                   std::vector<int>* nonUniformSampleCounts,
                                                   const value_t& totalDistanceSums)
 {
     for (int i = 0; i < mSampleSize; i++)
     {
-        value_t randNum = getRandFloat01MPI();
+        double randNum = getRandDouble01MPI();
         if (randNum >= 0.5)
         {
             updateUniformSampleCounts(uniformSampleCounts);
@@ -241,7 +182,7 @@ void MPICoresetCreator::calculateSamplingStrategy(std::vector<int>* uniformSampl
 
 void MPICoresetCreator::updateUniformSampleCounts(std::vector<int>* uniformSampleCounts)
 {
-    float randNum     = getRandFloat01MPI() * mTotalNumData;
+    double randNum    = getRandDouble01MPI() * mTotalNumData;
     int cumulativeSum = 0;
     for (int j = 0; j < mNumProcs; j++)
     {
@@ -257,7 +198,7 @@ void MPICoresetCreator::updateUniformSampleCounts(std::vector<int>* uniformSampl
 void MPICoresetCreator::updateNonUniformSampleCounts(std::vector<int>* nonUniformSampleCounts,
                                                      const value_t& totalDistanceSums)
 {
-    float randNum         = getRandFloat01MPI() * totalDistanceSums;
+    double randNum        = getRandDouble01MPI() * totalDistanceSums;
     value_t cumulativeSum = 0;
     for (int j = 0; j < mNumProcs; j++)
     {

@@ -41,7 +41,7 @@ void MPIKPlusPlus::weightedClusterSelection()
     int dataIdx;
     if (*pRank == 0)
     {
-        value_t randSumFrac =
+        double randSumFrac =
           getRandDouble01MPI() * std::accumulate((*ppSqDistances)->begin(), (*ppSqDistances)->end(), 0.0);
         dataIdx = pSelector->select((*ppSqDistances), randSumFrac);
     }
