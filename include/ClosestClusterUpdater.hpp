@@ -61,7 +61,7 @@ public:
 
     void findAndUpdateClosestClusters(KmeansData* const kmeansData)
     {
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for shared(kmeansData), schedule(static)
         for (int i = 0; i < kmeansData->pData->getNumData(); i++)
         {
             findAndUpdateClosestCluster(i, kmeansData);
