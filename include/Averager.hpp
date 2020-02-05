@@ -6,51 +6,60 @@
 class AbstractWeightedAverager
 {
 public:
-    virtual void calculateSum(Matrix* data, Matrix* avgContainer, std::vector<int>* dataAssignments,
-                              std::vector<value_t>* weights)                                       = 0;
-    virtual void normalizeSum(Matrix* avgContainer, std::vector<value_t>* weightSums)              = 0;
-    virtual void calculateAverage(Matrix* data, Matrix* avgContainer, std::vector<int>* dataAssignments,
-                                  std::vector<value_t>* weights, std::vector<value_t>* weightSums) = 0;
+    virtual void calculateAverage(const Matrix* const data, Matrix* const avgContainer,
+                                  const std::vector<int>* const dataAssignments,
+                                  const std::vector<value_t>* const weights,
+                                  const std::vector<value_t>* const weightSums) = 0;
+
+    virtual void calculateSum(const Matrix* const data, Matrix* const avgContainer,
+                              const std::vector<int>* const dataAssignments,
+                              const std::vector<value_t>* const weights) = 0;
+
+    virtual void normalizeSum(Matrix* const avgContainer, const std::vector<value_t>* const weightSums) = 0;
 };
 
 class WeightedMultiVectorAverager : public AbstractWeightedAverager
 {
 public:
-    void calculateSum(Matrix* data, Matrix* avgContainer, std::vector<int>* dataAssignments,
-                      std::vector<value_t>* weights) override;
+    void calculateAverage(const Matrix* const data, Matrix* const avgContainer,
+                          const std::vector<int>* const dataAssignments, const std::vector<value_t>* const weights,
+                          const std::vector<value_t>* const weightSums) override;
 
-    void normalizeSum(Matrix* avgContainer, std::vector<value_t>* weightSums) override;
+    void calculateSum(const Matrix* const data, Matrix* const avgContainer,
+                      const std::vector<int>* const dataAssignments,
+                      const std::vector<value_t>* const weights) override;
 
-    void calculateAverage(Matrix* data, Matrix* avgContainer, std::vector<int>* dataAssignments,
-                          std::vector<value_t>* weights, std::vector<value_t>* weightSums) override;
+    void normalizeSum(Matrix* const avgContainer, const std::vector<value_t>* const weightSums) override;
 };
 
 class OMPWeightedMultiVectorAverager : public WeightedMultiVectorAverager
 {
 public:
-    void normalizeSum(Matrix* avgContainer, std::vector<value_t>* weightSums) override;
+    void normalizeSum(Matrix* const avgContainer, const std::vector<value_t>* const weightSums) override;
 };
 
 class AbstractAverager
 {
 public:
-    virtual void calculateSum(Matrix* data, std::vector<value_t>* avgContainer)     = 0;
-    virtual void normalizeSum(std::vector<value_t>* avgContainer, int numData)      = 0;
-    virtual void calculateAverage(Matrix* data, std::vector<value_t>* avgContainer) = 0;
+    void calculateAverage(const Matrix* const data, std::vector<value_t>* const avgContainer);
+
+    virtual void calculateSum(const Matrix* const data, std::vector<value_t>* const avgContainer) = 0;
+
+    virtual void normalizeSum(std::vector<value_t>* const avgContainer, const int numData) = 0;
 };
 
 class VectorAverager : public AbstractAverager
 {
 public:
-    void calculateSum(Matrix* data, std::vector<value_t>* avgContainer) override;
-    void normalizeSum(std::vector<value_t>* avgContainer, int numData) override;
-    void calculateAverage(Matrix* data, std::vector<value_t>* avgContainer) override;
+    void calculateSum(const Matrix* const data, std::vector<value_t>* const avgContainer) override;
+
+    void normalizeSum(std::vector<value_t>* const avgContainer, const int numData) override;
 };
 
 class OMPVectorAverager : public AbstractAverager
 {
 public:
-    void calculateSum(Matrix* data, std::vector<value_t>* avgContainer) override;
-    void normalizeSum(std::vector<value_t>* avgContainer, int numData) override;
-    void calculateAverage(Matrix* data, std::vector<value_t>* avgContainer) override;
+    void calculateSum(const Matrix* const data, std::vector<value_t>* const avgContainer) override;
+
+    void normalizeSum(std::vector<value_t>* const avgContainer, const int numData) override;
 };

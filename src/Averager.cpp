@@ -2,8 +2,18 @@
 
 #include "omp.h"
 
-void WeightedMultiVectorAverager::calculateSum(Matrix* data, Matrix* avgContainer, std::vector<int>* dataAssignments,
-                                               std::vector<value_t>* weights)
+void WeightedMultiVectorAverager::calculateAverage(const Matrix* const data, Matrix* const avgContainer,
+                                                   const std::vector<int>* const dataAssignments,
+                                                   const std::vector<value_t>* const weights,
+                                                   const std::vector<value_t>* const weightSums)
+{
+    calculateSum(data, avgContainer, dataAssignments, weights);
+    normalizeSum(avgContainer, weightSums);
+}
+
+void WeightedMultiVectorAverager::calculateSum(const Matrix* const data, Matrix* const avgContainer,
+                                               const std::vector<int>* const dataAssignments,
+                                               const std::vector<value_t>* const weights)
 {
     for (int i = 0; i < data->getNumData(); i++)
     {
@@ -14,7 +24,7 @@ void WeightedMultiVectorAverager::calculateSum(Matrix* data, Matrix* avgContaine
     }
 }
 
-void WeightedMultiVectorAverager::normalizeSum(Matrix* avgContainer, std::vector<value_t>* weightSums)
+void WeightedMultiVectorAverager::normalizeSum(Matrix* const avgContainer, const std::vector<value_t>* const weightSums)
 {
     for (int i = 0; i < avgContainer->getNumData(); i++)
     {
@@ -25,15 +35,8 @@ void WeightedMultiVectorAverager::normalizeSum(Matrix* avgContainer, std::vector
     }
 }
 
-void WeightedMultiVectorAverager::calculateAverage(Matrix* data, Matrix* avgContainer,
-                                                   std::vector<int>* dataAssignments, std::vector<value_t>* weights,
-                                                   std::vector<value_t>* weightSums)
-{
-    calculateSum(data, avgContainer, dataAssignments, weights);
-    normalizeSum(avgContainer, weightSums);
-}
-
-void OMPWeightedMultiVectorAverager::normalizeSum(Matrix* avgContainer, std::vector<value_t>* weightSums)
+void OMPWeightedMultiVectorAverager::normalizeSum(Matrix* const avgContainer,
+                                                  const std::vector<value_t>* const weightSums)
 {
 #pragma omp parallel for shared(avgContainer, weightSums), schedule(static), collapse(2)
     for (int i = 0; i < avgContainer->getNumData(); i++)
@@ -45,7 +48,13 @@ void OMPWeightedMultiVectorAverager::normalizeSum(Matrix* avgContainer, std::vec
     }
 }
 
-void VectorAverager::calculateSum(Matrix* data, std::vector<value_t>* avgContainer)
+void AbstractAverager::calculateAverage(const Matrix* const data, std::vector<value_t>* const avgContainer)
+{
+    calculateSum(data, avgContainer);
+    normalizeSum(avgContainer, data->getNumData());
+}
+
+void VectorAverager::calculateSum(const Matrix* const data, std::vector<value_t>* const avgContainer)
 {
     for (int i = 0; i < data->getNumData(); i++)
     {
@@ -56,7 +65,7 @@ void VectorAverager::calculateSum(Matrix* data, std::vector<value_t>* avgContain
     }
 }
 
-void VectorAverager::normalizeSum(std::vector<value_t>* avgContainer, int numData)
+void VectorAverager::normalizeSum(std::vector<value_t>* const avgContainer, const int numData)
 {
     for (int i = 0; i < avgContainer->size(); i++)
     {
@@ -64,13 +73,7 @@ void VectorAverager::normalizeSum(std::vector<value_t>* avgContainer, int numDat
     }
 }
 
-void VectorAverager::calculateAverage(Matrix* data, std::vector<value_t>* avgContainer)
-{
-    calculateSum(data, avgContainer);
-    normalizeSum(avgContainer, data->getNumData());
-}
-
-void OMPVectorAverager::calculateSum(Matrix* data, std::vector<value_t>* avgContainer)
+void OMPVectorAverager::calculateSum(const Matrix* const data, std::vector<value_t>* const avgContainer)
 {
     std::vector<value_t> copyContainer(avgContainer->size(), 0);
     auto copyContainerData = copyContainer.data();
@@ -87,17 +90,11 @@ void OMPVectorAverager::calculateSum(Matrix* data, std::vector<value_t>* avgCont
     std::copy(copyContainer.begin(), copyContainer.end(), avgContainer->begin());
 }
 
-void OMPVectorAverager::normalizeSum(std::vector<value_t>* avgContainer, int numData)
+void OMPVectorAverager::normalizeSum(std::vector<value_t>* const avgContainer, const int numData)
 {
 #pragma omp parallel for shared(avgContainer, numData), schedule(static)
     for (int i = 0; i < avgContainer->size(); i++)
     {
         avgContainer->at(i) /= numData;
     }
-}
-
-void OMPVectorAverager::calculateAverage(Matrix* data, std::vector<value_t>* avgContainer)
-{
-    calculateSum(data, avgContainer);
-    normalizeSum(avgContainer, data->getNumData());
 }
