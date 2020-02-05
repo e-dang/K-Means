@@ -43,10 +43,10 @@ inline MPIData getMPIData(const int& totalNumData)
     std::vector<int> displacements(numProcs);  // index of each sub-array to gather
     for (int i = 0; i < numProcs; i++)
     {
-        lengths[i]       = chunk;
-        displacements[i] = i * chunk;
+        lengths.at(i)       = chunk;
+        displacements.at(i) = i * chunk;
     }
-    lengths[numProcs - 1] = scrap;
+    lengths.at(numProcs - 1) = scrap;
 
     return MPIData{ rank, numProcs, lengths, displacements };
 }
