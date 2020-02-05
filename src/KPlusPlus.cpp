@@ -11,10 +11,10 @@ void TemplateKPlusPlus::initialize()
     weightedClusterSelection();
 
     // change fill distances vector with -1 so values aren't confused with actual distances
-    std::fill(pDistances->begin(), pDistances->end(), -1);
+    std::fill((*ppSqDistances)->begin(), (*ppSqDistances)->end(), -1);
 
     // initialize remaining clusters; start from index 1 since we know we have only 1 cluster so far
-    for (int i = 1; i < pClusters->getMaxNumData(); i++)
+    for (int i = 1; i < (*ppClusters)->getMaxNumData(); i++)
     {
         // find distance between each datapoint and nearest cluster, then update clustering assignment
         findAndUpdateClosestClusters();
@@ -27,37 +27,23 @@ void TemplateKPlusPlus::initialize()
     findAndUpdateClosestClusters();
 }
 
-void TemplateKPlusPlus::weightedClusterSelection()
+void SharedMemoryKPlusPlus::weightedClusterSelection()
 {
-    value_t randSumFrac = getRandFloat01() * std::accumulate(pDistances->begin(), pDistances->end(), 0.0);
-    int dataIdx         = pSelector->select(pDistances, randSumFrac);
-    pClusters->appendDataPoint(pData->at(dataIdx));
+    value_t randSumFrac = getRandFloat01() * std::accumulate((*ppSqDistances)->begin(), (*ppSqDistances)->end(), 0.0);
+    int dataIdx         = pSelector->select(*ppSqDistances, randSumFrac);
+    (*ppClusters)->appendDataPoint(pData->at(dataIdx));
 }
 
-void TemplateKPlusPlus::findAndUpdateClosestClusters()
-{
-    for (int i = 0; i < pData->getMaxNumData(); i++)
-    {
-        findAndUpdateClosestCluster(i);
-    }
-}
-
-void OMPKPlusPlus::findAndUpdateClosestClusters()
-{
-#pragma omp parallel for schedule(static)
-    for (int i = 0; i < pData->getMaxNumData(); i++)
-    {
-        findAndUpdateClosestCluster(i);
-    }
-}
+void SharedMemoryKPlusPlus::findAndUpdateClosestClusters() { pUpdater->findAndUpdateClosestClusters(pKmeansData); }
 
 void MPIKPlusPlus::weightedClusterSelection()
 {
     int dataIdx;
-    if (mRank == 0)
+    if (*pRank == 0)
     {
-        value_t randSumFrac = getRandFloat01MPI() * std::accumulate(pDistances->begin(), pDistances->end(), 0.0);
-        dataIdx             = pSelector->select(pDistances, randSumFrac);
+        value_t randSumFrac =
+          getRandFloat01MPI() * std::accumulate((*ppSqDistances)->begin(), (*ppSqDistances)->end(), 0.0);
+        dataIdx = pSelector->select((*ppSqDistances), randSumFrac);
     }
 
     MPI_Bcast(&dataIdx, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -73,42 +59,25 @@ void MPIKPlusPlus::weightedClusterSelection()
         }
     }
 
-    if (mRank == rank)
+    if (*pRank == rank)
     {
-        pClusters->appendDataPoint(pData->at(dataIdx - pDisplacements->at(mRank)));
+        (*ppClusters)->appendDataPoint(pData->at(dataIdx - pDisplacements->at(*pRank)));
     }
     else
     {
-        pClusters->reserve(pClusters->getNumData() + 1);
+        (*ppClusters)->reserve((*ppClusters)->getNumData() + 1);
     }
 
-    MPI_Bcast(pClustering->data(), pClustering->size(), MPI_INT, rank, MPI_COMM_WORLD);
-    MPI_Bcast(pClusters->data(), pClusters->size(), MPI_FLOAT, rank, MPI_COMM_WORLD);
+    MPI_Bcast((*ppClustering)->data(), (*ppClustering)->size(), MPI_INT, rank, MPI_COMM_WORLD);
+    MPI_Bcast((*ppClusters)->data(), (*ppClusters)->size(), MPI_FLOAT, rank, MPI_COMM_WORLD);
 }
 
 void MPIKPlusPlus::findAndUpdateClosestClusters()
 {
-    for (int i = 0; i < pData->getMaxNumData(); i++)
-    {
-        findAndUpdateClosestCluster(i);
-    }
+    pUpdater->findAndUpdateClosestClusters(pKmeansData);
 
-    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_INT, pClustering->data(), pLengths->data(),
+    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(*pRank), MPI_INT, (*ppClustering)->data(), pLengths->data(),
                    pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
-    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_FLOAT, pDistances->data(), pLengths->data(),
-                   pDisplacements->data(), MPI_FLOAT, MPI_COMM_WORLD);
-}
-
-void HybridKPlusPlus::findAndUpdateClosestClusters()
-{
-#pragma omp parallel for schedule(static)
-    for (int i = 0; i < pData->getMaxNumData(); i++)
-    {
-        findAndUpdateClosestCluster(i);
-    }
-
-    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_INT, pClustering->data(), pLengths->data(),
-                   pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
-    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_FLOAT, pDistances->data(), pLengths->data(),
+    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(*pRank), MPI_FLOAT, (*ppSqDistances)->data(), pLengths->data(),
                    pDisplacements->data(), MPI_FLOAT, MPI_COMM_WORLD);
 }
