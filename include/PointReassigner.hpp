@@ -16,11 +16,11 @@ public:
 
     unsigned int reassignPoint(const int& dataIdx, KmeansData* const kmeansData)
     {
-        int before = kmeansData->pClustering->at(dataIdx);
+        int before = kmeansData->clusteringAt(dataIdx);
 
         pUpdater->findAndUpdateClosestCluster(dataIdx, kmeansData);
 
-        if (before != kmeansData->pClustering->at(dataIdx))
+        if (before != kmeansData->clusteringAt(dataIdx))
         {
             return 1;
         }
@@ -59,22 +59,21 @@ public:
     unsigned int reassignPoints(KmeansData* const kmeansData) override
     {
         unsigned int changed = 0;
-        int displacement     = kmeansData->mDisplacements.at(kmeansData->mRank);
         int numFeatures      = kmeansData->pData->getNumFeatures();
 
         for (int i = 0; i < kmeansData->pData->getNumData(); i++)
         {
-            int clusterIdx = kmeansData->pClustering->at(displacement + i);
+            int clusterIdx = kmeansData->clusteringAt(i);
             value_t dist   = std::pow((*kmeansData->pDistanceFunc)(kmeansData->pData->at(i),
                                                                  kmeansData->pClusters->at(clusterIdx), numFeatures),
                                     2);
-            if (dist > kmeansData->pSqDistances->at(i) || kmeansData->pSqDistances->at(i) < 0)
+            if (dist > kmeansData->sqDistancesAt(i) || kmeansData->sqDistancesAt(i) < 0)
             {
                 changed += reassignPoint(i, kmeansData);
             }
             else
             {
-                kmeansData->pSqDistances->at(i) = dist;
+                kmeansData->sqDistancesAt(i) = dist;
             }
         }
 
@@ -92,6 +91,7 @@ public:
     unsigned int reassignPoints(KmeansData* const kmeansData) override
     {
         unsigned int changed = 0;
+
 #pragma omp parallel for shared(kmeansData), schedule(static), reduction(+ : changed)
         for (int i = 0; i < kmeansData->pData->getNumData(); i++)
         {
@@ -112,23 +112,22 @@ public:
     unsigned int reassignPoints(KmeansData* const kmeansData) override
     {
         unsigned int changed = 0;
-        int displacement     = kmeansData->mDisplacements.at(kmeansData->mRank);
         int numFeatures      = kmeansData->pData->getNumFeatures();
 
-#pragma omp parallel for shared(kmeansData, displacement, numFeatures), schedule(static), reduction(+ : changed)
+#pragma omp parallel for shared(kmeansData, numFeatures), schedule(static), reduction(+ : changed)
         for (int i = 0; i < kmeansData->pData->getNumData(); i++)
         {
-            int clusterIdx = kmeansData->pClustering->at(displacement + i);
+            int clusterIdx = kmeansData->clusteringAt(i);
             value_t dist   = std::pow((*kmeansData->pDistanceFunc)(kmeansData->pData->at(i),
                                                                  kmeansData->pClusters->at(clusterIdx), numFeatures),
                                     2);
-            if (dist > kmeansData->pSqDistances->at(i) || kmeansData->pSqDistances->at(i) < 0)
+            if (dist > kmeansData->sqDistancesAt(i) || kmeansData->sqDistancesAt(i) < 0)
             {
                 changed += reassignPoint(i, kmeansData);
             }
             else
             {
-                kmeansData->pSqDistances->at(i) = dist;
+                kmeansData->sqDistancesAt(i) = dist;
             }
         }
 

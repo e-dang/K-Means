@@ -169,6 +169,7 @@ struct ClusterData
 struct KmeansData
 {
     const int mRank;
+    const int mDisplacement;
     const int mTotalNumData;
     const std::vector<int> mLengths;
     const std::vector<int> mDisplacements;
@@ -191,7 +192,8 @@ struct KmeansData
         mRank(rank),
         mTotalNumData(totalNumData),
         mLengths(lengths),
-        mDisplacements(displacements){};
+        mDisplacements(displacements),
+        mDisplacement(displacements.at(mRank)){};
 
     void setClusterData(ClusterData* clusterData)
     {
@@ -201,6 +203,10 @@ struct KmeansData
     }
 
     void setSqDistances(std::vector<value_t>* sqDistances) { pSqDistances = sqDistances; }
+
+    int& clusteringAt(const int& dataIdx) { return pClustering->at(mDisplacement + dataIdx); }
+    value_t& sqDistancesAt(const int& dataIdx) { return pSqDistances->at(mDisplacement + dataIdx); }
+    value_t& clusterWeightsAt(const int& clusterIdx) { return pClusterWeights->at(clusterIdx); }
 };
 
 /**
