@@ -29,7 +29,7 @@ void TemplateKPlusPlus::initialize()
 
 void SharedMemoryKPlusPlus::weightedClusterSelection()
 {
-    value_t randSumFrac = getRandFloat01() * std::accumulate((*ppSqDistances)->begin(), (*ppSqDistances)->end(), 0.0);
+    value_t randSumFrac = getRandDouble01() * std::accumulate((*ppSqDistances)->begin(), (*ppSqDistances)->end(), 0.0);
     int dataIdx         = pSelector->select(*ppSqDistances, randSumFrac);
     (*ppClusters)->appendDataPoint(pData->at(dataIdx));
 }
@@ -42,7 +42,7 @@ void MPIKPlusPlus::weightedClusterSelection()
     if (*pRank == 0)
     {
         value_t randSumFrac =
-          getRandFloat01MPI() * std::accumulate((*ppSqDistances)->begin(), (*ppSqDistances)->end(), 0.0);
+          getRandDouble01MPI() * std::accumulate((*ppSqDistances)->begin(), (*ppSqDistances)->end(), 0.0);
         dataIdx = pSelector->select((*ppSqDistances), randSumFrac);
     }
 

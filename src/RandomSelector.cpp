@@ -23,7 +23,7 @@ std::vector<int> MultiWeightedRandomSelector::select(std::vector<value_t>* weigh
     std::vector<double> vals;
     for (auto& val : *weights)
     {
-        vals.push_back(std::pow(getRandFloat01MPI(), 1. / val));
+        vals.push_back(std::pow(getRandDouble01MPI(), 1. / val));
     }
 
     std::vector<std::pair<int, value_t>> valsWithIndices;

@@ -25,8 +25,6 @@ public:
 
     virtual void createCoreset(Matrix* data, Coreset* coreset);
 
-    virtual void finishClustering(Matrix* data, ClusterResults* clusterResults);
-
 protected:
     virtual void calcMean(Matrix* data, std::vector<value_t>* mean);
 
@@ -99,8 +97,6 @@ public:
     }
 
     virtual ~MPICoresetCreator() {}
-
-    void finishClustering(Matrix* data, ClusterResults* clusterResults) override;
 
 protected:
     void calcMean(Matrix* data, std::vector<value_t>* mean) override;

@@ -8,25 +8,25 @@
 
 typedef boost::mt19937 RNGType;
 
-inline float getRandFloat01()
+inline double getRandDouble01()
 {
     thread_local static RNGType rng(time(NULL));
-    thread_local static boost::uniform_real<> floatRange(0, 1);
-    thread_local static boost::variate_generator<RNGType, boost::uniform_real<>> floatDistr(rng, floatRange);
+    thread_local static boost::uniform_real<double> dblRange(0, 1);
+    thread_local static boost::variate_generator<RNGType, boost::uniform_real<double>> dblDistr(rng, dblRange);
 
-    return floatDistr();
+    return dblDistr();
 }
 
-inline float getRandFloat01MPI()
+inline double getRandDouble01MPI()
 {
     static int rank = -1;
     if (rank == -1) MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    thread_local static RNGType rng(time(NULL) * (rank + 1));
-    thread_local static boost::uniform_real<> floatRange(0, 1);
-    thread_local static boost::variate_generator<RNGType, boost::uniform_real<>> floatDistr(rng, floatRange);
+    thread_local static RNGType rng(time(NULL) * (rank + 10));
+    thread_local static boost::uniform_real<double> dblRange(0, 1);
+    thread_local static boost::variate_generator<RNGType, boost::uniform_real<double>> dblDistr(rng, dblRange);
 
-    return floatDistr();
+    return dblDistr();
 }
 
 inline MPIData getMPIData(const int& totalNumData)
