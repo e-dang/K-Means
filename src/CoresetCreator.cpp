@@ -2,7 +2,7 @@
 
 #include "omp.h"
 
-void AbstractCoresetCreator::createCoreset(Matrix* data, Coreset* coreset)
+void AbstractCoresetCreator::createCoreset(const Matrix* const data, Coreset* const coreset)
 {
     std::vector<value_t> mean(data->getNumFeatures());
     std::vector<value_t> sqDistances(data->getNumData());
@@ -17,35 +17,26 @@ void AbstractCoresetCreator::createCoreset(Matrix* data, Coreset* coreset)
     sampleDistribution(data, &distribution, coreset);
 }
 
-void AbstractCoresetCreator::calcMean(Matrix* data, std::vector<value_t>* mean)
+void SharedMemoryCoresetCreator::calcMean(const Matrix* const data, std::vector<value_t>* const mean)
 {
     pAverager->calculateAverage(data, mean);
 }
 
-value_t AbstractCoresetCreator::calcDistsFromMean(Matrix* data, std::vector<value_t>* mean,
-                                                  std::vector<value_t>* sqDistances)
+value_t SharedMemoryCoresetCreator::calcDistsFromMean(const Matrix* const data, const std::vector<value_t>* const mean,
+                                                      std::vector<value_t>* const sqDistances)
 {
-    value_t distanceSum = 0.0;
-    for (int i = 0; i < data->getNumData(); i++)
-    {
-        sqDistances->at(i) = std::pow((*pDistanceFunc)(data->at(i), mean->data(), mean->size()), 2);
-        distanceSum += sqDistances->at(i);
-    }
-
-    return distanceSum;
+    return pDistSumCalc->calcDistances(data, mean, sqDistances, pDistanceFunc);
 }
 
-void AbstractCoresetCreator::calcDistribution(std::vector<value_t>* sqDistances, const value_t& distanceSum,
-                                              std::vector<value_t>* distribution)
+void SharedMemoryCoresetCreator::calcDistribution(const std::vector<value_t>* const sqDistances,
+                                                  const value_t& distanceSum, std::vector<value_t>* const distribution)
 {
-    value_t partialQ = 0.5 * (1.0 / sqDistances->size());  // portion of distribution calculation that is constant
-    for (int i = 0; i < sqDistances->size(); i++)
-    {
-        distribution->at(i) = partialQ + 0.5 * sqDistances->at(i) / distanceSum;
-    }
+    pDistrCalc->calcDistribution(sqDistances, distanceSum, distribution);
 }
 
-void AbstractCoresetCreator::sampleDistribution(Matrix* data, std::vector<value_t>* distribution, Coreset* coreset)
+void SharedMemoryCoresetCreator::sampleDistribution(const Matrix* const data,
+                                                    const std::vector<value_t>* const distribution,
+                                                    Coreset* const coreset)
 {
     auto selectedIdxs = pSelector->select(distribution, mSampleSize);
     for (auto& idx : selectedIdxs)
@@ -55,32 +46,7 @@ void AbstractCoresetCreator::sampleDistribution(Matrix* data, std::vector<value_
     }
 }
 
-value_t OMPCoresetCreator::calcDistsFromMean(Matrix* data, std::vector<value_t>* mean,
-                                             std::vector<value_t>* sqDistances)
-{
-    value_t distanceSum = 0.0;
-#pragma omp parallel for shared(data, mean, sqDistances, pDistanceFunc), schedule(static), reduction(+ : distanceSum)
-    for (int i = 0; i < data->getNumData(); i++)
-    {
-        sqDistances->at(i) = std::pow((*pDistanceFunc)(data->at(i), mean->data(), mean->size()), 2);
-        distanceSum += sqDistances->at(i);
-    }
-
-    return distanceSum;
-}
-
-void OMPCoresetCreator::calcDistribution(std::vector<value_t>* sqDistances, const value_t& distanceSum,
-                                         std::vector<value_t>* distribution)
-{
-    value_t partialQ = 0.5 * (1.0 / sqDistances->size());  // portion of distribution calculation that is constant
-#pragma omp parallel for shared(sqDistances, distanceSum, distribution, partialQ), schedule(static)
-    for (int i = 0; i < sqDistances->size(); i++)
-    {
-        distribution->at(i) = partialQ + 0.5 * sqDistances->at(i) / distanceSum;
-    }
-}
-
-void MPICoresetCreator::calcMean(Matrix* data, std::vector<value_t>* mean)
+void MPICoresetCreator::calcMean(const Matrix* const data, std::vector<value_t>* const mean)
 {
     chunkMeans    = Matrix(mNumProcs, data->getNumFeatures());
     mDistanceSums = std::vector<value_t>(data->getNumData());
@@ -100,16 +66,11 @@ void MPICoresetCreator::calcMean(Matrix* data, std::vector<value_t>* mean)
     MPI_Bcast(mean->data(), mean->size(), MPI_FLOAT, 0, MPI_COMM_WORLD);
 }
 
-value_t MPICoresetCreator::calcDistsFromMean(Matrix* data, std::vector<value_t>* mean,
-                                             std::vector<value_t>* sqDistances)
+value_t MPICoresetCreator::calcDistsFromMean(const Matrix* const data, const std::vector<value_t>* const mean,
+                                             std::vector<value_t>* const sqDistances)
 {
     // calculate local quantization errors
-    value_t localDistanceSum = 0.0;
-    for (int i = 0; i < data->getNumData(); i++)
-    {
-        sqDistances->at(i) += std::pow((*pDistanceFunc)(data->at(i), mean->data(), mean->size()), 2);
-        localDistanceSum += sqDistances->at(i);
-    }
+    value_t localDistanceSum = pDistSumCalc->calcDistances(data, mean, sqDistances, pDistanceFunc);
 
     MPI_Gather(&localDistanceSum, 1, MPI_FLOAT, mDistanceSums.data(), 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
     MPI_Allreduce(&localDistanceSum, &mTotalDistanceSum, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
@@ -117,8 +78,8 @@ value_t MPICoresetCreator::calcDistsFromMean(Matrix* data, std::vector<value_t>*
     return localDistanceSum;
 }
 
-void MPICoresetCreator::calcDistribution(std::vector<value_t>* sqDistances, const value_t& distanceSum,
-                                         std::vector<value_t>* distribution)
+void MPICoresetCreator::calcDistribution(const std::vector<value_t>* const sqDistances, const value_t& distanceSum,
+                                         std::vector<value_t>* const distribution)
 {
     value_t totalDistanceSums;
     std::vector<int> uniformSampleCounts(mNumProcs, 0);
@@ -140,7 +101,8 @@ void MPICoresetCreator::calcDistribution(std::vector<value_t>* sqDistances, cons
     }
 }
 
-void MPICoresetCreator::sampleDistribution(Matrix* data, std::vector<value_t>* distribution, Coreset* coreset)
+void MPICoresetCreator::sampleDistribution(const Matrix* const data, const std::vector<value_t>* const distribution,
+                                           Coreset* const coreset)
 {
     std::vector<value_t> uniformWeights(distribution->size(), 1.0 / mTotalNumData);
 
@@ -150,8 +112,9 @@ void MPICoresetCreator::sampleDistribution(Matrix* data, std::vector<value_t>* d
     distributeCoreset(coreset);
 }
 
-void MPICoresetCreator::appendDataToCoreset(Matrix* data, Coreset* coreset, std::vector<value_t>* weights,
-                                            std::vector<value_t>* distribution, const int& numSamples)
+void MPICoresetCreator::appendDataToCoreset(const Matrix* const data, Coreset* const coreset,
+                                            const std::vector<value_t>* const weights,
+                                            const std::vector<value_t>* const distribution, const int& numSamples)
 {
     value_t partialQ         = 0.5 * (1.0 / mTotalNumData);
     auto uniformSelectedIdxs = pSelector->select(weights, numSamples);
@@ -162,8 +125,8 @@ void MPICoresetCreator::appendDataToCoreset(Matrix* data, Coreset* coreset, std:
     }
 }
 
-void MPICoresetCreator::calculateSamplingStrategy(std::vector<int>* uniformSampleCounts,
-                                                  std::vector<int>* nonUniformSampleCounts,
+void MPICoresetCreator::calculateSamplingStrategy(std::vector<int>* const uniformSampleCounts,
+                                                  std::vector<int>* const nonUniformSampleCounts,
                                                   const value_t& totalDistanceSums)
 {
     for (int i = 0; i < mSampleSize; i++)
@@ -180,7 +143,7 @@ void MPICoresetCreator::calculateSamplingStrategy(std::vector<int>* uniformSampl
     }
 }
 
-void MPICoresetCreator::updateUniformSampleCounts(std::vector<int>* uniformSampleCounts)
+void MPICoresetCreator::updateUniformSampleCounts(std::vector<int>* const uniformSampleCounts)
 {
     double randNum    = getRandDouble01MPI() * mTotalNumData;
     int cumulativeSum = 0;
@@ -195,7 +158,7 @@ void MPICoresetCreator::updateUniformSampleCounts(std::vector<int>* uniformSampl
     }
 }
 
-void MPICoresetCreator::updateNonUniformSampleCounts(std::vector<int>* nonUniformSampleCounts,
+void MPICoresetCreator::updateNonUniformSampleCounts(std::vector<int>* const nonUniformSampleCounts,
                                                      const value_t& totalDistanceSums)
 {
     double randNum        = getRandDouble01MPI() * totalDistanceSums;
@@ -211,7 +174,7 @@ void MPICoresetCreator::updateNonUniformSampleCounts(std::vector<int>* nonUnifor
     }
 }
 
-void MPICoresetCreator::distributeCoreset(Coreset* coreset)
+void MPICoresetCreator::distributeCoreset(Coreset* const coreset)
 {
     // get the number of datapoints in each process' coreset
     int numCoresetData = coreset->weights.size();
@@ -260,22 +223,4 @@ void MPICoresetCreator::distributeCoreset(Coreset* coreset)
                  coreset->weights.data(), coreset->weights.size(), MPI_FLOAT, 0, MPI_COMM_WORLD);
     MPI_Scatterv(fullCoreset.data.data(), matrixLengths.data(), matrixDisplacements.data(), MPI_FLOAT,
                  coreset->data.data(), matrixLengths.at(mRank), MPI_FLOAT, 0, MPI_COMM_WORLD);
-}
-
-value_t HybridCoresetCreator::calcDistsFromMean(Matrix* data, std::vector<value_t>* mean,
-                                                std::vector<value_t>* sqDistances)
-{
-    value_t localDistanceSum = 0.0;
-
-#pragma omp parallel for schedule(static), reduction(+ : localDistanceSum)
-    for (int i = 0; i < data->getNumData(); i++)
-    {
-        sqDistances->at(i) += std::pow((*pDistanceFunc)(data->at(i), mean->data(), mean->size()), 2);
-        localDistanceSum += sqDistances->at(i);
-    }
-
-    MPI_Gather(&localDistanceSum, 1, MPI_FLOAT, mDistanceSums.data(), 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
-    MPI_Allreduce(&localDistanceSum, &mTotalDistanceSum, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
-
-    return localDistanceSum;
 }

@@ -3,6 +3,8 @@
 #include <memory>
 
 #include "Averager.hpp"
+#include "CoresetDistributionCalculator.hpp"
+#include "DistanceSumCalculator.hpp"
 #include "RandomSelector.hpp"
 #include "Utils.hpp"
 
@@ -12,56 +14,59 @@ protected:
     int mSampleSize;
     std::unique_ptr<IMultiWeightedRandomSelector> pSelector;
     std::unique_ptr<AbstractAverager> pAverager;
+    std::unique_ptr<IDistanceSumCalculator> pDistSumCalc;
     std::shared_ptr<IDistanceFunctor> pDistanceFunc;
 
 public:
     AbstractCoresetCreator(const int& sampleSize, IMultiWeightedRandomSelector* selector, AbstractAverager* averager,
-                           IDistanceFunctor* distanceFunc) :
-        mSampleSize(sampleSize), pSelector(selector), pAverager(averager), pDistanceFunc(distanceFunc)
-    {
-    }
+                           IDistanceSumCalculator* distSumCalc, IDistanceFunctor* distanceFunc) :
+        mSampleSize(sampleSize),
+        pSelector(selector),
+        pAverager(averager),
+        pDistSumCalc(distSumCalc),
+        pDistanceFunc(distanceFunc){};
 
-    virtual ~AbstractCoresetCreator() {}
+    virtual ~AbstractCoresetCreator(){};
 
-    virtual void createCoreset(Matrix* data, Coreset* coreset);
-
-protected:
-    virtual void calcMean(Matrix* data, std::vector<value_t>* mean);
-
-    virtual value_t calcDistsFromMean(Matrix* data, std::vector<value_t>* mean, std::vector<value_t>* sqDistances);
-
-    virtual void calcDistribution(std::vector<value_t>* sqDistances, const value_t& distanceSum,
-                                  std::vector<value_t>* distribution);
-
-    virtual void sampleDistribution(Matrix* data, std::vector<value_t>* distribution, Coreset* coreset);
-};
-
-class SerialCoresetCreator : public AbstractCoresetCreator
-{
-public:
-    SerialCoresetCreator(const int& sampleSize, IDistanceFunctor* distanceFunc) :
-        AbstractCoresetCreator(sampleSize, new MultiWeightedRandomSelector(), new VectorAverager(), distanceFunc)
-    {
-    }
-
-    virtual ~SerialCoresetCreator() {}
-};
-
-class OMPCoresetCreator : public AbstractCoresetCreator
-{
-public:
-    OMPCoresetCreator(const int& sampleSize, IDistanceFunctor* distanceFunc) :
-        AbstractCoresetCreator(sampleSize, new MultiWeightedRandomSelector(), new OMPVectorAverager(), distanceFunc)
-    {
-    }
-
-    virtual ~OMPCoresetCreator() {}
+    void createCoreset(const Matrix* const data, Coreset* const coreset);
 
 protected:
-    value_t calcDistsFromMean(Matrix* data, std::vector<value_t>* mean, std::vector<value_t>* sqDistances) override;
+    virtual void calcMean(const Matrix* const data, std::vector<value_t>* const mean) = 0;
 
-    void calcDistribution(std::vector<value_t>* sqDistances, const value_t& distanceSum,
-                          std::vector<value_t>* distribution) override;
+    virtual value_t calcDistsFromMean(const Matrix* const data, const std::vector<value_t>* const mean,
+                                      std::vector<value_t>* const sqDistances) = 0;
+
+    virtual void calcDistribution(const std::vector<value_t>* const sqDistances, const value_t& distanceSum,
+                                  std::vector<value_t>* const distribution) = 0;
+
+    virtual void sampleDistribution(const Matrix* const data, const std::vector<value_t>* const distribution,
+                                    Coreset* const coreset) = 0;
+};
+
+class SharedMemoryCoresetCreator : public AbstractCoresetCreator
+{
+protected:
+    std::unique_ptr<ICoresetDistributionCalculator> pDistrCalc;
+
+public:
+    SharedMemoryCoresetCreator(const int& sampleSize, IMultiWeightedRandomSelector* selector,
+                               AbstractAverager* averager, IDistanceSumCalculator* distSumCalc,
+                               ICoresetDistributionCalculator* distrCalc, IDistanceFunctor* distanceFunc) :
+        AbstractCoresetCreator(sampleSize, selector, averager, distSumCalc, distanceFunc), pDistrCalc(distrCalc){};
+
+    ~SharedMemoryCoresetCreator(){};
+
+protected:
+    void calcMean(const Matrix* const data, std::vector<value_t>* const mean) override;
+
+    value_t calcDistsFromMean(const Matrix* const data, const std::vector<value_t>* const mean,
+                              std::vector<value_t>* const sqDistances) override;
+
+    void calcDistribution(const std::vector<value_t>* const sqDistances, const value_t& distanceSum,
+                          std::vector<value_t>* const distribution) override;
+
+    void sampleDistribution(const Matrix* const data, const std::vector<value_t>* const distribution,
+                            Coreset* const coreset) override;
 };
 
 class MPICoresetCreator : public AbstractCoresetCreator
@@ -80,8 +85,8 @@ protected:
 
 public:
     MPICoresetCreator(const int& totalNumData, const int& sampleSize, IMultiWeightedRandomSelector* selector,
-                      AbstractAverager* averager, IDistanceFunctor* distanceFunc) :
-        mTotalNumData(totalNumData), AbstractCoresetCreator(sampleSize, selector, averager, distanceFunc)
+                      AbstractAverager* averager, IDistanceSumCalculator* distSumCalc, IDistanceFunctor* distanceFunc) :
+        mTotalNumData(totalNumData), AbstractCoresetCreator(sampleSize, selector, averager, distSumCalc, distanceFunc)
     {
         auto mpiData   = getMPIData(totalNumData);
         mRank          = mpiData.rank;
@@ -90,48 +95,30 @@ public:
         mDisplacements = mpiData.displacements;
     }
 
-    MPICoresetCreator(const int& totalNumData, const int& sampleSize, IDistanceFunctor* distanceFunc) :
-        MPICoresetCreator(totalNumData, sampleSize, new MultiWeightedRandomSelector(), new VectorAverager(),
-                          distanceFunc)
-    {
-    }
-
-    virtual ~MPICoresetCreator() {}
+    ~MPICoresetCreator() {}
 
 protected:
-    void calcMean(Matrix* data, std::vector<value_t>* mean) override;
+    void calcMean(const Matrix* const data, std::vector<value_t>* const mean) override;
 
-    value_t calcDistsFromMean(Matrix* data, std::vector<value_t>* mean, std::vector<value_t>* sqDistances) override;
+    value_t calcDistsFromMean(const Matrix* const data, const std::vector<value_t>* const mean,
+                              std::vector<value_t>* const sqDistances) override;
 
-    void calcDistribution(std::vector<value_t>* sqDistances, const value_t& distanceSum,
-                          std::vector<value_t>* distribution) override;
+    void calcDistribution(const std::vector<value_t>* const sqDistances, const value_t& distanceSum,
+                          std::vector<value_t>* const distribution) override;
 
-    void sampleDistribution(Matrix* data, std::vector<value_t>* distribution, Coreset* coreset) override;
+    void sampleDistribution(const Matrix* const data, const std::vector<value_t>* const distribution,
+                            Coreset* const coreset) override;
 
-    void calculateSamplingStrategy(std::vector<int>* uniformSampleCounts, std::vector<int>* nonUniformSampleCounts,
-                                   const value_t& totalDistanceSums);
+    void appendDataToCoreset(const Matrix* const data, Coreset* const coreset,
+                             const std::vector<value_t>* const weights, const std::vector<value_t>* const distribution,
+                             const int& numSamples);
 
-    void updateUniformSampleCounts(std::vector<int>* uniformSampleCounts);
+    void calculateSamplingStrategy(std::vector<int>* const uniformSampleCounts,
+                                   std::vector<int>* const nonUniformSampleCounts, const value_t& totalDistanceSums);
 
-    void updateNonUniformSampleCounts(std::vector<int>* nonUniformSampleCounts, const value_t& totalDistanceSums);
+    void updateUniformSampleCounts(std::vector<int>* const uniformSampleCounts);
 
-    void appendDataToCoreset(Matrix* data, Coreset* coreset, std::vector<value_t>* weights,
-                             std::vector<value_t>* distribution, const int& numSamples);
+    void updateNonUniformSampleCounts(std::vector<int>* const nonUniformSampleCounts, const value_t& totalDistanceSums);
 
-    void distributeCoreset(Coreset* coreset);
-};
-
-class HybridCoresetCreator : public MPICoresetCreator
-{
-public:
-    HybridCoresetCreator(const int& totalNumData, const int& sampleSize, IDistanceFunctor* distanceFunc) :
-        MPICoresetCreator(totalNumData, sampleSize, new MultiWeightedRandomSelector(), new OMPVectorAverager(),
-                          distanceFunc)
-    {
-    }
-
-    ~HybridCoresetCreator(){};
-
-protected:
-    value_t calcDistsFromMean(Matrix* data, std::vector<value_t>* mean, std::vector<value_t>* sqDistances) override;
+    void distributeCoreset(Coreset* const coreset);
 };
