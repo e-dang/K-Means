@@ -90,7 +90,7 @@ public:
     void setDistanceFunc(IDistanceFunctor* distanceFunc) { pDistanceFunc.reset(distanceFunc); }
 
 protected:
-    ClusterResults run(Matrix* matrix, const int& numClusters, const int& numRestarts, StaticData* staticData);
+    ClusterResults run(Matrix* matrix, const int& numClusters, const int& numRestarts, KmeansData* kmeansData);
 
     /**
      * @brief Helper function that takes in the resulting clusterData and squared distances of each datapoint to their
@@ -112,15 +112,10 @@ protected:
         }
     }
 
-    virtual StaticData initStaticData(Matrix* data, std::vector<value_t>* weights)
+    virtual KmeansData initKmeansData(Matrix* data, std::vector<value_t>* weights)
     {
-        return StaticData{ data,
-                           weights,
-                           pDistanceFunc,
-                           0,
-                           data->getMaxNumData(),
-                           std::vector<int>(1, data->getMaxNumData()),
-                           std::vector<int>(1, 0) };
+        return KmeansData(data, weights, pDistanceFunc, 0, data->getNumData(), std::vector<int>(1, data->getNumData()),
+                          std::vector<int>(1, 0));
     }
 };
 
@@ -177,7 +172,7 @@ public:
     virtual ~MPIKmeans(){};
 
 protected:
-    StaticData initStaticData(Matrix* data, std::vector<value_t>* weights) override;
+    KmeansData initKmeansData(Matrix* data, std::vector<value_t>* weights) override;
 };
 
 class CoresetKmeans : public AbstractKmeans
@@ -187,12 +182,11 @@ private:
     int mSampleSize;
     std::unique_ptr<AbstractKmeans> pKmeans;
     std::unique_ptr<AbstractCoresetCreator> pCreator;
-    std::unique_ptr<AbstractClosestClusterFinder> pFinder;
+    std::unique_ptr<IClosestClusterFinder> pFinder;
 
 public:
     CoresetKmeans(const int& totalNumData, const int& sampleSize, AbstractKmeans* kmeans,
-                  AbstractCoresetCreator* creator, AbstractClosestClusterFinder* finder,
-                  IDistanceFunctor* distanceFunc) :
+                  AbstractCoresetCreator* creator, IClosestClusterFinder* finder, IDistanceFunctor* distanceFunc) :
         mTotalNumData(totalNumData),
         mSampleSize(sampleSize),
         pKmeans(kmeans),

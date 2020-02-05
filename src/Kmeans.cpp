@@ -2,20 +2,20 @@
 
 #include "mpi.h"
 
-ClusterResults AbstractKmeans::run(Matrix* data, const int& numClusters, const int& numRestarts, StaticData* staticData)
+ClusterResults AbstractKmeans::run(Matrix* data, const int& numClusters, const int& numRestarts, KmeansData* kmeansData)
 {
     ClusterResults clusterResults;
 
-    pInitializer->setStaticData(staticData);
-    pMaximizer->setStaticData(staticData);
+    pInitializer->setKmeansData(kmeansData);
+    pMaximizer->setKmeansData(kmeansData);
 
     for (int i = 0; i < numRestarts; i++)
     {
-        std::vector<value_t> distances(staticData->mTotalNumData, 1);
-        ClusterData clusterData(staticData->mTotalNumData, data->getNumFeatures(), numClusters);
+        std::vector<value_t> distances(kmeansData->mTotalNumData, 1);
+        ClusterData clusterData(kmeansData->mTotalNumData, data->getNumFeatures(), numClusters);
 
-        pInitializer->setDynamicData(&clusterData, &distances);
-        pMaximizer->setDynamicData(&clusterData, &distances);
+        kmeansData->setClusterData(&clusterData);
+        kmeansData->setSqDistances(&distances);
 
         pInitializer->initialize();
         pMaximizer->maximize();
@@ -35,16 +35,15 @@ ClusterResults AbstractKmeans::fit(Matrix* data, const int& numClusters, const i
 ClusterResults AbstractKmeans::fit(Matrix* data, const int& numClusters, const int& numRestarts,
                                    std::vector<value_t>* weights)
 {
-    auto staticData = initStaticData(data, weights);
-    return run(data, numClusters, numRestarts, &staticData);
+    auto kmeansData = initKmeansData(data, weights);
+    return run(data, numClusters, numRestarts, &kmeansData);
 }
 
-StaticData MPIKmeans::initStaticData(Matrix* data, std::vector<value_t>* weights)
+KmeansData MPIKmeans::initKmeansData(Matrix* data, std::vector<value_t>* weights)
 {
     auto mpiData = getMPIData(mTotalNumData);
-    return StaticData{
-        data, weights, pDistanceFunc, mpiData.rank, mTotalNumData, mpiData.lengths, mpiData.displacements
-    };
+    return KmeansData(data, weights, pDistanceFunc, mpiData.rank, mTotalNumData, mpiData.lengths,
+                      mpiData.displacements);
 }
 
 ClusterResults CoresetKmeans::fit(Matrix* data, const int& numClusters, const int& numRestarts)
