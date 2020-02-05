@@ -24,7 +24,6 @@ public:
         {
             return 1;
         }
-
         return 0;
     }
 
@@ -93,8 +92,7 @@ public:
     unsigned int reassignPoints(KmeansData* const kmeansData) override
     {
         unsigned int changed = 0;
-
-#pragma omp parallel for schedule(static), reduction(+ : changed)
+#pragma omp parallel for shared(kmeansData), schedule(static), reduction(+ : changed)
         for (int i = 0; i < kmeansData->pData->getNumData(); i++)
         {
             changed += reassignPoint(i, kmeansData);
@@ -117,7 +115,7 @@ public:
         int displacement     = kmeansData->mDisplacements.at(kmeansData->mRank);
         int numFeatures      = kmeansData->pData->getNumFeatures();
 
-#pragma omp parallel for shared(displacement, numFeatures), schedule(static), reduction(+ : changed)
+#pragma omp parallel for shared(kmeansData, displacement, numFeatures), schedule(static), reduction(+ : changed)
         for (int i = 0; i < kmeansData->pData->getNumData(); i++)
         {
             int clusterIdx = kmeansData->pClustering->at(displacement + i);
