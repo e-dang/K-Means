@@ -1,133 +1,30 @@
 
 #include "Lloyd.hpp"
 
-#include <iostream>
-
 #include "mpi.h"
 
 void TemplateLloyd::maximize()
 {
-    int changed;
+    unsigned int changed, minNumChanged = (*pTotalNumData * MIN_PERCENT_CHANGED);
 
     do
     {
-        pClusters->fill(0);
+        (*ppClusters)->fill(0);
 
-        // calc the weighted sum of each feature for all points belonging to a cluster
         calcClusterSums();
 
         averageClusterSums();
 
         changed = reassignPoints();
 
-    } while (changed > (mTotalNumData * MIN_PERCENT_CHANGED));  // do until 99.9% of data doesnt change
+    } while (changed > minNumChanged);
 }
 
-void TemplateLloyd::calcClusterSums() { pAverager->calculateSum(pData, pClusters, pClustering, pWeights); }
+void SharedMemoryLloyd::calcClusterSums() { pAverager->calculateSum(pData, (*ppClusters), (*ppClustering), pWeights); }
 
-void TemplateLloyd::averageClusterSums() { pAverager->normalizeSum(pClusters, pClusterWeights); }
+void SharedMemoryLloyd::averageClusterSums() { pAverager->normalizeSum((*ppClusters), (*ppClusterWeights)); }
 
-int TemplateLloyd::reassignPoints()
-{
-    int changed = 0;
-    for (int i = 0; i < pData->getMaxNumData(); i++)
-    {
-        // find closest cluster for each datapoint and update cluster assignment
-        int before = pClustering->at(i);
-        findAndUpdateClosestCluster(i);
-
-        // check if cluster assignments have changed
-        if (before != pClustering->at(i))
-        {
-            changed++;
-        }
-    }
-
-    return changed;
-}
-
-int OptimizedLloyd::reassignPoints()
-{
-    int changed = 0;
-    for (int i = 0; i < pData->getMaxNumData(); i++)
-    {
-        // check distance to previously closest cluster, if it increased then recalculate distances to all clusters
-        int clusterIdx = pClustering->at(pDisplacements->at(mRank) + i);
-        value_t dist = std::pow((*pDistanceFunc)(pData->at(i), pClusters->at(clusterIdx), pData->getNumFeatures()), 2);
-        if (dist > pDistances->at(i) || pDistances->at(i) < 0)
-        {
-            int before = pClustering->at(i);
-
-            // find closest cluster for each datapoint and update cluster assignment
-            findAndUpdateClosestCluster(i);
-
-            // check if cluster assignments have changed
-            if (before != pClustering->at(i))
-            {
-                changed++;
-            }
-        }
-        else  // distance is smaller, thus update the distances vector
-        {
-            pDistances->at(i) = dist;
-        }
-    }
-
-    return changed;
-}
-
-int OMPLloyd::reassignPoints()
-{
-    int changed = 0;
-
-#pragma omp parallel for schedule(static), reduction(+ : changed)
-    for (int i = 0; i < pData->getMaxNumData(); i++)
-    {
-        int before = pClustering->at(i);
-
-        findAndUpdateClosestCluster(i);
-
-        // check if cluster assignments have changed
-        if (before != pClustering->at(i))
-        {
-            changed++;
-        }
-    }
-
-    return changed;
-}
-
-int OMPOptimizedLloyd::reassignPoints()
-{
-    int changed = 0;
-
-#pragma omp parallel for schedule(static), reduction(+ : changed)
-    for (int i = 0; i < pData->getMaxNumData(); i++)
-    {
-        // check distance to previously closest cluster, if it increased then recalculate distances to all clusters
-        int clusterIdx = pClustering->at(pDisplacements->at(mRank) + i);
-        value_t dist = std::pow((*pDistanceFunc)(pData->at(i), pClusters->at(clusterIdx), pData->getNumFeatures()), 2);
-        if (dist > pDistances->at(i) || pDistances->at(i) < 0)
-        {
-            int before = pClustering->at(i);
-
-            // find closest cluster for each datapoint and update cluster assignment
-            findAndUpdateClosestCluster(i);
-
-            // check if cluster assignments have changed
-            if (before != pClustering->at(i))
-            {
-                changed++;
-            }
-        }
-        else  // distance is smaller, thus update the distances vector
-        {
-            pDistances->at(i) = dist;
-        }
-    }
-
-    return changed;
-}
+unsigned int SharedMemoryLloyd::reassignPoints() { return pPointReassigner->reassignPoints(pKmeansData); }
 
 void MPILloyd::calcClusterSums()
 {
@@ -135,147 +32,36 @@ void MPILloyd::calcClusterSums()
     {
         for (int j = 0; j < pData->getNumFeatures(); j++)
         {
-            pClusters->at(pClustering->at(pDisplacements->at(mRank) + i), j) += pWeights->at(i) * pData->at(i, j);
+            (*ppClusters)->at((*ppClustering)->at(pDisplacements->at(*pRank) + i), j) +=
+              pWeights->at(i) * pData->at(i, j);
         }
     }
 
-    MPI_Allreduce(MPI_IN_PLACE, pClusters->data(), pClusters->size(), MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(MPI_IN_PLACE, (*ppClusters)->data(), (*ppClusters)->size(), MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
 }
 
 void MPILloyd::averageClusterSums()
 {
-    std::vector<value_t> copyWeights(pClusterWeights->size());
-    MPI_Reduce(pClusterWeights->data(), copyWeights.data(), copyWeights.size(), MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+    std::vector<value_t> copyWeights((*ppClusterWeights)->size());
+    MPI_Reduce((*ppClusterWeights)->data(), copyWeights.data(), copyWeights.size(), MPI_FLOAT, MPI_SUM, 0,
+               MPI_COMM_WORLD);
 
-    if (mRank == 0)
+    if (*pRank == 0)
     {
-        pAverager->normalizeSum(pClusters, &copyWeights);
+        pAverager->normalizeSum(*ppClusters, &copyWeights);
     }
 
-    MPI_Bcast(pClusters->data(), pClusters->size(), MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Bcast((*ppClusters)->data(), (*ppClusters)->size(), MPI_FLOAT, 0, MPI_COMM_WORLD);
 }
 
-int MPILloyd::reassignPoints()
+unsigned int MPILloyd::reassignPoints()
 {
-    int changed = 0;
-    for (int i = 0; i < pData->getMaxNumData(); i++)
-    {
-        // find closest cluster for each datapoint and update cluster assignment
-        int before = pClustering->at(i);
+    unsigned int changed = pPointReassigner->reassignPoints(pKmeansData);
 
-        findAndUpdateClosestCluster(i);
-
-        // check if cluster assignments have changed
-        if (before != pClustering->at(i))
-        {
-            changed++;
-        }
-    }
-
-    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_INT, pClustering->data(), pLengths->data(),
+    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(*pRank), MPI_INT, (*ppClustering)->data(), pLengths->data(),
                    pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
     MPI_Allreduce(MPI_IN_PLACE, &changed, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_FLOAT, pDistances->data(), pLengths->data(),
-                   pDisplacements->data(), MPI_FLOAT, MPI_COMM_WORLD);
-
-    return changed;
-}
-
-int MPIOptimizedLloyd::reassignPoints()
-{
-    int changed = 0;
-    for (int i = 0; i < pData->getMaxNumData(); i++)
-    {
-        int clusterIdx = pClustering->at(pDisplacements->at(mRank) + i);
-        value_t dist = std::pow((*pDistanceFunc)(pData->at(i), pClusters->at(clusterIdx), pData->getNumFeatures()), 2);
-        if (dist > pDistances->at(i) || pDistances->at(i) < 0)
-        {
-            int before = pClustering->at(i);
-
-            // find closest cluster for each datapoint and update cluster assignment
-            findAndUpdateClosestCluster(i);
-
-            // check if cluster assignments have changed
-            if (before != pClustering->at(i))
-            {
-                changed++;
-            }
-        }
-        else  // distance is smaller, thus update the distances vector
-        {
-            pDistances->at(i) = dist;
-        }
-    }
-
-    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_INT, pClustering->data(), pLengths->data(),
-                   pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
-    MPI_Allreduce(MPI_IN_PLACE, &changed, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_FLOAT, pDistances->data(), pLengths->data(),
-                   pDisplacements->data(), MPI_FLOAT, MPI_COMM_WORLD);
-
-    return changed;
-}
-
-int HybridLloyd::reassignPoints()
-{
-    int changed = 0;
-
-#pragma omp parallel for schedule(static), reduction(+ : changed)
-    for (int i = 0; i < pData->getMaxNumData(); i++)
-    {
-        // find closest cluster for each datapoint and update cluster assignment
-        int before = pClustering->at(i);
-
-        findAndUpdateClosestCluster(i);
-
-        // check if cluster assignments have changed
-        if (before != pClustering->at(i))
-        {
-            changed++;
-        }
-    }
-
-    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_INT, pClustering->data(), pLengths->data(),
-                   pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
-    MPI_Allreduce(MPI_IN_PLACE, &changed, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_FLOAT, pDistances->data(), pLengths->data(),
-                   pDisplacements->data(), MPI_FLOAT, MPI_COMM_WORLD);
-
-    return changed;
-}
-
-int HybridOptimizedLloyd::reassignPoints()
-{
-    int changed = 0;
-
-#pragma omp parallel for schedule(static), reduction(+ : changed)
-    for (int i = 0; i < pData->getMaxNumData(); i++)
-    {
-        int clusterIdx = pClustering->at(pDisplacements->at(mRank) + i);
-        value_t dist = std::pow((*pDistanceFunc)(pData->at(i), pClusters->at(clusterIdx), pData->getNumFeatures()), 2);
-        if (dist > pDistances->at(i) || pDistances->at(i) < 0)
-        {
-            int before = pClustering->at(i);
-
-            // find closest cluster for each datapoint and update cluster assignment
-            findAndUpdateClosestCluster(i);
-
-            // check if cluster assignments have changed
-            if (before != pClustering->at(i))
-            {
-                changed++;
-            }
-        }
-        else  // distance is smaller, thus update the distances vector
-        {
-            pDistances->at(i) = dist;
-        }
-    }
-
-    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_INT, pClustering->data(), pLengths->data(),
-                   pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
-    MPI_Allreduce(MPI_IN_PLACE, &changed, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(mRank), MPI_FLOAT, pDistances->data(), pLengths->data(),
+    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(*pRank), MPI_FLOAT, (*ppSqDistances)->data(), pLengths->data(),
                    pDisplacements->data(), MPI_FLOAT, MPI_COMM_WORLD);
 
     return changed;
