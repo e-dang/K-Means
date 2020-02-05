@@ -2,7 +2,7 @@
 
 #include "Utils.hpp"
 
-int SingleWeightedRandomSelector::select(std::vector<value_t>* weights, value_t randomSumFrac)
+int SingleWeightedRandomSelector::select(const std::vector<value_t>* const weights, value_t randomSumFrac)
 {
     int maxIdx = weights->size();
 
@@ -18,7 +18,7 @@ int SingleWeightedRandomSelector::select(std::vector<value_t>* weights, value_t 
     return maxIdx - 1;
 }
 
-std::vector<int> MultiWeightedRandomSelector::select(std::vector<value_t>* weights, const int& sampleSize)
+std::vector<int> MultiWeightedRandomSelector::select(const std::vector<value_t>* const weights, const int& sampleSize)
 {
     std::vector<double> vals;
     for (auto& val : *weights)
