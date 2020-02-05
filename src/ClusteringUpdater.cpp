@@ -2,7 +2,7 @@
 
 void ClusteringUpdater::update(const int& dataIdx, const ClosestCluster& closestCluster, KmeansData* const kmeansData)
 {
-    int displacedDataIdx   = kmeansData->mDisplacements.at(dataIdx) + dataIdx;
+    int displacedDataIdx   = kmeansData->mDisplacements.at(kmeansData->mRank) + dataIdx;
     int& clusterAssignment = kmeansData->pClustering->at(displacedDataIdx);
     value_t weight         = kmeansData->pWeights->at(dataIdx);
 
@@ -25,7 +25,7 @@ void ClusteringUpdater::update(const int& dataIdx, const ClosestCluster& closest
 void AtomicClusteringUpdater::update(const int& dataIdx, const ClosestCluster& closestCluster,
                                      KmeansData* const kmeansData)
 {
-    int displacedDataIdx   = kmeansData->mDisplacements.at(dataIdx) + dataIdx;
+    int displacedDataIdx   = kmeansData->mDisplacements.at(kmeansData->mRank) + dataIdx;
     int& clusterAssignment = kmeansData->pClustering->at(displacedDataIdx);
     value_t weight         = kmeansData->pWeights->at(dataIdx);
 
@@ -50,7 +50,7 @@ void AtomicClusteringUpdater::update(const int& dataIdx, const ClosestCluster& c
 void DistributedClusteringUpdater::update(const int& dataIdx, const ClosestCluster& closestCluster,
                                           KmeansData* const kmeansData)
 {
-    int displacedDataIdx   = kmeansData->mDisplacements.at(dataIdx) + dataIdx;
+    int displacedDataIdx   = kmeansData->mDisplacements.at(kmeansData->mRank) + dataIdx;
     int& clusterAssignment = kmeansData->pClustering->at(displacedDataIdx);
     value_t weight         = kmeansData->pWeights->at(dataIdx);
 
@@ -72,7 +72,7 @@ void DistributedClusteringUpdater::update(const int& dataIdx, const ClosestClust
 void AtomicDistributedClusteringUpdater::update(const int& dataIdx, const ClosestCluster& closestCluster,
                                                 KmeansData* const kmeansData)
 {
-    int displacedDataIdx   = kmeansData->mDisplacements.at(dataIdx) + dataIdx;
+    int displacedDataIdx   = kmeansData->mDisplacements.at(kmeansData->mRank) + dataIdx;
     int& clusterAssignment = kmeansData->pClustering->at(displacedDataIdx);
     value_t weight         = kmeansData->pWeights->at(dataIdx);
 
