@@ -77,9 +77,9 @@ public:
             {
                 kmeansData->pSqDistances->at(i) = dist;
             }
-
-            return changed;
         }
+
+        return changed;
     }
 };
 
@@ -132,8 +132,8 @@ public:
             {
                 kmeansData->pSqDistances->at(i) = dist;
             }
-
-            return changed;
         }
+
+        return changed;
     }
 };
