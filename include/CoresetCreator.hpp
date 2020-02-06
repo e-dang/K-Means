@@ -19,12 +19,16 @@ protected:
 
 public:
     AbstractCoresetCreator(const int& sampleSize, IMultiWeightedRandomSelector* selector, AbstractAverager* averager,
-                           IDistanceSumCalculator* distSumCalc, IDistanceFunctor* distanceFunc) :
+                           IDistanceSumCalculator* distSumCalc, std::shared_ptr<IDistanceFunctor> distanceFunc) :
         mSampleSize(sampleSize),
         pSelector(selector),
         pAverager(averager),
         pDistSumCalc(distSumCalc),
         pDistanceFunc(distanceFunc){};
+
+    AbstractCoresetCreator(IMultiWeightedRandomSelector* selector, AbstractAverager* averager,
+                           IDistanceSumCalculator* distSumCalc, std::shared_ptr<IDistanceFunctor> distanceFunc) :
+        AbstractCoresetCreator(NULL, selector, averager, distSumCalc, distanceFunc){};
 
     virtual ~AbstractCoresetCreator(){};
 
@@ -51,8 +55,14 @@ protected:
 public:
     SharedMemoryCoresetCreator(const int& sampleSize, IMultiWeightedRandomSelector* selector,
                                AbstractAverager* averager, IDistanceSumCalculator* distSumCalc,
-                               ICoresetDistributionCalculator* distrCalc, IDistanceFunctor* distanceFunc) :
+                               ICoresetDistributionCalculator* distrCalc,
+                               std::shared_ptr<IDistanceFunctor> distanceFunc) :
         AbstractCoresetCreator(sampleSize, selector, averager, distSumCalc, distanceFunc), pDistrCalc(distrCalc){};
+
+    SharedMemoryCoresetCreator(IMultiWeightedRandomSelector* selector, AbstractAverager* averager,
+                               IDistanceSumCalculator* distSumCalc, ICoresetDistributionCalculator* distrCalc,
+                               std::shared_ptr<IDistanceFunctor> distanceFunc) :
+        SharedMemoryCoresetCreator(NULL, selector, averager, distSumCalc, distrCalc, distanceFunc){};
 
     ~SharedMemoryCoresetCreator(){};
 
@@ -85,7 +95,8 @@ protected:
 
 public:
     MPICoresetCreator(const int& totalNumData, const int& sampleSize, IMultiWeightedRandomSelector* selector,
-                      AbstractAverager* averager, IDistanceSumCalculator* distSumCalc, IDistanceFunctor* distanceFunc) :
+                      AbstractAverager* averager, IDistanceSumCalculator* distSumCalc,
+                      std::shared_ptr<IDistanceFunctor> distanceFunc) :
         mTotalNumData(totalNumData), AbstractCoresetCreator(sampleSize, selector, averager, distSumCalc, distanceFunc)
     {
         auto mpiData   = getMPIData(totalNumData);
@@ -94,6 +105,10 @@ public:
         mLengths       = mpiData.lengths;
         mDisplacements = mpiData.displacements;
     }
+
+    MPICoresetCreator(IMultiWeightedRandomSelector* selector, AbstractAverager* averager,
+                      IDistanceSumCalculator* distSumCalc, std::shared_ptr<IDistanceFunctor> distanceFunc) :
+        MPICoresetCreator(NULL, NULL, selector, averager, distSumCalc, distanceFunc){};
 
     ~MPICoresetCreator() {}
 
