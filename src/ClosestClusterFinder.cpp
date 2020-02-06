@@ -24,6 +24,8 @@ ClosestCluster ClosestClusterFinder::findClosestCluster(const int& dataIdx, Kmea
 
 ClosestCluster ClosestNewClusterFinder::findClosestCluster(const int& dataIdx, KmeansData* const kmeansData)
 {
+    thread_local static unsigned int prevNumClusters;
+    thread_local static unsigned int intermediate;
     int clusterIdx;
     int numFeatures          = kmeansData->pData->getNumFeatures();
     int numExistingClusters  = kmeansData->pClusters->getNumData();
@@ -32,7 +34,8 @@ ClosestCluster ClosestNewClusterFinder::findClosestCluster(const int& dataIdx, K
 
     if (numExistingClusters == 1)
     {
-        resetState(numExistingClusters);
+        prevNumClusters = 0;
+        intermediate    = 1;
     }
 
     for (int i = prevNumClusters; i < numExistingClusters; i++)
@@ -48,7 +51,8 @@ ClosestCluster ClosestNewClusterFinder::findClosestCluster(const int& dataIdx, K
 
     if (intermediate != numExistingClusters)
     {
-        updateState(numExistingClusters);
+        prevNumClusters = intermediate;
+        intermediate    = numExistingClusters;
     }
 
     return ClosestCluster{ clusterIdx, std::pow(minDistance, 2) };
