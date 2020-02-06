@@ -1,46 +1,59 @@
 #pragma once
 
-#include <vector>
-
 #include "DataClasses.hpp"
 #include "Definitions.hpp"
 
-class IClusteringUpdater
+class AbstractClusteringDataUpdater
 {
 public:
-    virtual ~IClusteringUpdater(){};
+    virtual ~AbstractClusteringDataUpdater(){};
 
-    virtual void update(const int& dataIdx, const ClosestCluster& closestCluster, KmeansData* const kmeansData) = 0;
+    virtual void update(const int& dataIdx, const ClosestCluster& closestCluster, KmeansData* const kmeansData);
+
+    virtual void updateClusterWeights(const int& dataIdx, const int& prevAssignment, const int& newAssignment,
+                                      KmeansData* const kmeansData) = 0;
 };
 
-class ClusteringUpdater : public IClusteringUpdater
+class ClusteringDataUpdater : public AbstractClusteringDataUpdater
 {
 public:
-    ~ClusteringUpdater() {}
+    ~ClusteringDataUpdater() {}
 
-    void update(const int& dataIdx, const ClosestCluster& closestCluster, KmeansData* const kmeansData) override;
+    void updateClusterWeights(const int& dataIdx, const int& prevAssignment, const int& newAssignment,
+                              KmeansData* const kmeansData) override;
 };
 
-class AtomicClusteringUpdater : public IClusteringUpdater
+class AtomicClusteringDataUpdater : public AbstractClusteringDataUpdater
 {
 public:
-    ~AtomicClusteringUpdater() {}
+    ~AtomicClusteringDataUpdater() {}
 
-    void update(const int& dataIdx, const ClosestCluster& closestCluster, KmeansData* const kmeansData) override;
+    void updateClusterWeights(const int& dataIdx, const int& prevAssignment, const int& newAssignment,
+                              KmeansData* const kmeansData) override;
 };
 
-class DistributedClusteringUpdater : public IClusteringUpdater
+class DistributedClusteringDataUpdater : public AbstractClusteringDataUpdater
 {
 public:
-    ~DistributedClusteringUpdater() {}
+    ~DistributedClusteringDataUpdater() {}
 
-    void update(const int& dataIdx, const ClosestCluster& closestCluster, KmeansData* const kmeansData) override;
+    void updateClusterWeights(const int& dataIdx, const int& prevAssignment, const int& newAssignment,
+                              KmeansData* const kmeansData) override;
 };
 
-class AtomicDistributedClusteringUpdater : public IClusteringUpdater
+class AtomicDistributedClusteringDataUpdater : public AbstractClusteringDataUpdater
 {
 public:
-    ~AtomicDistributedClusteringUpdater() {}
+    ~AtomicDistributedClusteringDataUpdater() {}
 
-    void update(const int& dataIdx, const ClosestCluster& closestCluster, KmeansData* const kmeansData) override;
+    void updateClusterWeights(const int& dataIdx, const int& prevAssignment, const int& newAssignment, KmeansData* const kmeansData);
+};
+
+class CoresetClusteringDataUpdater : public AbstractClusteringDataUpdater
+{
+public:
+    ~CoresetClusteringDataUpdater() {}
+
+    void updateClusterWeights(const int& dataIdx, const int& prevAssignment, const int& newAssignment,
+                              KmeansData* const kmeansData) override;
 };
