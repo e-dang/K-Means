@@ -11,10 +11,10 @@ class AbstractClosestClusterUpdater
 {
 protected:
     std::unique_ptr<IClosestClusterFinder> pFinder;
-    std::unique_ptr<IClusteringUpdater> pUpdater;
+    std::unique_ptr<AbstractClusteringDataUpdater> pUpdater;
 
 public:
-    AbstractClosestClusterUpdater(IClosestClusterFinder* finder, IClusteringUpdater* updater) :
+    AbstractClosestClusterUpdater(IClosestClusterFinder* finder, AbstractClusteringDataUpdater* updater) :
         pFinder(finder), pUpdater(updater)
     {
     }
@@ -33,7 +33,7 @@ public:
 class SerialClosestClusterUpdater : public AbstractClosestClusterUpdater
 {
 public:
-    SerialClosestClusterUpdater(IClosestClusterFinder* finder, IClusteringUpdater* updater) :
+    SerialClosestClusterUpdater(IClosestClusterFinder* finder, AbstractClusteringDataUpdater* updater) :
         AbstractClosestClusterUpdater(finder, updater)
     {
     }
@@ -52,7 +52,7 @@ public:
 class OMPClosestClusterUpdater : public AbstractClosestClusterUpdater
 {
 public:
-    OMPClosestClusterUpdater(IClosestClusterFinder* finder, IClusteringUpdater* updater) :
+    OMPClosestClusterUpdater(IClosestClusterFinder* finder, AbstractClusteringDataUpdater* updater) :
         AbstractClosestClusterUpdater(finder, updater)
     {
     }
