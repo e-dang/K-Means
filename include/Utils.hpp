@@ -58,3 +58,17 @@ inline MPIData getMPIData(const int& totalNumData)
 
     return MPIData{ rank, numProcs, lengths, displacements };
 }
+
+inline unsigned long getTotalNumDataMPI(const Matrix* const data)
+{
+    int rank, numProcs;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+
+    unsigned long totalNumData = 0;
+    unsigned long localNumData = data->getNumData();
+
+    MPI_Allreduce(&localNumData, &totalNumData, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+
+    return totalNumData;
+}
