@@ -1,4 +1,5 @@
 #include <chrono>
+#include <iomanip>
 #include <iostream>
 
 #include "Averager.hpp"
@@ -7,64 +8,38 @@
 #include "DistanceFunctors.hpp"
 #include "KPlusPlus.hpp"
 #include "Kmeans.hpp"
+#include "KmeansFacade.hpp"
+#include "KmeansFactories.hpp"
 #include "Lloyd.hpp"
 #include "RandomSelector.hpp"
 #include "Reader.hpp"
+#include "Utils.hpp"
 #include "Writer.hpp"
 #include "mpi.h"
 
 int main(int argc, char* argv[])
 {
-    int numRestarts = 5;
-    int numData     = 1000000;
-    int numFeatures = 50;
-    int numClusters = 100;
-    int sampleSize  = 1000;
+    int numRestarts = 50;
+    int numData     = 100000;
+    int numFeatures = 2;
+    int numClusters = 30;
+    int sampleSize  = 5000;
 
     int rank = 0, numProcs;
-    // MPI_Init(&argc, &argv);
-    // MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    // MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
-    VectorReader reader;
-    // MPIReader reader;
+    // VectorReader reader;
+    MPIReader reader;
     std::string inFile = "../data/test_" + std::to_string(numData) + "_" + std::to_string(numFeatures) + ".txt";
     reader.read(inFile, numData, numFeatures);
-    Matrix matrix(reader.getData(), numData, numFeatures);
-    // Matrix matrix(reader.getData(), numData / numProcs, numFeatures);
+    // Matrix matrix(reader.getData(), numData, numFeatures);
+    Matrix matrix(reader.getData(), numData / numProcs, numFeatures);
     // matrix.display();
 
-    // KPlusPlus kplusplus;
-    // OptimizedKPlusPlus kplusplus;
-    // OMPKPlusPlus kplusplus;
-    // OMPOptimizedKPlusPlus kplusplus;
-    // MPIKPlusPlus kplusplus;
-    // MPIOptimizedKPlusPlus kplusplus;
-    // HybridKPlusPlus
-    // HybridOptimizedKPlusPlus
-    // Lloyd lloyd;
-    // OptimizedLloyd lloyd;
-    // OMPLloyd lloyd;
-    // OMPOptimizedLloyd lloyd;
-    // MPILloyd lloyd;
-    // MPIOptimizedLloyd lloyd;
-    // HybridLloyd
-    // HybridOptimizedLloyd
-    // EuclideanDistance distanceFunc;
+    Kmeans kmeans(OptKPP, OptLloyd, LWCoreset, Hybrid, std::make_shared<EuclideanDistance>(), sampleSize);
 
-    // CoresetKmeans kmeans(
-    //   numData, sampleSize,
-    //   new MPIKmeans(sampleSize, new HybridOptimizedKPlusPlus, new HybridOptimizedLloyd, new EuclideanDistance),
-    //   new HybridCoresetCreator(numData, sampleSize, new EuclideanDistance), new ClosestClusterFinder(nullptr),
-    //   new EuclideanDistance);
-    // CoresetKmeans kmeans(sampleSize, new SharedMemoryKmeans(&kplusplus, &lloyd, &distanceFunc),
-    //                      new OMPCoresetCreator(new MultiWeightedRandomSelector, new OMPVectorAverager),
-    //                      new ClosestClusterFinder(nullptr), &distanceFunc);
-
-    SharedMemoryKmeans kmeans(new OMPOptimizedKPlusPlus, new OMPOptimizedLloyd, new EuclideanDistance);
-    // MPIKmeans kmeans(numData, new MPIOptimizedKPlusPlus, new MPIOptimizedLloyd, new EuclideanDistance);
-
-    // std::cout << matrix.size() << " " << rank << std::endl;
     auto start             = std::chrono::high_resolution_clock::now();
     auto clusterResults    = kmeans.fit(&matrix, numClusters, numRestarts);
     auto stop              = std::chrono::high_resolution_clock::now();
@@ -95,5 +70,5 @@ int main(int argc, char* argv[])
         std::cout << "Clusters" << std::endl;
         clusterdata.mClusters.display();
     }
-    // MPI_Finalize();
+    MPI_Finalize();
 }

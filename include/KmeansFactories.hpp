@@ -1,9 +1,5 @@
 #pragma once
 
-#include <cctype>
-#include <memory>
-#include <string>
-
 #include "ClosestClusterUpdater.hpp"
 #include "CoresetClusteringFinisher.hpp"
 #include "CoresetCreator.hpp"
