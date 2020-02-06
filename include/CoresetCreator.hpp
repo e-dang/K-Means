@@ -97,22 +97,28 @@ public:
     MPICoresetCreator(const int& totalNumData, const int& sampleSize, IMultiWeightedRandomSelector* selector,
                       AbstractAverager* averager, IDistanceSumCalculator* distSumCalc,
                       std::shared_ptr<IDistanceFunctor> distanceFunc) :
-        mTotalNumData(totalNumData), AbstractCoresetCreator(sampleSize, selector, averager, distSumCalc, distanceFunc)
+        AbstractCoresetCreator(sampleSize, selector, averager, distSumCalc, distanceFunc)
+    {
+        setTotalNumData(totalNumData);
+    }
+
+    MPICoresetCreator(const int& sampleSize, IMultiWeightedRandomSelector* selector, AbstractAverager* averager,
+                      IDistanceSumCalculator* distSumCalc, std::shared_ptr<IDistanceFunctor> distanceFunc) :
+        MPICoresetCreator(NULL, sampleSize, selector, averager, distSumCalc, distanceFunc){};
+
+    ~MPICoresetCreator() {}
+
+protected:
+    void setTotalNumData(const int& totalNumData)
     {
         auto mpiData   = getMPIData(totalNumData);
         mRank          = mpiData.rank;
         mNumProcs      = mpiData.numProcs;
         mLengths       = mpiData.lengths;
         mDisplacements = mpiData.displacements;
+        mTotalNumData  = totalNumData;
     }
 
-    MPICoresetCreator(IMultiWeightedRandomSelector* selector, AbstractAverager* averager,
-                      IDistanceSumCalculator* distSumCalc, std::shared_ptr<IDistanceFunctor> distanceFunc) :
-        MPICoresetCreator(NULL, NULL, selector, averager, distSumCalc, distanceFunc){};
-
-    ~MPICoresetCreator() {}
-
-protected:
     void calcMean(const Matrix* const data, std::vector<value_t>* const mean) override;
 
     value_t calcDistsFromMean(const Matrix* const data, const std::vector<value_t>* const mean,
