@@ -48,7 +48,7 @@ public:
     virtual void normalizeSum(std::vector<value_t>* const avgContainer, const int numData) = 0;
 };
 
-class VectorAverager : public AbstractAverager
+class SerialVectorAverager : public AbstractAverager
 {
 public:
     void calculateSum(const Matrix* const data, std::vector<value_t>* const avgContainer) override;

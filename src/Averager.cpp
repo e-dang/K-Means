@@ -54,7 +54,7 @@ void AbstractAverager::calculateAverage(const Matrix* const data, std::vector<va
     normalizeSum(avgContainer, data->getNumData());
 }
 
-void VectorAverager::calculateSum(const Matrix* const data, std::vector<value_t>* const avgContainer)
+void SerialVectorAverager::calculateSum(const Matrix* const data, std::vector<value_t>* const avgContainer)
 {
     for (int i = 0; i < data->getNumData(); i++)
     {
@@ -65,7 +65,7 @@ void VectorAverager::calculateSum(const Matrix* const data, std::vector<value_t>
     }
 }
 
-void VectorAverager::normalizeSum(std::vector<value_t>* const avgContainer, const int numData)
+void SerialVectorAverager::normalizeSum(std::vector<value_t>* const avgContainer, const int numData)
 {
     for (int i = 0; i < avgContainer->size(); i++)
     {
