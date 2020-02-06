@@ -22,7 +22,7 @@ public:
     /**
      * @brief Top level function for running Lloyd's algorithm on a set of pre-initialized clusters.
      */
-    void maximize() override;
+    void maximize() final;
 
 protected:
     /**

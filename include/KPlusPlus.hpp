@@ -31,7 +31,7 @@ public:
     /**
      * @brief Template function that initializes the clusters.
      */
-    void initialize();
+    void initialize() final;
 
 protected:
     /**
