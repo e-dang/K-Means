@@ -12,7 +12,7 @@ typedef boost::mt19937 RNGType;
 
 inline int64_t getTime()
 {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
+    return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch())
       .count();
 }
 
