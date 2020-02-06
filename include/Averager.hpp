@@ -18,7 +18,7 @@ public:
     virtual void normalizeSum(Matrix* const avgContainer, const std::vector<value_t>* const weightSums) = 0;
 };
 
-class WeightedMultiVectorAverager : public AbstractWeightedAverager
+class SerialWeightedMultiVectorAverager : public AbstractWeightedAverager
 {
 public:
     void calculateAverage(const Matrix* const data, Matrix* const avgContainer,
@@ -32,7 +32,7 @@ public:
     void normalizeSum(Matrix* const avgContainer, const std::vector<value_t>* const weightSums) override;
 };
 
-class OMPWeightedMultiVectorAverager : public WeightedMultiVectorAverager
+class OMPWeightedMultiVectorAverager : public SerialWeightedMultiVectorAverager
 {
 public:
     void normalizeSum(Matrix* const avgContainer, const std::vector<value_t>* const weightSums) override;

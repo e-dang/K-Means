@@ -2,18 +2,18 @@
 
 #include "omp.h"
 
-void WeightedMultiVectorAverager::calculateAverage(const Matrix* const data, Matrix* const avgContainer,
-                                                   const std::vector<int>* const dataAssignments,
-                                                   const std::vector<value_t>* const weights,
-                                                   const std::vector<value_t>* const weightSums)
+void SerialWeightedMultiVectorAverager::calculateAverage(const Matrix* const data, Matrix* const avgContainer,
+                                                         const std::vector<int>* const dataAssignments,
+                                                         const std::vector<value_t>* const weights,
+                                                         const std::vector<value_t>* const weightSums)
 {
     calculateSum(data, avgContainer, dataAssignments, weights);
     normalizeSum(avgContainer, weightSums);
 }
 
-void WeightedMultiVectorAverager::calculateSum(const Matrix* const data, Matrix* const avgContainer,
-                                               const std::vector<int>* const dataAssignments,
-                                               const std::vector<value_t>* const weights)
+void SerialWeightedMultiVectorAverager::calculateSum(const Matrix* const data, Matrix* const avgContainer,
+                                                     const std::vector<int>* const dataAssignments,
+                                                     const std::vector<value_t>* const weights)
 {
     for (int i = 0; i < data->getNumData(); i++)
     {
@@ -24,7 +24,8 @@ void WeightedMultiVectorAverager::calculateSum(const Matrix* const data, Matrix*
     }
 }
 
-void WeightedMultiVectorAverager::normalizeSum(Matrix* const avgContainer, const std::vector<value_t>* const weightSums)
+void SerialWeightedMultiVectorAverager::normalizeSum(Matrix* const avgContainer,
+                                                     const std::vector<value_t>* const weightSums)
 {
     for (int i = 0; i < avgContainer->getNumData(); i++)
     {
