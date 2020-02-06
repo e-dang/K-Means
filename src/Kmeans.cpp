@@ -26,28 +26,23 @@ ClusterResults AbstractKmeans::run(Matrix* data, const int& numClusters, const i
     return clusterResults;
 }
 
-ClusterResults AbstractKmeans::fit(Matrix* data, const int& numClusters, const int& numRestarts)
+ClusterResults WeightedKmeans::fit(Matrix* data, const int& numClusters, const int& numRestarts)
 {
     std::vector<value_t> weights(data->getMaxNumData(), 1);
     return fit(data, numClusters, numRestarts, &weights);
 }
 
-ClusterResults AbstractKmeans::fit(Matrix* data, const int& numClusters, const int& numRestarts,
+ClusterResults WeightedKmeans::fit(Matrix* data, const int& numClusters, const int& numRestarts,
                                    std::vector<value_t>* weights)
 {
-    auto kmeansData = initKmeansData(data, weights);
+    auto kmeansData = pDataCreator->create(data, weights, pDistanceFunc);
     return run(data, numClusters, numRestarts, &kmeansData);
-}
-
-KmeansData MPIKmeans::initKmeansData(Matrix* data, std::vector<value_t>* weights)
-{
-    auto mpiData = getMPIData(mTotalNumData);
-    return KmeansData(data, weights, pDistanceFunc, mpiData.rank, mTotalNumData, mpiData.lengths,
-                      mpiData.displacements);
 }
 
 ClusterResults CoresetKmeans::fit(Matrix* data, const int& numClusters, const int& numRestarts)
 {
+    auto kmeansData = pDataCreator->create(data, nullptr, pDistanceFunc);
+
     std::vector<value_t> coresetWeights;
     coresetWeights.reserve(mSampleSize);
     Coreset coreset{ Matrix(mSampleSize, data->getNumFeatures()), coresetWeights };
@@ -55,10 +50,15 @@ ClusterResults CoresetKmeans::fit(Matrix* data, const int& numClusters, const in
     pCreator->createCoreset(data, &coreset);
 
     auto clusterResults = pKmeans->fit(&coreset.data, numClusters, numRestarts, &coreset.weights);
-    clusterResults.mClusterData.mClustering.resize(mTotalNumData);
-    clusterResults.mSqDistances.resize(mTotalNumData);
+    clusterResults.mClusterData.mClustering.resize(kmeansData.mTotalNumData);
+    clusterResults.mSqDistances.resize(kmeansData.mTotalNumData);
+    std::fill(clusterResults.mClusterData.mClustering.begin(), clusterResults.mClusterData.mClustering.end(), -1);
+    std::fill(clusterResults.mSqDistances.begin(), clusterResults.mSqDistances.end(), -1);
 
-    pCreator->finishClustering(data, &clusterResults);
+    kmeansData.setClusterData(&clusterResults.mClusterData);
+    kmeansData.setSqDistances(&clusterResults.mSqDistances);
+
+    clusterResults.mError = pFinisher->finishClustering(&kmeansData);
 
     return clusterResults;
 }

@@ -3,11 +3,13 @@
 #include <memory>
 #include <numeric>
 
+#include "CoresetClusteringFinisher.hpp"
 #include "CoresetCreator.hpp"
 #include "DataClasses.hpp"
 #include "Definitions.hpp"
 #include "DistanceFunctors.hpp"
 #include "KmeansAlgorithms.hpp"
+#include "KmeansDataCreator.hpp"
 
 /**
  * @brief Abstract class that defines the interface for using a Kmeans class, which wraps an initialization and
@@ -18,13 +20,14 @@
 class AbstractKmeans
 {
 protected:
-    // Member variables
     std::unique_ptr<AbstractKmeansInitializer> pInitializer;
     std::unique_ptr<AbstractKmeansMaximizer> pMaximizer;
     std::shared_ptr<IDistanceFunctor> pDistanceFunc;
+    std::unique_ptr<IKmeansDataCreator> pDataCreator;
 
 public:
-    AbstractKmeans(IDistanceFunctor* distanceFunc) : pDistanceFunc(distanceFunc) {}
+    AbstractKmeans(IKmeansDataCreator* dataCreator, std::shared_ptr<IDistanceFunctor> distanceFunc) :
+        pDataCreator(dataCreator), pDistanceFunc(distanceFunc){};
 
     /**
      * @brief Constructor for AbstractKmeans.
@@ -35,10 +38,8 @@ public:
      *                       euclidean distance.
      */
     AbstractKmeans(AbstractKmeansInitializer* initializer, AbstractKmeansMaximizer* maximizer,
-                   IDistanceFunctor* distanceFunc) :
-        pInitializer(initializer), pMaximizer(maximizer), pDistanceFunc(distanceFunc)
-    {
-    }
+                   IKmeansDataCreator* dataCreator, std::shared_ptr<IDistanceFunctor> distanceFunc) :
+        pInitializer(initializer), pMaximizer(maximizer), pDistanceFunc(distanceFunc), pDataCreator(dataCreator){};
 
     /**
      * @brief Destroy the Abstract Kmeans object.
@@ -55,7 +56,7 @@ public:
      * @param numClusters - The number of clusters to cluster the data into.
      * @param numRestarts - The number of times to repeat the clustering process.
      */
-    virtual ClusterResults fit(Matrix* data, const int& numClusters, const int& numRestarts);
+    virtual ClusterResults fit(Matrix* data, const int& numClusters, const int& numRestarts) = 0;
 
     /**
      * @brief Interface for the top level function that initiates the clustering process.
@@ -66,21 +67,7 @@ public:
      * @param weights - The weights for each datapoint in the matrix.
      */
     virtual ClusterResults fit(Matrix* data, const int& numClusters, const int& numRestarts,
-                               std::vector<value_t>* weights);
-
-    // /**
-    //  * @brief Set the initializer member variable.
-    //  *
-    //  * @param initializer - A pointer to an implementation of the AbstractKmeansInitializer class.
-    //  */
-    // void setInitializer(AbstractKmeansInitializer* initializer) { pInitializer = initializer; }
-
-    // /**
-    //  * @brief Set the maximizer member variable.
-    //  *
-    //  * @param maximizer - A pointer to an implementation of the AbstractKmeansMaximizer class.
-    //  */
-    // void setMaximizer(AbstractKmeansMaximizer* maximizer) { pMaximizer = maximizer; }
+                               std::vector<value_t>* weights) = 0;
 
     /**
      * @brief Set the distanceFunc member variable.
@@ -111,94 +98,45 @@ protected:
             clusterResults->mSqDistances = *sqDistances;
         }
     }
-
-    virtual KmeansData initKmeansData(Matrix* data, std::vector<value_t>* weights)
-    {
-        return KmeansData(data, weights, pDistanceFunc, 0, data->getNumData(), std::vector<int>(1, data->getNumData()),
-                          std::vector<int>(1, 0));
-    }
 };
 
-/**
- * @brief Implementation of AbstractKmeans that can take serialized or threaded implementations of KmeansAlgorithms.
- */
-class SharedMemoryKmeans : public AbstractKmeans
+class WeightedKmeans : public AbstractKmeans
 {
 public:
-    /**
-     * @brief Construct a new Kmeans object. Calls base class' constructor.
-     *
-     * @param initializer - A pointer to a class implementing a Kmeans initialization algorithm such as K++.
-     * @param maximizer - A pointer to a class implementing a Kmeans maximization algorithm such as lloyd's algorithm.
-     * @param distanceFunc - A pointer to a functor class used to calculate the distance between points, such as the
-     *                       euclidean distance.
-     */
-    SharedMemoryKmeans(AbstractKmeansInitializer* initializer, AbstractKmeansMaximizer* maximizer,
-                       IDistanceFunctor* distanceFunc) :
-        AbstractKmeans(initializer, maximizer, distanceFunc)
-    {
-    }
+    WeightedKmeans(AbstractKmeansInitializer* initializer, AbstractKmeansMaximizer* maximizer,
+                   IKmeansDataCreator* dataCreator, std::shared_ptr<IDistanceFunctor> distanceFunc) :
+        AbstractKmeans(initializer, maximizer, dataCreator, distanceFunc){};
 
-    /**
-     * @brief Destroy the Kmeans object.
-     */
-    virtual ~SharedMemoryKmeans(){};
-};
+    ~WeightedKmeans(){};
 
-class MPIKmeans : public AbstractKmeans
-{
-private:
-    int mTotalNumData;
+    ClusterResults fit(Matrix* data, const int& numClusters, const int& numRestarts) override;
 
-public:
-    /**
-     * @brief Construct a new MPIKmeans object. Calls base class' constructor.
-     *
-     * @param initializer - A pointer to a class implementing a MPIKmeans initialization algorithm such as K++.
-     * @param maximizer - A pointer to a class implementing a MPIKmeans maximization algorithm such as lloyd's
-     * algorithm.
-     * @param distanceFunc - A pointer to a functor class used to calculate the distance between points, such as the
-     *                       euclidean distance.
-     */
-    MPIKmeans(const int& totalNumData, AbstractKmeansInitializer* initializer, AbstractKmeansMaximizer* maximizer,
-              IDistanceFunctor* distanceFunc) :
-        mTotalNumData(totalNumData), AbstractKmeans(initializer, maximizer, distanceFunc)
-    {
-    }
-
-    /**
-     * @brief Destroy the MPIKmeans object.
-     */
-    virtual ~MPIKmeans(){};
-
-protected:
-    KmeansData initKmeansData(Matrix* data, std::vector<value_t>* weights) override;
+    ClusterResults fit(Matrix* data, const int& numClusters, const int& numRestarts,
+                       std::vector<value_t>* weights) override;
 };
 
 class CoresetKmeans : public AbstractKmeans
 {
 private:
-    int mTotalNumData;
     int mSampleSize;
     std::unique_ptr<AbstractKmeans> pKmeans;
     std::unique_ptr<AbstractCoresetCreator> pCreator;
-    std::unique_ptr<IClosestClusterFinder> pFinder;
+    std::unique_ptr<AbstractCoresetClusteringFinisher> pFinisher;
 
 public:
-    CoresetKmeans(const int& totalNumData, const int& sampleSize, AbstractKmeans* kmeans,
-                  AbstractCoresetCreator* creator, IClosestClusterFinder* finder, IDistanceFunctor* distanceFunc) :
-        mTotalNumData(totalNumData),
+    CoresetKmeans(const int& sampleSize, AbstractKmeans* kmeans, AbstractCoresetCreator* creator,
+                  AbstractCoresetClusteringFinisher* finisher, IKmeansDataCreator* dataCreator,
+                  std::shared_ptr<IDistanceFunctor> distanceFunc) :
         mSampleSize(sampleSize),
         pKmeans(kmeans),
         pCreator(creator),
-        pFinder(finder),
-        AbstractKmeans(distanceFunc)
-    {
-    }
+        pFinisher(finisher),
+        AbstractKmeans(dataCreator, distanceFunc){};
+
+    ~CoresetKmeans(){};
 
     ClusterResults fit(Matrix* data, const int& numClusters, const int& numRestarts) override;
 
-private:
     ClusterResults fit(Matrix* data, const int& numClusters, const int& numRestarts,
                        std::vector<value_t>* weights) override;
 };
