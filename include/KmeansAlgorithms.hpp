@@ -82,8 +82,8 @@ public:
 class AbstractKmeansMaximizer : public AbstractKmeansAlgorithm
 {
 protected:
-    const float MIN_PERCENT_CHANGED = 0.0001;  // the % amount of data points allowed to changed before going to next
-                                               // iteration
+    const double MIN_PERCENT_CHANGED = 0.0001;  // the % amount of data points allowed to changed before going to next
+                                                // iteration
 
     std::unique_ptr<AbstractPointReassigner> pPointReassigner;
 
