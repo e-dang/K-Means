@@ -49,15 +49,14 @@ void MPIKPlusPlus::weightedClusterSelection()
     MPI_Bcast(&dataIdx, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     // find which rank holds the selected datapoint
-    int_fast32_t lengthSum = 0;
-    size_t rank;
-    for (rank = 0; rank < pLengths->size(); rank++)
+    int_fast32_t rank = 0, lengthSum = 0;
+    for (const auto& val : *pLengths)
     {
-        lengthSum += pLengths->at(rank);
+        lengthSum += val;
         if (lengthSum > dataIdx)
-        {
             break;
-        }
+
+        rank++;
     }
 
     if (*pRank == rank)
