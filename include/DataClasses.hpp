@@ -170,7 +170,7 @@ struct KmeansData
 {
     const int mRank;
     const int mDisplacement;
-    const int mTotalNumData;
+    const size_t mTotalNumData;
     const std::vector<int> mLengths;
     const std::vector<int> mDisplacements;
 
@@ -185,7 +185,7 @@ struct KmeansData
     std::vector<value_t>* pSqDistances;
 
     KmeansData(Matrix* data, std::vector<value_t>* weights, std::shared_ptr<IDistanceFunctor> distanceFunc,
-               const int& rank, const int& totalNumData, std::vector<int> lengths, std::vector<int> displacements) :
+               const int& rank, const size_t& totalNumData, std::vector<int> lengths, std::vector<int> displacements) :
         pData(data),
         pWeights(weights),
         pDistanceFunc(distanceFunc),

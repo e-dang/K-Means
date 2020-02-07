@@ -88,13 +88,13 @@ protected:
     std::vector<value_t> mDistanceSums;
     int mRank;
     int mNumProcs;
-    int mTotalNumData;
+    size_t mTotalNumData;
     int mNumUniformSamples;
     int mNumNonUniformSamples;
     value_t mTotalDistanceSum;
 
 public:
-    MPICoresetCreator(const int& totalNumData, const size_t& sampleSize, IMultiWeightedRandomSelector* selector,
+    MPICoresetCreator(const size_t& totalNumData, const size_t& sampleSize, IMultiWeightedRandomSelector* selector,
                       AbstractAverager* averager, IDistanceSumCalculator* distSumCalc,
                       std::shared_ptr<IDistanceFunctor> distanceFunc) :
         AbstractCoresetCreator(sampleSize, selector, averager, distSumCalc, distanceFunc)
@@ -109,7 +109,7 @@ public:
     ~MPICoresetCreator() {}
 
 protected:
-    void setTotalNumData(const int& totalNumData)
+    void setTotalNumData(const size_t& totalNumData)
     {
         auto mpiData   = getMPIData(totalNumData);
         mRank          = mpiData.rank;
