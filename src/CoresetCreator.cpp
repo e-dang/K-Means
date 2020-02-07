@@ -48,10 +48,10 @@ void SharedMemoryCoresetCreator::sampleDistribution(const Matrix* const data,
 
 void MPICoresetCreator::calcMean(const Matrix* const data, std::vector<value_t>* const mean)
 {
+    setTotalNumData(getTotalNumDataMPI(data));
     chunkMeans    = Matrix(mNumProcs, data->getNumFeatures());
     mDistanceSums = std::vector<value_t>(data->getNumData());
     chunkMeans.resize(mNumProcs);
-    setTotalNumData(getTotalNumDataMPI(data));
 
     pAverager->calculateSum(data, mean);
     MPI_Gather(mean->data(), mean->size(), MPI_FLOAT, chunkMeans.data(), mean->size(), MPI_FLOAT, 0, MPI_COMM_WORLD);
