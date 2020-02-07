@@ -58,8 +58,8 @@ void MPICoresetCreator::calcMean(const Matrix* const data, std::vector<value_t>*
 
     if (mRank == 0)
     {
-        std::fill(mean->begin(), mean->end(), 0);
-        int numData = std::accumulate(mLengths.begin(), mLengths.end(), 0);
+        std::fill(mean->begin(), mean->end(), 0.0);
+        auto numData = std::accumulate(mLengths.begin(), mLengths.end(), (unsigned long long)0);
         pAverager->calculateSum(&chunkMeans, mean);
         pAverager->normalizeSum(mean, numData);
     }
@@ -96,7 +96,7 @@ void MPICoresetCreator::calcDistribution(const std::vector<value_t>* const sqDis
     MPI_Scatter(uniformSampleCounts.data(), 1, MPI_INT, &mNumUniformSamples, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Scatter(nonUniformSampleCounts.data(), 1, MPI_INT, &mNumNonUniformSamples, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    for (int i = 0; i < distribution->size(); i++)
+    for (auto i = 0; i < distribution->size(); i++)
     {
         distribution->at(i) = sqDistances->at(i) / totalDistanceSums;
     }
@@ -130,7 +130,7 @@ void MPICoresetCreator::calculateSamplingStrategy(std::vector<int>* const unifor
                                                   std::vector<int>* const nonUniformSampleCounts,
                                                   const value_t& totalDistanceSums)
 {
-    for (int i = 0; i < mSampleSize; i++)
+    for (auto i = 0; i < mSampleSize; i++)
     {
         double randNum = getRandDouble01MPI();
         if (randNum >= 0.5)
@@ -146,9 +146,9 @@ void MPICoresetCreator::calculateSamplingStrategy(std::vector<int>* const unifor
 
 void MPICoresetCreator::updateUniformSampleCounts(std::vector<int>* const uniformSampleCounts)
 {
-    double randNum    = getRandDouble01MPI() * mTotalNumData;
-    int cumulativeSum = 0;
-    for (int j = 0; j < mNumProcs; j++)
+    double randNum              = getRandDouble01MPI() * mTotalNumData;
+    unsigned long cumulativeSum = 0;
+    for (auto j = 0; j < mNumProcs; j++)
     {
         cumulativeSum += mLengths[j];
         if (cumulativeSum >= randNum)
@@ -164,7 +164,7 @@ void MPICoresetCreator::updateNonUniformSampleCounts(std::vector<int>* const non
 {
     double randNum        = getRandDouble01MPI() * totalDistanceSums;
     value_t cumulativeSum = 0;
-    for (int j = 0; j < mNumProcs; j++)
+    for (auto j = 0; j < mNumProcs; j++)
     {
         cumulativeSum += mDistanceSums.at(j);
         if (cumulativeSum >= randNum)
@@ -178,7 +178,7 @@ void MPICoresetCreator::updateNonUniformSampleCounts(std::vector<int>* const non
 void MPICoresetCreator::distributeCoreset(Coreset* const coreset)
 {
     // get the number of datapoints in each process' coreset
-    int numCoresetData = coreset->weights.size();
+    auto numCoresetData = coreset->weights.size();
     std::vector<int> numCoresetDataPerProc(mNumProcs);
     MPI_Allgather(&numCoresetData, 1, MPI_INT, numCoresetDataPerProc.data(), 1, MPI_INT, MPI_COMM_WORLD);
 
@@ -186,7 +186,7 @@ void MPICoresetCreator::distributeCoreset(Coreset* const coreset)
     std::vector<int> matrixLengths(mNumProcs);
     std::vector<int> matrixDisplacements(mNumProcs, 0);
     std::vector<int> vectorDisplacements(mNumProcs, 0);
-    for (int i = 0; i < mNumProcs; i++)
+    for (auto i = 0; i < mNumProcs; i++)
     {
         matrixLengths.at(i) = numCoresetDataPerProc.at(i) * coreset->data.getNumFeatures();
         if (i != 0)
@@ -208,7 +208,7 @@ void MPICoresetCreator::distributeCoreset(Coreset* const coreset)
     auto mpiData        = getMPIData(mSampleSize);
     auto& vectorLengths = mpiData.lengths;
     vectorDisplacements = mpiData.displacements;
-    for (int i = 0; i < mNumProcs; i++)
+    for (auto i = 0; i < mNumProcs; i++)
     {
         matrixLengths.at(i) = vectorLengths.at(i) * coreset->data.getNumFeatures();
         if (i != 0)
