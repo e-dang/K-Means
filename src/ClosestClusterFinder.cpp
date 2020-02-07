@@ -2,15 +2,15 @@
 
 ClosestCluster ClosestClusterFinder::findClosestCluster(const int_fast32_t& dataIdx, KmeansData* const kmeansData)
 {
-    int_fast32_t clusterIdx;
     auto numFeatures         = kmeansData->pData->getNumFeatures();
     auto numExistingClusters = kmeansData->pClusters->getNumData();
     const auto datapoint     = kmeansData->pData->at(dataIdx);
     double minDistance       = -1.0;
+    int_fast32_t clusterIdx  = -1;
 
     for (int_fast32_t i = 0; i < numExistingClusters; i++)
     {
-        value_t tempDistance = (*kmeansData->pDistanceFunc)(datapoint, kmeansData->pClusters->at(i), numFeatures);
+        double tempDistance = (*kmeansData->pDistanceFunc)(datapoint, kmeansData->pClusters->at(i), numFeatures);
 
         if (minDistance > tempDistance || minDistance < 0)
         {
@@ -26,11 +26,11 @@ ClosestCluster ClosestNewClusterFinder::findClosestCluster(const int_fast32_t& d
 {
     thread_local static int_fast32_t prevNumClusters;
     thread_local static int_fast32_t intermediate;
-    int_fast32_t clusterIdx;
     auto numFeatures         = kmeansData->pData->getNumFeatures();
     auto numExistingClusters = kmeansData->pClusters->getNumData();
     const auto datapoint     = kmeansData->pData->at(dataIdx);
     double minDistance       = -1.0;
+    int_fast32_t clusterIdx  = -1;
 
     if (numExistingClusters == 1)
     {
@@ -40,7 +40,7 @@ ClosestCluster ClosestNewClusterFinder::findClosestCluster(const int_fast32_t& d
 
     for (auto i = prevNumClusters; i < numExistingClusters; i++)
     {
-        auto tempDistance = (*kmeansData->pDistanceFunc)(datapoint, kmeansData->pClusters->at(i), numFeatures);
+        double tempDistance = (*kmeansData->pDistanceFunc)(datapoint, kmeansData->pClusters->at(i), numFeatures);
 
         if (minDistance > tempDistance || minDistance < 0)
         {

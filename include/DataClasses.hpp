@@ -220,7 +220,7 @@ struct ClosestCluster
 {
     // Public member variables
     int_fast32_t clusterIdx;
-    value_t distance;
+    double distance;
 };
 
 struct ClusterResults
