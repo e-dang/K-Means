@@ -38,7 +38,7 @@ void SharedMemoryKPlusPlus::findAndUpdateClosestClusters() { pUpdater->findAndUp
 
 void MPIKPlusPlus::weightedClusterSelection()
 {
-    int dataIdx;
+    int_fast32_t dataIdx;
     if (*pRank == 0)
     {
         double randSumFrac =
@@ -49,7 +49,8 @@ void MPIKPlusPlus::weightedClusterSelection()
     MPI_Bcast(&dataIdx, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     // find which rank holds the selected datapoint
-    int rank, lengthSum = 0;
+    int_fast32_t lengthSum = 0;
+    size_t rank;
     for (rank = 0; rank < pLengths->size(); rank++)
     {
         lengthSum += pLengths->at(rank);
