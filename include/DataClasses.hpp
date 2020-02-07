@@ -171,8 +171,8 @@ struct KmeansData
     const int mRank;
     const int mDisplacement;
     const size_t mTotalNumData;
-    const std::vector<int> mLengths;
-    const std::vector<int> mDisplacements;
+    const std::vector<int_fast32_t> mLengths;
+    const std::vector<int_fast32_t> mDisplacements;
 
     const Matrix* const pData;
     const std::vector<value_t>* const pWeights;
@@ -185,7 +185,8 @@ struct KmeansData
     std::vector<value_t>* pSqDistances;
 
     KmeansData(Matrix* data, std::vector<value_t>* weights, std::shared_ptr<IDistanceFunctor> distanceFunc,
-               const int& rank, const size_t& totalNumData, std::vector<int> lengths, std::vector<int> displacements) :
+               const int& rank, const size_t& totalNumData, std::vector<int_fast32_t> lengths,
+               std::vector<int_fast32_t> displacements) :
         pData(data),
         pWeights(weights),
         pDistanceFunc(distanceFunc),
@@ -241,6 +242,6 @@ struct MPIData
 {
     int rank;
     int numProcs;
-    std::vector<int> lengths;
-    std::vector<int> displacements;
+    std::vector<int_fast32_t> lengths;
+    std::vector<int_fast32_t> displacements;
 };

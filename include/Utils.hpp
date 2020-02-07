@@ -44,11 +44,11 @@ inline MPIData getMPIData(const size_t& totalNumData)
     MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
     // number of datapoints allocated for each process to compute
-    int chunk = totalNumData / numProcs;
-    int scrap = chunk + (totalNumData % numProcs);
+    int_fast32_t chunk = totalNumData / numProcs;
+    int_fast32_t scrap = chunk + (totalNumData % numProcs);
 
-    std::vector<int> lengths(numProcs);        // size of each sub-array to gather
-    std::vector<int> displacements(numProcs);  // index of each sub-array to gather
+    std::vector<int_fast32_t> lengths(numProcs);        // size of each sub-array to gather
+    std::vector<int_fast32_t> displacements(numProcs);  // index of each sub-array to gather
     for (int i = 0; i < numProcs; i++)
     {
         lengths.at(i)       = chunk;

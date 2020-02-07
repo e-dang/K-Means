@@ -17,8 +17,8 @@ public:
     KmeansData create(Matrix* data, std::vector<value_t>* weights,
                       std::shared_ptr<IDistanceFunctor> distanceFunc) override
     {
-        return KmeansData(data, weights, distanceFunc, 0, data->getNumData(), std::vector<int>(1, data->getNumData()),
-                          std::vector<int>(1, 0));
+        return KmeansData(data, weights, distanceFunc, 0, data->getNumData(),
+                          std::vector<int_fast32_t>(1, data->getNumData()), std::vector<int_fast32_t>(1, 0));
     }
 };
 

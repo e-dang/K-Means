@@ -83,8 +83,8 @@ class MPICoresetCreator : public AbstractCoresetCreator
 {
 protected:
     Matrix chunkMeans;
-    std::vector<int> mLengths;
-    std::vector<int> mDisplacements;
+    std::vector<int_fast32_t> mLengths;
+    std::vector<int_fast32_t> mDisplacements;
     std::vector<value_t> mDistanceSums;
     int mRank;
     int mNumProcs;
