@@ -39,10 +39,10 @@ void SharedMemoryCoresetCreator::sampleDistribution(const Matrix* const data,
                                                     Coreset* const coreset)
 {
     auto selectedIdxs = pSelector->select(distribution, mSampleSize);
-    for (auto& idx : selectedIdxs)
+    for (const auto& idx : selectedIdxs)
     {
         coreset->data.appendDataPoint(data->at(idx));
-        coreset->weights.push_back(1.0 / (mSampleSize * distribution->at(idx)));
+        coreset->weights.emplace_back(1.0 / (mSampleSize * distribution->at(idx)));
     }
 }
 
