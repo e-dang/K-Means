@@ -16,20 +16,20 @@ class Matrix
 private:
     // Member variables
     std::vector<value_t> mData;
-    int mNumRows;  // this is the number of datapoints in the matrix
-    int mNumCols;  // this is the number of features of each datapoint in the matrix
+    int_fast32_t mNumRows;  // this is the number of datapoints in the matrix
+    int_fast32_t mNumCols;  // this is the number of features of each datapoint in the matrix
 
 public:
     Matrix() {}
 
-    Matrix(const int& numRows, const int& numCols)
+    Matrix(const int_fast32_t& numRows, const int_fast32_t& numCols)
     {
         mData.reserve(numRows * numCols);
         mNumRows = numRows;
         mNumCols = numCols;
     }
 
-    Matrix(std::vector<value_t> data, const int& numRows, const int& numCols)
+    Matrix(std::vector<value_t> data, const int_fast32_t& numRows, const int_fast32_t& numCols)
     {
         if (data.size() > numRows * numCols)
         {
@@ -54,7 +54,7 @@ public:
      * @param row - The number of the row to retrieve.
      * @return value_t *
      */
-    value_t* at(const int& row) { return mData.data() + (row * mNumCols); }
+    value_t* at(const int_fast32_t& row) { return mData.data() + (row * mNumCols); }
 
     /**
      * @brief Function to access a specific value in the matrix.
@@ -63,11 +63,11 @@ public:
      * @param col - The column number that the value is in.
      * @return value_t&
      */
-    value_t& at(const int& row, const int& col) { return *(this->at(row) + col); }
+    value_t& at(const int_fast32_t& row, const int_fast32_t& col) { return *(this->at(row) + col); }
 
-    const value_t at(const int& row, const int& col) const { return *(this->at(row) + col); }
+    const value_t at(const int_fast32_t& row, const int_fast32_t& col) const { return *(this->at(row) + col); }
 
-    const value_t* at(const int& row) const { return mData.data() + (row * mNumCols); }
+    const value_t* at(const int_fast32_t& row) const { return mData.data() + (row * mNumCols); }
 
     void appendDataPoint(const value_t* datapoint)
     {
@@ -81,26 +81,27 @@ public:
         }
     }
 
-    void fill(const int& val) { std::fill(mData.begin(), mData.end(), val); }
+    void fill(const int_fast32_t& val) { std::fill(mData.begin(), mData.end(), val); }
 
-    void resize(const int& val)
+    void resize(const int_fast32_t& val)
     {
         mData.resize(val * mNumCols);
         mNumRows = val;
     }
 
-    void reserve(const int& val)
+    void reserve(const int_fast32_t& val)
     {
         mData.resize(val * mNumCols);
-        if (val > mNumRows) mNumRows = val;
+        if (val > mNumRows)
+            mNumRows = val;
     }
 
     value_t* data() { return mData.data(); }
 
-    int size() const { return mData.size(); }
-    int getNumData() const { return mData.size() / mNumCols; }
-    int getMaxNumData() const { return mNumRows; }
-    int getNumFeatures() const { return mNumCols; }
+    int_fast32_t size() const { return mData.size(); }
+    int_fast32_t getNumData() const { return mData.size() / mNumCols; }
+    int_fast32_t getMaxNumData() const { return mNumRows; }
+    int_fast32_t getNumFeatures() const { return mNumCols; }
 
     void operator=(const Matrix& lhs)
     {
@@ -111,7 +112,7 @@ public:
 
     void display()
     {
-        for (auto& val : mData)
+        for (const auto& val : mData)
         {
             std::cout << val << " ";
         }
@@ -125,9 +126,9 @@ public:
 struct ClusterData
 {
     // Public member variables
-    Matrix mClusters;                      // the cluster centers
-    std::vector<int> mClustering;          // the cluster assignments of each datapoint
-    std::vector<value_t> mClusterWeights;  // the sum of the weights of each datapoint assigned to a cluster
+    Matrix mClusters;                       // the cluster centers
+    std::vector<int_fast32_t> mClustering;  // the cluster assignments of each datapoint
+    std::vector<value_t> mClusterWeights;   // the sum of the weights of each datapoint assigned to a cluster
 
     /**
      * @brief Default constructor.
@@ -141,10 +142,10 @@ struct ClusterData
      * @param numFeatures - The number of features each datapoint has.
      * @param numClusters - The number of clusters that the data is being clustered into.
      */
-    ClusterData(const int& numData, const int& numFeatures, const int& numClusters) :
+    ClusterData(const int_fast32_t& numData, const int_fast32_t& numFeatures, const int_fast32_t& numClusters) :
         mClusters(numClusters, numFeatures)
     {
-        mClustering     = std::vector<int>(numData, -1);
+        mClustering     = std::vector<int_fast32_t>(numData, -1);
         mClusterWeights = std::vector<value_t>(numClusters, 0);
     }
 
@@ -169,10 +170,10 @@ struct ClusterData
 struct KmeansData
 {
     const int mRank;
-    const int mDisplacement;
-    const size_t mTotalNumData;
+    const int_fast32_t mTotalNumData;
     const std::vector<int_fast32_t> mLengths;
     const std::vector<int_fast32_t> mDisplacements;
+    const int_fast32_t mDisplacement;
 
     const Matrix* const pData;
     const std::vector<value_t>* const pWeights;
@@ -180,21 +181,21 @@ struct KmeansData
 
     // dynamic data that changes each repeat
     Matrix* pClusters;
-    std::vector<int>* pClustering;
+    std::vector<int_fast32_t>* pClustering;
     std::vector<value_t>* pClusterWeights;
     std::vector<value_t>* pSqDistances;
 
     KmeansData(Matrix* data, std::vector<value_t>* weights, std::shared_ptr<IDistanceFunctor> distanceFunc,
-               const int& rank, const size_t& totalNumData, std::vector<int_fast32_t> lengths,
+               const int& rank, const int_fast32_t& totalNumData, std::vector<int_fast32_t> lengths,
                std::vector<int_fast32_t> displacements) :
-        pData(data),
-        pWeights(weights),
-        pDistanceFunc(distanceFunc),
         mRank(rank),
         mTotalNumData(totalNumData),
         mLengths(lengths),
         mDisplacements(displacements),
-        mDisplacement(displacements.at(mRank)){};
+        mDisplacement(displacements.at(mRank)),
+        pData(data),
+        pWeights(weights),
+        pDistanceFunc(distanceFunc){};
 
     void setClusterData(ClusterData* clusterData)
     {
@@ -205,9 +206,9 @@ struct KmeansData
 
     void setSqDistances(std::vector<value_t>* sqDistances) { pSqDistances = sqDistances; }
 
-    int& clusteringAt(const int& dataIdx) { return pClustering->at(mDisplacement + dataIdx); }
-    value_t& sqDistancesAt(const int& dataIdx) { return pSqDistances->at(mDisplacement + dataIdx); }
-    value_t& clusterWeightsAt(const int& clusterIdx) { return pClusterWeights->at(clusterIdx); }
+    int_fast32_t& clusteringAt(const int_fast32_t& dataIdx) { return pClustering->at(mDisplacement + dataIdx); }
+    value_t& sqDistancesAt(const int_fast32_t& dataIdx) { return pSqDistances->at(mDisplacement + dataIdx); }
+    value_t& clusterWeightsAt(const int_fast32_t& clusterIdx) { return pClusterWeights->at(clusterIdx); }
 };
 
 /**
@@ -217,7 +218,7 @@ struct KmeansData
 struct ClosestCluster
 {
     // Public member variables
-    int clusterIdx;
+    int_fast32_t clusterIdx;
     value_t distance;
 };
 
