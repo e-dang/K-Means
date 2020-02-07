@@ -8,18 +8,18 @@
 class Kmeans
 {
 protected:
-    std::unique_ptr<KmeansFactory> pFactory;
     std::unique_ptr<AbstractKmeans> pKmeans;
+    std::unique_ptr<KmeansFactory> pFactory;
 
-    int_fast32_t mSampleSize;
     Initializer mInitializer;
     Maximizer mMaximizer;
     CoresetCreator mCoreset;
     Parallelism mParallelism;
+    int_fast32_t mSampleSize;
 
 public:
     Kmeans(Initializer initializer, Maximizer maximizer, CoresetCreator coreset, Parallelism parallelism,
-           std::shared_ptr<IDistanceFunctor> distanceFunc, const int_fast32_t sampleSize = NULL) :
+           std::shared_ptr<IDistanceFunctor> distanceFunc, const int_fast32_t sampleSize = -1) :
         pKmeans(nullptr),
         pFactory(new KmeansFactory()),
         mInitializer(initializer),
@@ -35,7 +35,8 @@ public:
 
     std::shared_ptr<ClusterResults> fit(Matrix* data, const int& numClusters, const int& numRestarts)
     {
-        if (isValidSampleSize(data) && pKmeans != nullptr) return pKmeans->fit(data, numClusters, numRestarts);
+        if (isValidSampleSize(data) && pKmeans != nullptr)
+            return pKmeans->fit(data, numClusters, numRestarts);
 
         return nullptr;
     }
@@ -43,7 +44,8 @@ public:
     std::shared_ptr<ClusterResults> fit(Matrix* data, const int& numClusters, const int& numRestarts,
                                         std::vector<value_t>* weights)
     {
-        if (isValidSampleSize(data) && pKmeans != nullptr) return pKmeans->fit(data, numClusters, numRestarts, weights);
+        if (isValidSampleSize(data) && pKmeans != nullptr)
+            return pKmeans->fit(data, numClusters, numRestarts, weights);
 
         return nullptr;
     }
@@ -51,7 +53,7 @@ public:
     void setDistanceFunc(IDistanceFunctor* distanceFunc) { pKmeans->setDistanceFunc(distanceFunc); }
 
     bool setKmeans(Initializer initializer, Maximizer maximizer, CoresetCreator coreset, Parallelism parallelism,
-                   std::shared_ptr<IDistanceFunctor> distanceFunc, const int_fast32_t sampleSize = NULL)
+                   std::shared_ptr<IDistanceFunctor> distanceFunc, const int_fast32_t sampleSize = -1)
     {
         if (sampleSizeCheck())
         {
@@ -76,7 +78,8 @@ private:
 
     bool sampleSizeCheck()
     {
-        if (mCoreset == None || (mCoreset != None && mSampleSize != NULL)) return true;
+        if (mCoreset == None || (mCoreset != None && mSampleSize >= 0))
+            return true;
 
         std::cout << "A sample size must be given when using CoresetKmeans." << std::endl;
         return false;
@@ -84,7 +87,8 @@ private:
 
     bool isValidSampleSize(Matrix* data)
     {
-        if (mSampleSize <= data->getNumData()) return true;
+        if (mSampleSize <= data->getNumData())
+            return true;
 
         return false;
     }
