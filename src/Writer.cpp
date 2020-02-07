@@ -22,7 +22,7 @@ void ClusterDataWriter::writeClustering(std::string filepath)
         throw std::runtime_error("Unable to open specified file");
     }
 
-    file.write(reinterpret_cast<char*>(clusterData.mClustering.data()), sizeof(int) * numData);
+    file.write(reinterpret_cast<char*>(clusterData.mClustering.data()), sizeof(int_fast32_t) * numData);
 }
 
 void ClusterDataWriter::writeTimes(std::vector<double> times, std::string filepath)
