@@ -96,10 +96,8 @@ void MPICoresetCreator::calcDistribution(const std::vector<value_t>* const sqDis
     MPI_Scatter(uniformSampleCounts.data(), 1, MPI_INT, &mNumUniformSamples, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Scatter(nonUniformSampleCounts.data(), 1, MPI_INT, &mNumNonUniformSamples, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    for (auto i = 0; i < distribution->size(); i++)
-    {
-        distribution->at(i) = sqDistances->at(i) / totalDistanceSums;
-    }
+    std::transform(sqDistances->begin(), sqDistances->end(), distribution->begin(),
+                   [&totalDistanceSums](const value_t& dist) { return dist / totalDistanceSums; });
 }
 
 void MPICoresetCreator::sampleDistribution(const Matrix* const data, const std::vector<value_t>* const distribution,
