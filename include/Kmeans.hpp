@@ -120,13 +120,13 @@ public:
 class CoresetKmeans : public AbstractKmeans
 {
 private:
-    size_t mSampleSize;
+    int_fast32_t mSampleSize;
     std::unique_ptr<AbstractKmeans> pKmeans;
     std::unique_ptr<AbstractCoresetCreator> pCreator;
     std::unique_ptr<AbstractCoresetClusteringFinisher> pFinisher;
 
 public:
-    CoresetKmeans(const size_t& sampleSize, AbstractKmeans* kmeans, AbstractCoresetCreator* creator,
+    CoresetKmeans(const int_fast32_t& sampleSize, AbstractKmeans* kmeans, AbstractCoresetCreator* creator,
                   AbstractCoresetClusteringFinisher* finisher, IKmeansDataCreator* dataCreator,
                   std::shared_ptr<IDistanceFunctor> distanceFunc) :
         AbstractKmeans(dataCreator, distanceFunc),
