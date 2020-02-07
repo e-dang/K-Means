@@ -1,5 +1,7 @@
 #pragma once
 
+#include <algorithm>
+
 #include "DataClasses.hpp"
 #include "Definitions.hpp"
 
@@ -16,11 +18,10 @@ public:
     void calcDistribution(const std::vector<value_t>* const sqDistances, const value_t& distanceSum,
                           std::vector<value_t>* const distribution) override
     {
-        value_t partialQ = 0.5 * (1.0 / sqDistances->size());  // portion of distribution calculation that is constant
-        for (int i = 0; i < sqDistances->size(); i++)
-        {
-            distribution->at(i) = partialQ + 0.5 * sqDistances->at(i) / distanceSum;
-        }
+        value_t partialQ = 0.5 * (1.0 / sqDistances->size());
+        std::transform(
+          sqDistances->begin(), sqDistances->end(), distribution->begin(),
+          [&partialQ, &distanceSum](const value_t& dist) { return partialQ + (0.5 * dist / distanceSum); });
     }
 };
 
@@ -32,7 +33,7 @@ public:
     {
         value_t partialQ = 0.5 * (1.0 / sqDistances->size());  // portion of distribution calculation that is constant
 #pragma omp parallel for shared(sqDistances, distanceSum, distribution, partialQ), schedule(static)
-        for (int i = 0; i < sqDistances->size(); i++)
+        for (size_t i = 0; i < sqDistances->size(); i++)
         {
             distribution->at(i) = partialQ + 0.5 * sqDistances->at(i) / distanceSum;
         }
