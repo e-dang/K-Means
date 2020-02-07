@@ -128,7 +128,7 @@ void MPICoresetCreator::calculateSamplingStrategy(std::vector<int>* const unifor
                                                   std::vector<int>* const nonUniformSampleCounts,
                                                   const value_t& totalDistanceSums)
 {
-    for (auto i = 0; i < mSampleSize; i++)
+    for (size_t i = 0; i < mSampleSize; i++)
     {
         double randNum = getRandDouble01MPI();
         if (randNum >= 0.5)

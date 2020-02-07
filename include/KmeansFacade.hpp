@@ -11,7 +11,7 @@ protected:
     std::unique_ptr<KmeansFactory> pFactory;
     std::unique_ptr<AbstractKmeans> pKmeans;
 
-    int mSampleSize;
+    size_t mSampleSize;
     Initializer mInitializer;
     Maximizer mMaximizer;
     CoresetCreator mCoreset;
@@ -19,7 +19,7 @@ protected:
 
 public:
     Kmeans(Initializer initializer, Maximizer maximizer, CoresetCreator coreset, Parallelism parallelism,
-           std::shared_ptr<IDistanceFunctor> distanceFunc, const int sampleSize = NULL) :
+           std::shared_ptr<IDistanceFunctor> distanceFunc, const size_t sampleSize = NULL) :
         pKmeans(nullptr),
         pFactory(new KmeansFactory()),
         mInitializer(initializer),
@@ -46,7 +46,7 @@ public:
     void setDistanceFunc(IDistanceFunctor* distanceFunc) { pKmeans->setDistanceFunc(distanceFunc); }
 
     bool setKmeans(Initializer initializer, Maximizer maximizer, CoresetCreator coreset, Parallelism parallelism,
-                   std::shared_ptr<IDistanceFunctor> distanceFunc, const int sampleSize = NULL)
+                   std::shared_ptr<IDistanceFunctor> distanceFunc, const size_t sampleSize = NULL)
     {
         if (sampleSizeCheck())
         {
