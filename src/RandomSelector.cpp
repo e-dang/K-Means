@@ -19,7 +19,7 @@ int SingleWeightedRandomSelector::select(const std::vector<value_t>* const weigh
 }
 
 std::vector<int> MultiWeightedRandomSelector::select(const std::vector<value_t>* const weights,
-                                                     const size_t& sampleSize)
+                                                     const int_fast32_t& sampleSize)
 {
     std::vector<double> vals;
     for (auto& val : *weights)
@@ -36,7 +36,7 @@ std::vector<int> MultiWeightedRandomSelector::select(const std::vector<value_t>*
               [](std::pair<int, value_t> x, std::pair<int, value_t> y) { return x.second > y.second; });
 
     std::vector<int> samples;
-    for (size_t i = 0; i < sampleSize; i++)
+    for (int_fast32_t i = 0; i < sampleSize; i++)
     {
         samples.push_back(valsWithIndices[i].first);
     }

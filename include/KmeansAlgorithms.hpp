@@ -30,7 +30,7 @@ protected:
 
     // chunk data
     const int* pRank;
-    const size_t* pTotalNumData;
+    const int_fast32_t* pTotalNumData;
     const std::vector<int>* pLengths;
     const std::vector<int>* pDisplacements;
 

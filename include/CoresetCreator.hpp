@@ -11,15 +11,16 @@
 class AbstractCoresetCreator
 {
 protected:
-    size_t mSampleSize;
+    int_fast32_t mSampleSize;
     std::unique_ptr<IMultiWeightedRandomSelector> pSelector;
     std::unique_ptr<AbstractAverager> pAverager;
     std::unique_ptr<IDistanceSumCalculator> pDistSumCalc;
     std::shared_ptr<IDistanceFunctor> pDistanceFunc;
 
 public:
-    AbstractCoresetCreator(const size_t& sampleSize, IMultiWeightedRandomSelector* selector, AbstractAverager* averager,
-                           IDistanceSumCalculator* distSumCalc, std::shared_ptr<IDistanceFunctor> distanceFunc) :
+    AbstractCoresetCreator(const int_fast32_t& sampleSize, IMultiWeightedRandomSelector* selector,
+                           AbstractAverager* averager, IDistanceSumCalculator* distSumCalc,
+                           std::shared_ptr<IDistanceFunctor> distanceFunc) :
         mSampleSize(sampleSize),
         pSelector(selector),
         pAverager(averager),
@@ -49,7 +50,7 @@ protected:
     std::unique_ptr<ICoresetDistributionCalculator> pDistrCalc;
 
 public:
-    SharedMemoryCoresetCreator(const size_t& sampleSize, IMultiWeightedRandomSelector* selector,
+    SharedMemoryCoresetCreator(const int_fast32_t& sampleSize, IMultiWeightedRandomSelector* selector,
                                AbstractAverager* averager, IDistanceSumCalculator* distSumCalc,
                                ICoresetDistributionCalculator* distrCalc,
                                std::shared_ptr<IDistanceFunctor> distanceFunc) :
@@ -79,20 +80,21 @@ protected:
     std::vector<value_t> mDistanceSums;
     int mRank;
     int mNumProcs;
-    size_t mTotalNumData;
+    int_fast32_t mTotalNumData;
     int_fast32_t mNumUniformSamples;
     int_fast32_t mNumNonUniformSamples;
     value_t mTotalDistanceSum;
 
 public:
-    MPICoresetCreator(const size_t& sampleSize, IMultiWeightedRandomSelector* selector, AbstractAverager* averager,
-                      IDistanceSumCalculator* distSumCalc, std::shared_ptr<IDistanceFunctor> distanceFunc) :
+    MPICoresetCreator(const int_fast32_t& sampleSize, IMultiWeightedRandomSelector* selector,
+                      AbstractAverager* averager, IDistanceSumCalculator* distSumCalc,
+                      std::shared_ptr<IDistanceFunctor> distanceFunc) :
         AbstractCoresetCreator(sampleSize, selector, averager, distSumCalc, distanceFunc){};
 
     ~MPICoresetCreator() {}
 
 protected:
-    void setTotalNumData(const size_t& totalNumData)
+    void setTotalNumData(const int_fast32_t& totalNumData)
     {
         auto mpiData   = getMPIData(totalNumData);
         mRank          = mpiData.rank;

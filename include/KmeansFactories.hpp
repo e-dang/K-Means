@@ -330,7 +330,7 @@ public:
         }
     }
 
-    AbstractCoresetCreator* createCoresetCreator(CoresetCreator coresetCreator, const size_t& sampleSize,
+    AbstractCoresetCreator* createCoresetCreator(CoresetCreator coresetCreator, const int_fast32_t& sampleSize,
                                                  std::shared_ptr<IDistanceFunctor> distanceFunc)
     {
         switch (coresetCreator)
@@ -351,7 +351,7 @@ protected:
 
     virtual AbstractKmeansMaximizer* getOptLloyd() = 0;
 
-    virtual AbstractCoresetCreator* getLWCoreset(const size_t& sampleSize,
+    virtual AbstractCoresetCreator* getLWCoreset(const int_fast32_t& sampleSize,
                                                  std::shared_ptr<IDistanceFunctor> distanceFunc) = 0;
 };
 
@@ -387,7 +387,7 @@ public:
                                      pStratFactory->createWeightedAverager());
     }
 
-    AbstractCoresetCreator* getLWCoreset(const size_t& sampleSize, std::shared_ptr<IDistanceFunctor> distanceFunc)
+    AbstractCoresetCreator* getLWCoreset(const int_fast32_t& sampleSize, std::shared_ptr<IDistanceFunctor> distanceFunc)
     {
         return new SharedMemoryCoresetCreator(sampleSize, pStratFactory->createMultiWeightedRandomSelector(),
                                               pStratFactory->createVectorAverager(),
@@ -425,7 +425,7 @@ public:
         return new MPILloyd(pStratFactory->createPointReassigner(Opt), pStratFactory->createWeightedAverager());
     }
 
-    AbstractCoresetCreator* getLWCoreset(const size_t& sampleSize, std::shared_ptr<IDistanceFunctor> distanceFunc)
+    AbstractCoresetCreator* getLWCoreset(const int_fast32_t& sampleSize, std::shared_ptr<IDistanceFunctor> distanceFunc)
     {
         return new MPICoresetCreator(sampleSize, pStratFactory->createMultiWeightedRandomSelector(),
                                      pStratFactory->createVectorAverager(),
@@ -480,7 +480,7 @@ public:
 
     AbstractKmeans* createKmeans(Initializer initializer, Maximizer maximizer, CoresetCreator coreset,
                                  Parallelism parallelism, std::shared_ptr<IDistanceFunctor> distanceFunc,
-                                 const size_t& sampleSize)
+                                 const int_fast32_t& sampleSize)
     {
         auto factoryPair  = pAlgFactoryProducer->getAlgFactory(parallelism);
         auto algFactory   = factoryPair.algFactory;

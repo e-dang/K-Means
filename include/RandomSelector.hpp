@@ -30,7 +30,7 @@ public:
 class IMultiWeightedRandomSelector
 {
 public:
-    virtual std::vector<int> select(const std::vector<value_t>* const weights, const size_t& sampleSize) = 0;
+    virtual std::vector<int> select(const std::vector<value_t>* const weights, const int_fast32_t& sampleSize) = 0;
 };
 
 /**
@@ -41,5 +41,5 @@ public:
 class MultiWeightedRandomSelector : public IMultiWeightedRandomSelector
 {
 public:
-    std::vector<int> select(const std::vector<value_t>* const weights, const size_t& sampleSize) override;
+    std::vector<int> select(const std::vector<value_t>* const weights, const int_fast32_t& sampleSize) override;
 };

@@ -11,7 +11,7 @@ protected:
     std::unique_ptr<KmeansFactory> pFactory;
     std::unique_ptr<AbstractKmeans> pKmeans;
 
-    size_t mSampleSize;
+    int_fast32_t mSampleSize;
     Initializer mInitializer;
     Maximizer mMaximizer;
     CoresetCreator mCoreset;
@@ -19,7 +19,7 @@ protected:
 
 public:
     Kmeans(Initializer initializer, Maximizer maximizer, CoresetCreator coreset, Parallelism parallelism,
-           std::shared_ptr<IDistanceFunctor> distanceFunc, const size_t sampleSize = NULL) :
+           std::shared_ptr<IDistanceFunctor> distanceFunc, const int_fast32_t sampleSize = NULL) :
         pKmeans(nullptr),
         pFactory(new KmeansFactory()),
         mInitializer(initializer),
@@ -33,20 +33,25 @@ public:
 
     ~Kmeans(){};
 
-    ClusterResults fit(Matrix* data, const int& numClusters, const int& numRestarts)
+    std::shared_ptr<ClusterResults> fit(Matrix* data, const int& numClusters, const int& numRestarts)
     {
         if (isValidSampleSize(data) && pKmeans != nullptr) return pKmeans->fit(data, numClusters, numRestarts);
+
+        return nullptr;
     }
 
-    ClusterResults fit(Matrix* data, const int& numClusters, const int& numRestarts, std::vector<value_t>* weights)
+    std::shared_ptr<ClusterResults> fit(Matrix* data, const int& numClusters, const int& numRestarts,
+                                        std::vector<value_t>* weights)
     {
         if (isValidSampleSize(data) && pKmeans != nullptr) return pKmeans->fit(data, numClusters, numRestarts, weights);
+
+        return nullptr;
     }
 
     void setDistanceFunc(IDistanceFunctor* distanceFunc) { pKmeans->setDistanceFunc(distanceFunc); }
 
     bool setKmeans(Initializer initializer, Maximizer maximizer, CoresetCreator coreset, Parallelism parallelism,
-                   std::shared_ptr<IDistanceFunctor> distanceFunc, const size_t sampleSize = NULL)
+                   std::shared_ptr<IDistanceFunctor> distanceFunc, const int_fast32_t sampleSize = NULL)
     {
         if (sampleSizeCheck())
         {
