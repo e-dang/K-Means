@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Factories/KmeansAlgorithmFactories.hpp"
-#include "Kmeans.hpp"
+#include "Kmeans/Kmeans.hpp"
 
 class KmeansFactory
 {

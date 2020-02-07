@@ -1,15 +1,15 @@
 #pragma once
 
-#include "Averager.hpp"
-#include "ClosestClusterFinder.hpp"
-#include "ClosestClusterUpdater.hpp"
-#include "CoresetClusteringFinisher.hpp"
-#include "CoresetDistributionCalculator.hpp"
-#include "DataClasses.hpp"
-#include "DistanceSumCalculator.hpp"
-#include "KmeansDataCreator.hpp"
-#include "PointReassigner.hpp"
-#include "RandomSelector.hpp"
+#include "Containers/DataClasses.hpp"
+#include "Strategies/Averager.hpp"
+#include "Strategies/ClosestClusterFinder.hpp"
+#include "Strategies/ClosestClusterUpdater.hpp"
+#include "Strategies/CoresetClusteringFinisher.hpp"
+#include "Strategies/CoresetDistributionCalculator.hpp"
+#include "Strategies/DistanceSumCalculator.hpp"
+#include "Strategies/KmeansDataCreator.hpp"
+#include "Strategies/PointReassigner.hpp"
+#include "Strategies/RandomSelector.hpp"
 
 class AbstractStrategyFactory
 {

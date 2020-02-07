@@ -2,11 +2,11 @@
 
 #include <memory>
 
-#include "CoresetCreator.hpp"
 #include "Factories/StrategyFactories.hpp"
-#include "KPlusPlus.hpp"
-#include "KmeansAlgorithms.hpp"
-#include "Lloyd.hpp"
+#include "KmeansAlgorithms/CoresetCreator.hpp"
+#include "KmeansAlgorithms/KPlusPlus.hpp"
+#include "KmeansAlgorithms/KmeansAlgorithms.hpp"
+#include "KmeansAlgorithms/Lloyd.hpp"
 
 class AbstractKmeansAlgorithmFactory
 {
