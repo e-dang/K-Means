@@ -22,8 +22,8 @@ class AbstractKmeans
 protected:
     std::unique_ptr<AbstractKmeansInitializer> pInitializer;
     std::unique_ptr<AbstractKmeansMaximizer> pMaximizer;
-    std::shared_ptr<IDistanceFunctor> pDistanceFunc;
     std::unique_ptr<IKmeansDataCreator> pDataCreator;
+    std::shared_ptr<IDistanceFunctor> pDistanceFunc;
 
 public:
     AbstractKmeans(IKmeansDataCreator* dataCreator, std::shared_ptr<IDistanceFunctor> distanceFunc) :
@@ -39,7 +39,7 @@ public:
      */
     AbstractKmeans(AbstractKmeansInitializer* initializer, AbstractKmeansMaximizer* maximizer,
                    IKmeansDataCreator* dataCreator, std::shared_ptr<IDistanceFunctor> distanceFunc) :
-        pInitializer(initializer), pMaximizer(maximizer), pDistanceFunc(distanceFunc), pDataCreator(dataCreator){};
+        pInitializer(initializer), pMaximizer(maximizer), pDataCreator(dataCreator), pDistanceFunc(distanceFunc){};
 
     /**
      * @brief Destroy the Abstract Kmeans object.
@@ -127,11 +127,11 @@ public:
     CoresetKmeans(const size_t& sampleSize, AbstractKmeans* kmeans, AbstractCoresetCreator* creator,
                   AbstractCoresetClusteringFinisher* finisher, IKmeansDataCreator* dataCreator,
                   std::shared_ptr<IDistanceFunctor> distanceFunc) :
+        AbstractKmeans(dataCreator, distanceFunc),
         mSampleSize(sampleSize),
         pKmeans(kmeans),
         pCreator(creator),
-        pFinisher(finisher),
-        AbstractKmeans(dataCreator, distanceFunc){};
+        pFinisher(finisher){};
 
     ~CoresetKmeans(){};
 
