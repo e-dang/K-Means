@@ -186,9 +186,9 @@ struct KmeansData
     std::vector<value_t>* pClusterWeights;
     std::vector<value_t>* pSqDistances;
 
-    KmeansData(Matrix* data, std::vector<value_t>* weights, std::shared_ptr<IDistanceFunctor> distanceFunc,
-               const int& rank, const int_fast32_t& totalNumData, std::vector<int_fast32_t> lengths,
-               std::vector<int_fast32_t> displacements) :
+    KmeansData(const Matrix* const data, const std::vector<value_t>* const weights,
+               std::shared_ptr<IDistanceFunctor> distanceFunc, const int& rank, const int_fast32_t& totalNumData,
+               const std::vector<int_fast32_t> lengths, const std::vector<int_fast32_t> displacements) :
         mRank(rank),
         mTotalNumData(totalNumData),
         mLengths(lengths),
@@ -198,14 +198,14 @@ struct KmeansData
         pWeights(weights),
         pDistanceFunc(distanceFunc){};
 
-    void setClusterData(ClusterData* clusterData)
+    void setClusterData(ClusterData* const clusterData)
     {
         pClusters       = &clusterData->mClusters;
         pClustering     = &clusterData->mClustering;
         pClusterWeights = &clusterData->mClusterWeights;
     }
 
-    void setSqDistances(std::vector<value_t>* sqDistances) { pSqDistances = sqDistances; }
+    void setSqDistances(std::vector<value_t>* const sqDistances) { pSqDistances = sqDistances; }
 
     int_fast32_t& clusteringAt(const int_fast32_t& dataIdx) { return pClustering->at(mDisplacement + dataIdx); }
     value_t& sqDistancesAt(const int_fast32_t& dataIdx) { return pSqDistances->at(mDisplacement + dataIdx); }

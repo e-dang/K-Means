@@ -18,8 +18,9 @@ protected:
     int_fast32_t mSampleSize;
 
 public:
-    Kmeans(Initializer initializer, Maximizer maximizer, CoresetCreator coreset, Parallelism parallelism,
-           std::shared_ptr<IDistanceFunctor> distanceFunc, const int_fast32_t sampleSize = -1) :
+    Kmeans(const Initializer initializer, const Maximizer maximizer, const CoresetCreator coreset,
+           const Parallelism parallelism, std::shared_ptr<IDistanceFunctor> distanceFunc,
+           const int_fast32_t sampleSize = -1) :
         pKmeans(nullptr),
         pFactory(new KmeansFactory()),
         mInitializer(initializer),
@@ -33,7 +34,8 @@ public:
 
     ~Kmeans(){};
 
-    std::shared_ptr<ClusterResults> fit(Matrix* data, const int_fast32_t& numClusters, const int& numRestarts)
+    std::shared_ptr<ClusterResults> fit(const Matrix* const data, const int_fast32_t& numClusters,
+                                        const int& numRestarts)
     {
         if (isValidSampleSize(data) && pKmeans != nullptr)
             return pKmeans->fit(data, numClusters, numRestarts);
@@ -41,8 +43,8 @@ public:
         return nullptr;
     }
 
-    std::shared_ptr<ClusterResults> fit(Matrix* data, const int_fast32_t& numClusters, const int& numRestarts,
-                                        std::vector<value_t>* weights)
+    std::shared_ptr<ClusterResults> fit(const Matrix* const data, const int_fast32_t& numClusters,
+                                        const int& numRestarts, std::vector<value_t>* weights)
     {
         if (isValidSampleSize(data) && pKmeans != nullptr)
             return pKmeans->fit(data, numClusters, numRestarts, weights);
@@ -52,8 +54,9 @@ public:
 
     void setDistanceFunc(IDistanceFunctor* distanceFunc) { pKmeans->setDistanceFunc(distanceFunc); }
 
-    bool setKmeans(Initializer initializer, Maximizer maximizer, CoresetCreator coreset, Parallelism parallelism,
-                   std::shared_ptr<IDistanceFunctor> distanceFunc, const int_fast32_t sampleSize = -1)
+    bool setKmeans(const Initializer initializer, const Maximizer maximizer, const CoresetCreator coreset,
+                   const Parallelism parallelism, std::shared_ptr<IDistanceFunctor> distanceFunc,
+                   const int_fast32_t sampleSize = -1)
     {
         if (sampleSizeCheck())
         {
@@ -71,10 +74,10 @@ public:
     }
 
 private:
-    void setInitializer(Initializer initializer) { mInitializer = initializer; }
-    void setMaximizer(Maximizer maximizer) { mMaximizer = maximizer; }
-    void setCoresetCreator(CoresetCreator coreset) { mCoreset = coreset; }
-    void setParallelism(Parallelism parallelism) { mParallelism = parallelism; }
+    void setInitializer(const Initializer initializer) { mInitializer = initializer; }
+    void setMaximizer(const Maximizer maximizer) { mMaximizer = maximizer; }
+    void setCoresetCreator(const CoresetCreator coreset) { mCoreset = coreset; }
+    void setParallelism(const Parallelism parallelism) { mParallelism = parallelism; }
 
     bool sampleSizeCheck()
     {
@@ -85,7 +88,7 @@ private:
         return false;
     }
 
-    bool isValidSampleSize(Matrix* data)
+    bool isValidSampleSize(const Matrix* const data)
     {
         if (mSampleSize <= data->getNumData())
             return true;

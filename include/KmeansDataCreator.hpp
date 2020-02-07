@@ -7,14 +7,14 @@
 class IKmeansDataCreator
 {
 public:
-    virtual KmeansData create(Matrix* data, std::vector<value_t>* weights,
+    virtual KmeansData create(const Matrix* const data, const std::vector<value_t>* const weights,
                               std::shared_ptr<IDistanceFunctor> distanceFunc) = 0;
 };
 
 class SharedMemoryKmeansDataCreator : public IKmeansDataCreator
 {
 public:
-    KmeansData create(Matrix* data, std::vector<value_t>* weights,
+    KmeansData create(const Matrix* const data, const std::vector<value_t>* const weights,
                       std::shared_ptr<IDistanceFunctor> distanceFunc) override
     {
         return KmeansData(data, weights, distanceFunc, 0, data->getNumData(),
@@ -25,7 +25,7 @@ public:
 class MPIKmeansDataCreator : public IKmeansDataCreator
 {
 public:
-    KmeansData create(Matrix* data, std::vector<value_t>* weights,
+    KmeansData create(const Matrix* const data, const std::vector<value_t>* const weights,
                       std::shared_ptr<IDistanceFunctor> distanceFunc) override
     {
         auto totalNumData = getTotalNumDataMPI(data);
