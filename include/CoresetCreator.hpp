@@ -89,8 +89,8 @@ protected:
     int mRank;
     int mNumProcs;
     size_t mTotalNumData;
-    int mNumUniformSamples;
-    int mNumNonUniformSamples;
+    int_fast32_t mNumUniformSamples;
+    int_fast32_t mNumNonUniformSamples;
     value_t mTotalDistanceSum;
 
 public:
@@ -132,14 +132,16 @@ protected:
 
     void appendDataToCoreset(const Matrix* const data, Coreset* const coreset,
                              const std::vector<value_t>* const weights, const std::vector<value_t>* const distribution,
-                             const int& numSamples);
+                             const int_fast32_t& numSamples);
 
-    void calculateSamplingStrategy(std::vector<int>* const uniformSampleCounts,
-                                   std::vector<int>* const nonUniformSampleCounts, const value_t& totalDistanceSums);
+    void calculateSamplingStrategy(std::vector<int_fast32_t>* const uniformSampleCounts,
+                                   std::vector<int_fast32_t>* const nonUniformSampleCounts,
+                                   const value_t& totalDistanceSums);
 
-    void updateUniformSampleCounts(std::vector<int>* const uniformSampleCounts);
+    void updateUniformSampleCounts(std::vector<int_fast32_t>* const uniformSampleCounts);
 
-    void updateNonUniformSampleCounts(std::vector<int>* const nonUniformSampleCounts, const value_t& totalDistanceSums);
+    void updateNonUniformSampleCounts(std::vector<int_fast32_t>* const nonUniformSampleCounts,
+                                      const value_t& totalDistanceSums);
 
     void distributeCoreset(Coreset* const coreset);
 };

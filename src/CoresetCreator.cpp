@@ -59,7 +59,7 @@ void MPICoresetCreator::calcMean(const Matrix* const data, std::vector<value_t>*
     if (mRank == 0)
     {
         std::fill(mean->begin(), mean->end(), 0.0);
-        auto numData = std::accumulate(mLengths.begin(), mLengths.end(), (unsigned long long)0);
+        auto numData = std::accumulate(mLengths.begin(), mLengths.end(), (int_fast32_t)0);
         pAverager->calculateSum(&chunkMeans, mean);
         pAverager->normalizeSum(mean, numData);
     }
@@ -83,8 +83,8 @@ void MPICoresetCreator::calcDistribution(const std::vector<value_t>* const sqDis
                                          std::vector<value_t>* const distribution)
 {
     value_t totalDistanceSums;
-    std::vector<int> uniformSampleCounts(mNumProcs, 0);
-    std::vector<int> nonUniformSampleCounts(mNumProcs, 0);
+    std::vector<int_fast32_t> uniformSampleCounts(mNumProcs, 0);
+    std::vector<int_fast32_t> nonUniformSampleCounts(mNumProcs, 0);
 
     if (mRank == 0)
     {
@@ -113,7 +113,8 @@ void MPICoresetCreator::sampleDistribution(const Matrix* const data, const std::
 
 void MPICoresetCreator::appendDataToCoreset(const Matrix* const data, Coreset* const coreset,
                                             const std::vector<value_t>* const weights,
-                                            const std::vector<value_t>* const distribution, const int& numSamples)
+                                            const std::vector<value_t>* const distribution,
+                                            const int_fast32_t& numSamples)
 {
     value_t partialQ         = 0.5 * (1.0 / mTotalNumData);
     auto uniformSelectedIdxs = pSelector->select(weights, numSamples);
@@ -124,8 +125,8 @@ void MPICoresetCreator::appendDataToCoreset(const Matrix* const data, Coreset* c
     }
 }
 
-void MPICoresetCreator::calculateSamplingStrategy(std::vector<int>* const uniformSampleCounts,
-                                                  std::vector<int>* const nonUniformSampleCounts,
+void MPICoresetCreator::calculateSamplingStrategy(std::vector<int_fast32_t>* const uniformSampleCounts,
+                                                  std::vector<int_fast32_t>* const nonUniformSampleCounts,
                                                   const value_t& totalDistanceSums)
 {
     for (size_t i = 0; i < mSampleSize; i++)
@@ -142,7 +143,7 @@ void MPICoresetCreator::calculateSamplingStrategy(std::vector<int>* const unifor
     }
 }
 
-void MPICoresetCreator::updateUniformSampleCounts(std::vector<int>* const uniformSampleCounts)
+void MPICoresetCreator::updateUniformSampleCounts(std::vector<int_fast32_t>* const uniformSampleCounts)
 {
     double randNum              = getRandDouble01MPI() * mTotalNumData;
     unsigned long cumulativeSum = 0;
@@ -157,7 +158,7 @@ void MPICoresetCreator::updateUniformSampleCounts(std::vector<int>* const unifor
     }
 }
 
-void MPICoresetCreator::updateNonUniformSampleCounts(std::vector<int>* const nonUniformSampleCounts,
+void MPICoresetCreator::updateNonUniformSampleCounts(std::vector<int_fast32_t>* const nonUniformSampleCounts,
                                                      const value_t& totalDistanceSums)
 {
     double randNum        = getRandDouble01MPI() * totalDistanceSums;
@@ -177,13 +178,13 @@ void MPICoresetCreator::distributeCoreset(Coreset* const coreset)
 {
     // get the number of datapoints in each process' coreset
     auto numCoresetData = coreset->weights.size();
-    std::vector<int> numCoresetDataPerProc(mNumProcs);
+    std::vector<int_fast32_t> numCoresetDataPerProc(mNumProcs);
     MPI_Allgather(&numCoresetData, 1, MPI_INT, numCoresetDataPerProc.data(), 1, MPI_INT, MPI_COMM_WORLD);
 
     // create length and displacement vectors for transfer of coreset data
-    std::vector<int> matrixLengths(mNumProcs);
-    std::vector<int> matrixDisplacements(mNumProcs, 0);
-    std::vector<int> vectorDisplacements(mNumProcs, 0);
+    std::vector<int_fast32_t> matrixLengths(mNumProcs);
+    std::vector<int_fast32_t> matrixDisplacements(mNumProcs, 0);
+    std::vector<int_fast32_t> vectorDisplacements(mNumProcs, 0);
     for (auto i = 0; i < mNumProcs; i++)
     {
         matrixLengths.at(i) = numCoresetDataPerProc.at(i) * coreset->data.getNumFeatures();
