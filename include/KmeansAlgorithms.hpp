@@ -24,7 +24,7 @@ protected:
 
     // cluster data
     Matrix** ppClusters;
-    std::vector<int>** ppClustering;
+    std::vector<int_fast32_t>** ppClustering;
     std::vector<value_t>** ppClusterWeights;
     std::vector<value_t>** ppSqDistances;
 
