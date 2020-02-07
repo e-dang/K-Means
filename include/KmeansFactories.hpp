@@ -42,7 +42,7 @@ enum Variant
 {
     Reg,
     Opt,
-    Coreset
+    SpecificCoreset
 };
 
 class AbstractStrategyFactory
@@ -101,7 +101,7 @@ public:
     {
         switch (variant)
         {
-            case (Coreset):
+            case (SpecificCoreset):
                 return new SerialClosestClusterUpdater(createClosestClusterFinder(Reg),
                                                        createCoresetClusteringDataUpdater());
             default:
@@ -136,7 +136,7 @@ public:
 
     AbstractCoresetClusteringFinisher* createCoresetClusteringFinisher() override
     {
-        return new SharedMemoryCoresetClusteringFinisher(createClosestClusterUpdater(Coreset));
+        return new SharedMemoryCoresetClusteringFinisher(createClosestClusterUpdater(SpecificCoreset));
     }
 };
 
@@ -153,7 +153,7 @@ public:
     {
         switch (variant)
         {
-            case (Coreset):
+            case (SpecificCoreset):
                 return new OMPClosestClusterUpdater(createClosestClusterFinder(Reg),
                                                     createCoresetClusteringDataUpdater());
             default:
@@ -187,7 +187,7 @@ public:
 
     AbstractCoresetClusteringFinisher* createCoresetClusteringFinisher() override
     {
-        return new SharedMemoryCoresetClusteringFinisher(createClosestClusterUpdater(Coreset));
+        return new SharedMemoryCoresetClusteringFinisher(createClosestClusterUpdater(SpecificCoreset));
     }
 };
 
@@ -207,7 +207,7 @@ public:
     {
         switch (variant)
         {
-            case (Coreset):
+            case (SpecificCoreset):
                 return new SerialClosestClusterUpdater(createClosestClusterFinder(Reg),
                                                        createCoresetClusteringDataUpdater());
             default:
@@ -239,7 +239,7 @@ public:
 
     AbstractCoresetClusteringFinisher* createCoresetClusteringFinisher() override
     {
-        return new MPICoresetClusteringFinisher(createClosestClusterUpdater(Coreset));
+        return new MPICoresetClusteringFinisher(createClosestClusterUpdater(SpecificCoreset));
     }
 };
 
@@ -259,7 +259,7 @@ public:
     {
         switch (variant)
         {
-            case (Coreset):
+            case (SpecificCoreset):
                 return new OMPClosestClusterUpdater(createClosestClusterFinder(Reg),
                                                     createCoresetClusteringDataUpdater());
             default:
@@ -290,7 +290,7 @@ public:
 
     AbstractCoresetClusteringFinisher* createCoresetClusteringFinisher() override
     {
-        return new MPICoresetClusteringFinisher(createClosestClusterUpdater(Coreset));
+        return new MPICoresetClusteringFinisher(createClosestClusterUpdater(SpecificCoreset));
     }
 };
 
