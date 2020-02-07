@@ -26,10 +26,6 @@ public:
         pDistSumCalc(distSumCalc),
         pDistanceFunc(distanceFunc){};
 
-    AbstractCoresetCreator(IMultiWeightedRandomSelector* selector, AbstractAverager* averager,
-                           IDistanceSumCalculator* distSumCalc, std::shared_ptr<IDistanceFunctor> distanceFunc) :
-        AbstractCoresetCreator(NULL, selector, averager, distSumCalc, distanceFunc){};
-
     virtual ~AbstractCoresetCreator(){};
 
     void createCoreset(const Matrix* const data, Coreset* const coreset);
@@ -58,11 +54,6 @@ public:
                                ICoresetDistributionCalculator* distrCalc,
                                std::shared_ptr<IDistanceFunctor> distanceFunc) :
         AbstractCoresetCreator(sampleSize, selector, averager, distSumCalc, distanceFunc), pDistrCalc(distrCalc){};
-
-    SharedMemoryCoresetCreator(IMultiWeightedRandomSelector* selector, AbstractAverager* averager,
-                               IDistanceSumCalculator* distSumCalc, ICoresetDistributionCalculator* distrCalc,
-                               std::shared_ptr<IDistanceFunctor> distanceFunc) :
-        SharedMemoryCoresetCreator(NULL, selector, averager, distSumCalc, distrCalc, distanceFunc){};
 
     ~SharedMemoryCoresetCreator(){};
 
@@ -94,17 +85,9 @@ protected:
     value_t mTotalDistanceSum;
 
 public:
-    MPICoresetCreator(const size_t& totalNumData, const size_t& sampleSize, IMultiWeightedRandomSelector* selector,
-                      AbstractAverager* averager, IDistanceSumCalculator* distSumCalc,
-                      std::shared_ptr<IDistanceFunctor> distanceFunc) :
-        AbstractCoresetCreator(sampleSize, selector, averager, distSumCalc, distanceFunc)
-    {
-        setTotalNumData(totalNumData);
-    }
-
     MPICoresetCreator(const size_t& sampleSize, IMultiWeightedRandomSelector* selector, AbstractAverager* averager,
                       IDistanceSumCalculator* distSumCalc, std::shared_ptr<IDistanceFunctor> distanceFunc) :
-        MPICoresetCreator(NULL, sampleSize, selector, averager, distSumCalc, distanceFunc){};
+        AbstractCoresetCreator(sampleSize, selector, averager, distSumCalc, distanceFunc){};
 
     ~MPICoresetCreator() {}
 
