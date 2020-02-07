@@ -2,9 +2,10 @@
 
 #include "mpi.h"
 
-ClusterResults AbstractKmeans::run(Matrix* data, const int& numClusters, const int& numRestarts, KmeansData* kmeansData)
+std::shared_ptr<ClusterResults> AbstractKmeans::run(Matrix* data, const int& numClusters, const int& numRestarts,
+                                                    KmeansData* kmeansData)
 {
-    ClusterResults clusterResults;
+    std::shared_ptr<ClusterResults> clusterResults = std::make_shared<ClusterResults>();
 
     pInitializer->setKmeansData(kmeansData);
     pMaximizer->setKmeansData(kmeansData);
@@ -20,26 +21,26 @@ ClusterResults AbstractKmeans::run(Matrix* data, const int& numClusters, const i
         pInitializer->initialize();
         pMaximizer->maximize();
 
-        compareResults(&clusterData, &distances, &clusterResults);
+        compareResults(&clusterData, &distances, clusterResults);
     }
 
     return clusterResults;
 }
 
-ClusterResults WeightedKmeans::fit(Matrix* data, const int& numClusters, const int& numRestarts)
+std::shared_ptr<ClusterResults> WeightedKmeans::fit(Matrix* data, const int& numClusters, const int& numRestarts)
 {
     std::vector<value_t> weights(data->getMaxNumData(), 1);
     return fit(data, numClusters, numRestarts, &weights);
 }
 
-ClusterResults WeightedKmeans::fit(Matrix* data, const int& numClusters, const int& numRestarts,
-                                   std::vector<value_t>* weights)
+std::shared_ptr<ClusterResults> WeightedKmeans::fit(Matrix* data, const int& numClusters, const int& numRestarts,
+                                                    std::vector<value_t>* weights)
 {
     auto kmeansData = pDataCreator->create(data, weights, pDistanceFunc);
     return run(data, numClusters, numRestarts, &kmeansData);
 }
 
-ClusterResults CoresetKmeans::fit(Matrix* data, const int& numClusters, const int& numRestarts)
+std::shared_ptr<ClusterResults> CoresetKmeans::fit(Matrix* data, const int& numClusters, const int& numRestarts)
 {
     auto kmeansData = pDataCreator->create(data, nullptr, pDistanceFunc);
 
@@ -50,22 +51,22 @@ ClusterResults CoresetKmeans::fit(Matrix* data, const int& numClusters, const in
     pCreator->createCoreset(data, &coreset);
 
     auto clusterResults = pKmeans->fit(&coreset.data, numClusters, numRestarts, &coreset.weights);
-    clusterResults.mClusterData.mClustering.resize(kmeansData.mTotalNumData);
-    clusterResults.mSqDistances.resize(kmeansData.mTotalNumData);
-    std::fill(clusterResults.mClusterData.mClustering.begin(), clusterResults.mClusterData.mClustering.end(), -1);
-    std::fill(clusterResults.mSqDistances.begin(), clusterResults.mSqDistances.end(), -1);
+    clusterResults->mClusterData.mClustering.resize(kmeansData.mTotalNumData);
+    clusterResults->mSqDistances.resize(kmeansData.mTotalNumData);
+    std::fill(clusterResults->mClusterData.mClustering.begin(), clusterResults->mClusterData.mClustering.end(), -1);
+    std::fill(clusterResults->mSqDistances.begin(), clusterResults->mSqDistances.end(), -1);
 
-    kmeansData.setClusterData(&clusterResults.mClusterData);
-    kmeansData.setSqDistances(&clusterResults.mSqDistances);
+    kmeansData.setClusterData(&clusterResults->mClusterData);
+    kmeansData.setSqDistances(&clusterResults->mSqDistances);
 
-    clusterResults.mError = pFinisher->finishClustering(&kmeansData);
+    clusterResults->mError = pFinisher->finishClustering(&kmeansData);
 
     return clusterResults;
 }
 
-ClusterResults CoresetKmeans::fit(Matrix* data, const int& numClusters, const int& numRestarts,
-                                  std::vector<value_t>* weights)
+std::shared_ptr<ClusterResults> CoresetKmeans::fit(Matrix* data, const int& numClusters, const int& numRestarts,
+                                                   std::vector<value_t>* weights)
 {
     throw std::runtime_error("Should not be calling this func.");
-    return ClusterResults{};
+    return nullptr;
 }
