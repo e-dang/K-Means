@@ -31,8 +31,8 @@ protected:
     // chunk data
     const int* pRank;
     const int_fast32_t* pTotalNumData;
-    const std::vector<int>* pLengths;
-    const std::vector<int>* pDisplacements;
+    const std::vector<int_fast32_t>* pLengths;
+    const std::vector<int_fast32_t>* pDisplacements;
 
 public:
     AbstractKmeansAlgorithm(){};
