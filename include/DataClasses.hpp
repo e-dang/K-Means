@@ -31,10 +31,11 @@ public:
 
     Matrix(std::vector<value_t> data, const int_fast32_t& numRows, const int_fast32_t& numCols)
     {
-        if (data.size() > numRows * numCols)
+        if (static_cast<int_fast32_t>(data.size()) > numRows * numCols)
         {
             throw std::runtime_error("The vector has more data than was specified.");
         }
+
         mData = data;
         mData.reserve(numRows * numCols);
         mNumRows = numRows;
