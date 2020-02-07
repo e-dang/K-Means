@@ -1,14 +1,14 @@
 #include "ClosestClusterFinder.hpp"
 
-ClosestCluster ClosestClusterFinder::findClosestCluster(const int& dataIdx, KmeansData* const kmeansData)
+ClosestCluster ClosestClusterFinder::findClosestCluster(const int_fast32_t& dataIdx, KmeansData* const kmeansData)
 {
-    int clusterIdx;
-    int numFeatures          = kmeansData->pData->getNumFeatures();
-    int numExistingClusters  = kmeansData->pClusters->getNumData();
-    const value_t* datapoint = kmeansData->pData->at(dataIdx);
-    value_t minDistance      = -1;
+    int_fast32_t clusterIdx;
+    auto numFeatures         = kmeansData->pData->getNumFeatures();
+    auto numExistingClusters = kmeansData->pClusters->getNumData();
+    const auto datapoint     = kmeansData->pData->at(dataIdx);
+    double minDistance       = -1.0;
 
-    for (int i = 0; i < numExistingClusters; i++)
+    for (int_fast32_t i = 0; i < numExistingClusters; i++)
     {
         value_t tempDistance = (*kmeansData->pDistanceFunc)(datapoint, kmeansData->pClusters->at(i), numFeatures);
 
@@ -22,15 +22,15 @@ ClosestCluster ClosestClusterFinder::findClosestCluster(const int& dataIdx, Kmea
     return ClosestCluster{ clusterIdx, std::pow(minDistance, 2) };
 }
 
-ClosestCluster ClosestNewClusterFinder::findClosestCluster(const int& dataIdx, KmeansData* const kmeansData)
+ClosestCluster ClosestNewClusterFinder::findClosestCluster(const int_fast32_t& dataIdx, KmeansData* const kmeansData)
 {
-    thread_local static unsigned int prevNumClusters;
-    thread_local static unsigned int intermediate;
-    int clusterIdx;
-    int numFeatures          = kmeansData->pData->getNumFeatures();
-    int numExistingClusters  = kmeansData->pClusters->getNumData();
-    const value_t* datapoint = kmeansData->pData->at(dataIdx);
-    value_t minDistance      = -1;
+    thread_local static int_fast32_t prevNumClusters;
+    thread_local static int_fast32_t intermediate;
+    int_fast32_t clusterIdx;
+    auto numFeatures         = kmeansData->pData->getNumFeatures();
+    auto numExistingClusters = kmeansData->pClusters->getNumData();
+    const auto datapoint     = kmeansData->pData->at(dataIdx);
+    double minDistance       = -1.0;
 
     if (numExistingClusters == 1)
     {
@@ -38,9 +38,9 @@ ClosestCluster ClosestNewClusterFinder::findClosestCluster(const int& dataIdx, K
         intermediate    = 1;
     }
 
-    for (int i = prevNumClusters; i < numExistingClusters; i++)
+    for (auto i = prevNumClusters; i < numExistingClusters; i++)
     {
-        value_t tempDistance = (*kmeansData->pDistanceFunc)(datapoint, kmeansData->pClusters->at(i), numFeatures);
+        auto tempDistance = (*kmeansData->pDistanceFunc)(datapoint, kmeansData->pClusters->at(i), numFeatures);
 
         if (minDistance > tempDistance || minDistance < 0)
         {

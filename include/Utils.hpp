@@ -28,7 +28,8 @@ inline double getRandDouble01()
 inline double getRandDouble01MPI()
 {
     static int rank = -1;
-    if (rank == -1) MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if (rank == -1)
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     thread_local static RNGType rng(getTime() * (rank + 10));
     thread_local static boost::uniform_real<double> dblRange(0, 1);
@@ -68,7 +69,7 @@ inline int_fast32_t getTotalNumDataMPI(const Matrix* const data)
     int_fast32_t totalNumData = 0;
     int_fast32_t localNumData = data->getNumData();
 
-    MPI_Allreduce(&localNumData, &totalNumData, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&localNumData, &totalNumData, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
     return totalNumData;
 }

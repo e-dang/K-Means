@@ -14,9 +14,9 @@ public:
 
     virtual ~AbstractPointReassigner(){};
 
-    unsigned int reassignPoint(const int& dataIdx, KmeansData* const kmeansData)
+    int_fast32_t reassignPoint(const int_fast32_t& dataIdx, KmeansData* const kmeansData)
     {
-        int before = kmeansData->clusteringAt(dataIdx);
+        auto before = kmeansData->clusteringAt(dataIdx);
 
         pUpdater->findAndUpdateClosestCluster(dataIdx, kmeansData);
 
@@ -27,7 +27,7 @@ public:
         return 0;
     }
 
-    virtual unsigned int reassignPoints(KmeansData* const kmeansData) = 0;
+    virtual int_fast32_t reassignPoints(KmeansData* const kmeansData) = 0;
 };
 
 class SerialPointReassigner : public AbstractPointReassigner
@@ -37,10 +37,10 @@ public:
 
     ~SerialPointReassigner(){};
 
-    unsigned int reassignPoints(KmeansData* const kmeansData) override
+    int_fast32_t reassignPoints(KmeansData* const kmeansData) override
     {
-        unsigned int changed = 0;
-        for (int i = 0; i < kmeansData->pData->getNumData(); i++)
+        int_fast32_t changed = 0;
+        for (int_fast32_t i = 0; i < kmeansData->pData->getNumData(); i++)
         {
             changed += reassignPoint(i, kmeansData);
         }
@@ -56,17 +56,17 @@ public:
 
     ~SerialOptimizedPointReassigner(){};
 
-    unsigned int reassignPoints(KmeansData* const kmeansData) override
+    int_fast32_t reassignPoints(KmeansData* const kmeansData) override
     {
-        unsigned int changed = 0;
-        int numFeatures      = kmeansData->pData->getNumFeatures();
+        int_fast32_t changed = 0;
+        auto numFeatures     = kmeansData->pData->getNumFeatures();
 
-        for (int i = 0; i < kmeansData->pData->getNumData(); i++)
+        for (int_fast32_t i = 0; i < kmeansData->pData->getNumData(); i++)
         {
-            int clusterIdx = kmeansData->clusteringAt(i);
-            value_t dist   = std::pow((*kmeansData->pDistanceFunc)(kmeansData->pData->at(i),
-                                                                 kmeansData->pClusters->at(clusterIdx), numFeatures),
-                                    2);
+            auto clusterIdx = kmeansData->clusteringAt(i);
+            auto dist       = std::pow((*kmeansData->pDistanceFunc)(kmeansData->pData->at(i),
+                                                              kmeansData->pClusters->at(clusterIdx), numFeatures),
+                                 2);
             if (dist > kmeansData->sqDistancesAt(i) || kmeansData->sqDistancesAt(i) < 0)
             {
                 changed += reassignPoint(i, kmeansData);
@@ -88,12 +88,12 @@ public:
 
     ~OMPPointReassigner(){};
 
-    unsigned int reassignPoints(KmeansData* const kmeansData) override
+    int_fast32_t reassignPoints(KmeansData* const kmeansData) override
     {
-        unsigned int changed = 0;
+        int_fast32_t changed = 0;
 
 #pragma omp parallel for shared(kmeansData), schedule(static), reduction(+ : changed)
-        for (int i = 0; i < kmeansData->pData->getNumData(); i++)
+        for (int_fast32_t i = 0; i < kmeansData->pData->getNumData(); i++)
         {
             changed += reassignPoint(i, kmeansData);
         }
@@ -109,18 +109,18 @@ public:
 
     ~OMPOptimizedPointReassigner(){};
 
-    unsigned int reassignPoints(KmeansData* const kmeansData) override
+    int_fast32_t reassignPoints(KmeansData* const kmeansData) override
     {
-        unsigned int changed = 0;
-        int numFeatures      = kmeansData->pData->getNumFeatures();
+        int_fast32_t changed = 0;
+        auto numFeatures     = kmeansData->pData->getNumFeatures();
 
 #pragma omp parallel for shared(kmeansData, numFeatures), schedule(static), reduction(+ : changed)
-        for (int i = 0; i < kmeansData->pData->getNumData(); i++)
+        for (int_fast32_t i = 0; i < kmeansData->pData->getNumData(); i++)
         {
-            int clusterIdx = kmeansData->clusteringAt(i);
-            value_t dist   = std::pow((*kmeansData->pDistanceFunc)(kmeansData->pData->at(i),
-                                                                 kmeansData->pClusters->at(clusterIdx), numFeatures),
-                                    2);
+            auto clusterIdx = kmeansData->clusteringAt(i);
+            auto dist       = std::pow((*kmeansData->pDistanceFunc)(kmeansData->pData->at(i),
+                                                              kmeansData->pClusters->at(clusterIdx), numFeatures),
+                                 2);
             if (dist > kmeansData->sqDistancesAt(i) || kmeansData->sqDistancesAt(i) < 0)
             {
                 changed += reassignPoint(i, kmeansData);

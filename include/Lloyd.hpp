@@ -37,9 +37,9 @@ protected:
      *        updated in the call to updateClusters(), and updates the clustering data if necessary. This function also
      *        keeps track of the number of datapoints that have changed cluster assignments and returns this value.
 
-     * @return unsigned int - The number of datapoints whose cluster assignment has changed in the current iteration.
+     * @return int - The number of datapoints whose cluster assignment has changed in the current iteration.
      */
-    virtual unsigned int reassignPoints() = 0;
+    virtual int_fast32_t reassignPoints() = 0;
 };
 
 class SharedMemoryLloyd : public TemplateLloyd
@@ -55,7 +55,7 @@ protected:
 
     void averageClusterSums() override;
 
-    unsigned int reassignPoints() override;
+    int_fast32_t reassignPoints() override;
 };
 
 class MPILloyd : public TemplateLloyd
@@ -71,5 +71,5 @@ protected:
 
     void averageClusterSums() override;
 
-    unsigned int reassignPoints() override;
+    int_fast32_t reassignPoints() override;
 };

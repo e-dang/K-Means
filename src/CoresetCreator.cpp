@@ -129,7 +129,7 @@ void MPICoresetCreator::calculateSamplingStrategy(std::vector<int_fast32_t>* con
                                                   std::vector<int_fast32_t>* const nonUniformSampleCounts,
                                                   const value_t& totalDistanceSums)
 {
-    for (auto i = 0; i < mSampleSize; i++)
+    for (int_fast32_t i = 0; i < mSampleSize; i++)
     {
         double randNum = getRandDouble01MPI();
         if (randNum >= 0.5)
@@ -145,9 +145,9 @@ void MPICoresetCreator::calculateSamplingStrategy(std::vector<int_fast32_t>* con
 
 void MPICoresetCreator::updateUniformSampleCounts(std::vector<int_fast32_t>* const uniformSampleCounts)
 {
-    double randNum              = getRandDouble01MPI() * mTotalNumData;
-    unsigned long cumulativeSum = 0;
-    for (auto j = 0; j < mNumProcs; j++)
+    double randNum             = getRandDouble01MPI() * mTotalNumData;
+    int_fast32_t cumulativeSum = 0;
+    for (int_fast32_t j = 0; j < mNumProcs; j++)
     {
         cumulativeSum += mLengths[j];
         if (cumulativeSum >= randNum)
@@ -163,7 +163,7 @@ void MPICoresetCreator::updateNonUniformSampleCounts(std::vector<int_fast32_t>* 
 {
     double randNum        = getRandDouble01MPI() * totalDistanceSums;
     value_t cumulativeSum = 0;
-    for (auto j = 0; j < mNumProcs; j++)
+    for (int_fast32_t j = 0; j < mNumProcs; j++)
     {
         cumulativeSum += mDistanceSums.at(j);
         if (cumulativeSum >= randNum)
@@ -185,7 +185,7 @@ void MPICoresetCreator::distributeCoreset(Coreset* const coreset)
     std::vector<int_fast32_t> matrixLengths(mNumProcs);
     std::vector<int_fast32_t> matrixDisplacements(mNumProcs, 0);
     std::vector<int_fast32_t> vectorDisplacements(mNumProcs, 0);
-    for (auto i = 0; i < mNumProcs; i++)
+    for (int_fast32_t i = 0; i < mNumProcs; i++)
     {
         matrixLengths.at(i) = numCoresetDataPerProc.at(i) * coreset->data.getNumFeatures();
         if (i != 0)
@@ -207,7 +207,7 @@ void MPICoresetCreator::distributeCoreset(Coreset* const coreset)
     auto mpiData        = getMPIData(mSampleSize);
     auto& vectorLengths = mpiData.lengths;
     vectorDisplacements = mpiData.displacements;
-    for (auto i = 0; i < mNumProcs; i++)
+    for (int_fast32_t i = 0; i < mNumProcs; i++)
     {
         matrixLengths.at(i) = vectorLengths.at(i) * coreset->data.getNumFeatures();
         if (i != 0)
