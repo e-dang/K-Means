@@ -56,7 +56,7 @@ public:
      * @param numClusters - The number of clusters to cluster the data into.
      * @param numRestarts - The number of times to repeat the clustering process.
      */
-    virtual std::shared_ptr<ClusterResults> fit(Matrix* data, const int& numClusters, const int& numRestarts) = 0;
+    virtual std::shared_ptr<ClusterResults> fit(Matrix* data, const int_fast32_t& numClusters, const int& numRestarts) = 0;
 
     /**
      * @brief Interface for the top level function that initiates the clustering process.
@@ -66,7 +66,7 @@ public:
      * @param numRestarts - The number of times to repeat the clustering process.
      * @param weights - The weights for each datapoint in the matrix.
      */
-    virtual std::shared_ptr<ClusterResults> fit(Matrix* data, const int& numClusters, const int& numRestarts,
+    virtual std::shared_ptr<ClusterResults> fit(Matrix* data, const int_fast32_t& numClusters, const int& numRestarts,
                                                 std::vector<value_t>* weights) = 0;
 
     /**
@@ -77,7 +77,7 @@ public:
     void setDistanceFunc(IDistanceFunctor* distanceFunc) { pDistanceFunc.reset(distanceFunc); }
 
 protected:
-    std::shared_ptr<ClusterResults> run(Matrix* data, const int& numClusters, const int& numRestarts,
+    std::shared_ptr<ClusterResults> run(Matrix* data, const int_fast32_t& numClusters, const int& numRestarts,
                                         KmeansData* kmeansData);
 
     /**
@@ -111,9 +111,9 @@ public:
 
     ~WeightedKmeans(){};
 
-    std::shared_ptr<ClusterResults> fit(Matrix* data, const int& numClusters, const int& numRestarts) override;
+    std::shared_ptr<ClusterResults> fit(Matrix* data, const int_fast32_t& numClusters, const int& numRestarts) override;
 
-    std::shared_ptr<ClusterResults> fit(Matrix* data, const int& numClusters, const int& numRestarts,
+    std::shared_ptr<ClusterResults> fit(Matrix* data, const int_fast32_t& numClusters, const int& numRestarts,
                                         std::vector<value_t>* weights) override;
 };
 
@@ -137,8 +137,8 @@ public:
 
     ~CoresetKmeans(){};
 
-    std::shared_ptr<ClusterResults> fit(Matrix* data, const int& numClusters, const int& numRestarts) override;
+    std::shared_ptr<ClusterResults> fit(Matrix* data, const int_fast32_t& numClusters, const int& numRestarts) override;
 
-    std::shared_ptr<ClusterResults> fit(Matrix* data, const int& numClusters, const int& numRestarts,
+    std::shared_ptr<ClusterResults> fit(Matrix* data, const int_fast32_t& numClusters, const int& numRestarts,
                                         std::vector<value_t>* weights) override;
 };

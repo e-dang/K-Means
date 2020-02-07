@@ -33,7 +33,7 @@ public:
 
     ~Kmeans(){};
 
-    std::shared_ptr<ClusterResults> fit(Matrix* data, const int& numClusters, const int& numRestarts)
+    std::shared_ptr<ClusterResults> fit(Matrix* data, const int_fast32_t& numClusters, const int& numRestarts)
     {
         if (isValidSampleSize(data) && pKmeans != nullptr)
             return pKmeans->fit(data, numClusters, numRestarts);
@@ -41,7 +41,7 @@ public:
         return nullptr;
     }
 
-    std::shared_ptr<ClusterResults> fit(Matrix* data, const int& numClusters, const int& numRestarts,
+    std::shared_ptr<ClusterResults> fit(Matrix* data, const int_fast32_t& numClusters, const int& numRestarts,
                                         std::vector<value_t>* weights)
     {
         if (isValidSampleSize(data) && pKmeans != nullptr)

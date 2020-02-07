@@ -8,7 +8,7 @@
 class IReader
 {
 public:
-    virtual void read(std::string filepath, int numData, int numFeatures) = 0;
+    virtual void read(std::string filepath, int_fast32_t numData, int_fast32_t numFeatures) = 0;
 };
 
 class VectorReader : public IReader
@@ -20,7 +20,7 @@ public:
     VectorReader(){};
     ~VectorReader(){};
 
-    void read(std::string filepath, int numData, int numFeatures) override;
+    void read(std::string filepath, int_fast32_t numData, int_fast32_t numFeatures) override;
 
     std::vector<value_t> getData() { return this->data; }
 };
@@ -34,7 +34,7 @@ public:
     MPIReader(){};
     ~MPIReader(){};
 
-    void read(std::string filepath, int numData, int numFeatures) override;
+    void read(std::string filepath, int_fast32_t numData, int_fast32_t numFeatures) override;
 
     std::vector<value_t> getData() { return this->data; }
 };

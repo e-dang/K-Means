@@ -21,7 +21,7 @@ public:
 
     virtual ~AbstractClosestClusterUpdater() {}
 
-    void findAndUpdateClosestCluster(const int& dataIdx, KmeansData* const kmeansData)
+    void findAndUpdateClosestCluster(const int_fast32_t& dataIdx, KmeansData* const kmeansData)
     {
         auto closestCluster = pFinder->findClosestCluster(dataIdx, kmeansData);
         pUpdater->update(dataIdx, closestCluster, kmeansData);
@@ -42,7 +42,7 @@ public:
 
     void findAndUpdateClosestClusters(KmeansData* const kmeansData)
     {
-        for (int i = 0; i < kmeansData->pData->getNumData(); i++)
+        for (int_fast32_t i = 0; i < kmeansData->pData->getNumData(); i++)
         {
             findAndUpdateClosestCluster(i, kmeansData);
         }
@@ -62,7 +62,7 @@ public:
     void findAndUpdateClosestClusters(KmeansData* const kmeansData)
     {
 #pragma omp parallel for shared(kmeansData), schedule(static)
-        for (int i = 0; i < kmeansData->pData->getNumData(); i++)
+        for (int_fast32_t i = 0; i < kmeansData->pData->getNumData(); i++)
         {
             findAndUpdateClosestCluster(i, kmeansData);
         }

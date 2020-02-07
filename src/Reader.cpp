@@ -5,7 +5,7 @@
 
 #include "mpi.h"
 
-void VectorReader::read(std::string filepath, int numData, int numFeatures)
+void VectorReader::read(std::string filepath, int_fast32_t numData, int_fast32_t numFeatures)
 {
     std::ifstream file(filepath, std::ios::binary);
     if (!file.is_open())
@@ -17,13 +17,13 @@ void VectorReader::read(std::string filepath, int numData, int numFeatures)
     file.read(reinterpret_cast<char*>(data.data()), sizeof(value_t) * numData * numFeatures);
 }
 
-void MPIReader::read(std::string filepath, int numData, int numFeatures)
+void MPIReader::read(std::string filepath, int_fast32_t numData, int_fast32_t numFeatures)
 {
     int rank, numProcs;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
-    int numDataPerProc = numData * numFeatures / numProcs;
+    int_fast32_t numDataPerProc = numData * numFeatures / numProcs;
     MPI_Offset offset  = rank * numDataPerProc * sizeof(value_t);
     MPI_File fh;
     MPI_Status status;

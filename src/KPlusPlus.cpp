@@ -14,7 +14,7 @@ void TemplateKPlusPlus::initialize()
     std::fill((*ppSqDistances)->begin(), (*ppSqDistances)->end(), -1);
 
     // initialize remaining clusters; start from index 1 since we know we have only 1 cluster so far
-    for (int i = 1; i < (*ppClusters)->getMaxNumData(); i++)
+    for (int_fast32_t i = 1; i < (*ppClusters)->getMaxNumData(); i++)
     {
         // find distance between each datapoint and nearest cluster, then update clustering assignment
         findAndUpdateClosestClusters();
@@ -30,7 +30,7 @@ void TemplateKPlusPlus::initialize()
 void SharedMemoryKPlusPlus::weightedClusterSelection()
 {
     value_t randSumFrac = getRandDouble01() * std::accumulate((*ppSqDistances)->begin(), (*ppSqDistances)->end(), 0.0);
-    int dataIdx         = pSelector->select(*ppSqDistances, randSumFrac);
+    int_fast32_t dataIdx         = pSelector->select(*ppSqDistances, randSumFrac);
     (*ppClusters)->appendDataPoint(pData->at(dataIdx));
 }
 

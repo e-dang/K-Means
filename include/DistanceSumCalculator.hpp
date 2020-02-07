@@ -19,7 +19,7 @@ public:
                           std::shared_ptr<IDistanceFunctor> distanceFunc) override
     {
         value_t distanceSum = 0.0;
-        for (int i = 0; i < data->getNumData(); i++)
+        for (int_fast32_t i = 0; i < data->getNumData(); i++)
         {
             sqDistances->at(i) = std::pow((*distanceFunc)(data->at(i), point->data(), point->size()), 2);
             distanceSum += sqDistances->at(i);
@@ -38,7 +38,7 @@ public:
     {
         value_t distanceSum = 0.0;
 #pragma omp parallel for shared(data, point, sqDistances, distanceFunc), schedule(static), reduction(+ : distanceSum)
-        for (int i = 0; i < data->getNumData(); i++)
+        for (int_fast32_t i = 0; i < data->getNumData(); i++)
         {
             sqDistances->at(i) = std::pow((*distanceFunc)(data->at(i), point->data(), point->size()), 2);
             distanceSum += sqDistances->at(i);

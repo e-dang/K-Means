@@ -7,7 +7,7 @@
 class IWeightedRandomSelector
 {
 public:
-    virtual int select(const std::vector<value_t>* const weights, value_t randomSumFrac) = 0;
+    virtual int_fast32_t select(const std::vector<value_t>* const weights, value_t randomSumFrac) = 0;
 };
 
 class SingleWeightedRandomSelector : public IWeightedRandomSelector
@@ -24,13 +24,14 @@ public:
      * @param randomFrac - A random float used in the algorithm to perform the random selection, [0, 1).
      * @return int - The selected index.
      */
-    int select(const std::vector<value_t>* const weights, value_t randomSumFrac) override;
+    int_fast32_t select(const std::vector<value_t>* const weights, value_t randomSumFrac) override;
 };
 
 class IMultiWeightedRandomSelector
 {
 public:
-    virtual std::vector<int> select(const std::vector<value_t>* const weights, const int_fast32_t& sampleSize) = 0;
+    virtual std::vector<int_fast32_t> select(const std::vector<value_t>* const weights,
+                                             const int_fast32_t& sampleSize) = 0;
 };
 
 /**
@@ -41,5 +42,6 @@ public:
 class MultiWeightedRandomSelector : public IMultiWeightedRandomSelector
 {
 public:
-    std::vector<int> select(const std::vector<value_t>* const weights, const int_fast32_t& sampleSize) override;
+    std::vector<int_fast32_t> select(const std::vector<value_t>* const weights,
+                                     const int_fast32_t& sampleSize) override;
 };

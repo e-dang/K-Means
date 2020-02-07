@@ -3,7 +3,7 @@
 #include "omp.h"
 
 void SerialWeightedMultiVectorAverager::calculateAverage(const Matrix* const data, Matrix* const avgContainer,
-                                                         const std::vector<int>* const dataAssignments,
+                                                         const std::vector<int_fast32_t>* const dataAssignments,
                                                          const std::vector<value_t>* const weights,
                                                          const std::vector<value_t>* const weightSums)
 {
@@ -12,7 +12,7 @@ void SerialWeightedMultiVectorAverager::calculateAverage(const Matrix* const dat
 }
 
 void SerialWeightedMultiVectorAverager::calculateSum(const Matrix* const data, Matrix* const avgContainer,
-                                                     const std::vector<int>* const dataAssignments,
+                                                     const std::vector<int_fast32_t>* const dataAssignments,
                                                      const std::vector<value_t>* const weights)
 {
     for (int_fast32_t i = 0; i < data->getNumData(); i++)
@@ -66,7 +66,7 @@ void SerialVectorAverager::calculateSum(const Matrix* const data, std::vector<va
     }
 }
 
-void SerialVectorAverager::normalizeSum(std::vector<value_t>* const avgContainer, const int numData)
+void SerialVectorAverager::normalizeSum(std::vector<value_t>* const avgContainer, const int_fast32_t& numData)
 {
     for (size_t i = 0; i < avgContainer->size(); i++)
     {
@@ -91,7 +91,7 @@ void OMPVectorAverager::calculateSum(const Matrix* const data, std::vector<value
     std::copy(copyContainer.begin(), copyContainer.end(), avgContainer->begin());
 }
 
-void OMPVectorAverager::normalizeSum(std::vector<value_t>* const avgContainer, const int numData)
+void OMPVectorAverager::normalizeSum(std::vector<value_t>* const avgContainer, const int_fast32_t& numData)
 {
 #pragma omp parallel for shared(avgContainer, numData), schedule(static)
     for (size_t i = 0; i < avgContainer->size(); i++)

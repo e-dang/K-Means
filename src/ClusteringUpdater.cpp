@@ -1,11 +1,11 @@
 #include "ClusteringUpdater.hpp"
 
-void AbstractClusteringDataUpdater::update(const int& dataIdx, const ClosestCluster& closestCluster,
+void AbstractClusteringDataUpdater::update(const int_fast32_t& dataIdx, const ClosestCluster& closestCluster,
                                            KmeansData* const kmeansData)
 {
     if (kmeansData->sqDistancesAt(dataIdx) > closestCluster.distance || kmeansData->sqDistancesAt(dataIdx) < 0)
     {
-        int& clusterAssignment = kmeansData->clusteringAt(dataIdx);
+        int_fast32_t& clusterAssignment = kmeansData->clusteringAt(dataIdx);
         if (clusterAssignment != closestCluster.clusterIdx)
         {
             updateClusterWeights(dataIdx, clusterAssignment, closestCluster.clusterIdx, kmeansData);
@@ -15,8 +15,8 @@ void AbstractClusteringDataUpdater::update(const int& dataIdx, const ClosestClus
     }
 }
 
-void ClusteringDataUpdater::updateClusterWeights(const int& dataIdx, const int& prevAssignment,
-                                                 const int& newAssignment, KmeansData* const kmeansData)
+void ClusteringDataUpdater::updateClusterWeights(const int_fast32_t& dataIdx, const int_fast32_t& prevAssignment,
+                                                 const int_fast32_t& newAssignment, KmeansData* const kmeansData)
 {
     value_t weight = kmeansData->pWeights->at(dataIdx);
     if (prevAssignment >= 0 && kmeansData->clusterWeightsAt(prevAssignment) > 0)
@@ -24,8 +24,8 @@ void ClusteringDataUpdater::updateClusterWeights(const int& dataIdx, const int& 
     kmeansData->clusterWeightsAt(newAssignment) += weight;
 }
 
-void AtomicClusteringDataUpdater::updateClusterWeights(const int& dataIdx, const int& prevAssignment,
-                                                       const int& newAssignment, KmeansData* const kmeansData)
+void AtomicClusteringDataUpdater::updateClusterWeights(const int_fast32_t& dataIdx, const int_fast32_t& prevAssignment,
+                                                       const int_fast32_t& newAssignment, KmeansData* const kmeansData)
 {
     value_t weight = kmeansData->pWeights->at(dataIdx);
     if (prevAssignment >= 0 && kmeansData->clusterWeightsAt(prevAssignment) > 0)
@@ -35,16 +35,16 @@ void AtomicClusteringDataUpdater::updateClusterWeights(const int& dataIdx, const
     kmeansData->clusterWeightsAt(newAssignment) += weight;
 }
 
-void DistributedClusteringDataUpdater::updateClusterWeights(const int& dataIdx, const int& prevAssignment,
-                                                            const int& newAssignment, KmeansData* const kmeansData)
+void DistributedClusteringDataUpdater::updateClusterWeights(const int_fast32_t& dataIdx, const int_fast32_t& prevAssignment,
+                                                            const int_fast32_t& newAssignment, KmeansData* const kmeansData)
 {
     value_t weight = kmeansData->pWeights->at(dataIdx);
     if (prevAssignment >= 0) kmeansData->clusterWeightsAt(prevAssignment) -= weight;
     kmeansData->clusterWeightsAt(newAssignment) += weight;
 }
 
-void AtomicDistributedClusteringDataUpdater::updateClusterWeights(const int& dataIdx, const int& prevAssignment,
-                                                                  const int& newAssignment,
+void AtomicDistributedClusteringDataUpdater::updateClusterWeights(const int_fast32_t& dataIdx, const int_fast32_t& prevAssignment,
+                                                                  const int_fast32_t& newAssignment,
                                                                   KmeansData* const kmeansData)
 {
     value_t weight = kmeansData->pWeights->at(dataIdx);
@@ -55,8 +55,8 @@ void AtomicDistributedClusteringDataUpdater::updateClusterWeights(const int& dat
     kmeansData->clusterWeightsAt(newAssignment) += weight;
 }
 
-void CoresetClusteringDataUpdater::updateClusterWeights(const int& dataIdx, const int& prevAssignment,
-                                                        const int& newAssignment, KmeansData* const kmeansData)
+void CoresetClusteringDataUpdater::updateClusterWeights(const int_fast32_t& dataIdx, const int_fast32_t& prevAssignment,
+                                                        const int_fast32_t& newAssignment, KmeansData* const kmeansData)
 {
     // no operations here
 }
