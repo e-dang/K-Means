@@ -224,7 +224,7 @@ struct ClosestCluster
 
 struct ClusterResults
 {
-    int mError;
+    value_t mError;
     ClusterData mClusterData;
     std::vector<value_t> mSqDistances;
 
