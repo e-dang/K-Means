@@ -117,10 +117,10 @@ void MPICoresetCreator::appendDataToCoreset(const Matrix* const data, Coreset* c
 {
     value_t partialQ         = 0.5 * (1.0 / mTotalNumData);
     auto uniformSelectedIdxs = pSelector->select(weights, numSamples);
-    for (auto& idx : uniformSelectedIdxs)
+    for (const auto& idx : uniformSelectedIdxs)
     {
         coreset->data.appendDataPoint(data->at(idx));
-        coreset->weights.push_back(1.0 / (mSampleSize * (partialQ + 0.5 * distribution->at(idx))));
+        coreset->weights.emplace_back(1.0 / (mSampleSize * (partialQ + 0.5 * distribution->at(idx))));
     }
 }
 
