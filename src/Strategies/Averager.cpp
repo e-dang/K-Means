@@ -15,21 +15,23 @@
 void AbstractWeightedAverager::calculateAverage(const Matrix* const data, Matrix* const avgContainer,
                                                 const std::vector<int_fast32_t>* const dataAssignments,
                                                 const std::vector<value_t>* const weights,
-                                                const std::vector<value_t>* const weightSums)
+                                                const std::vector<value_t>* const weightSums,
+                                                const int_fast32_t displacement)
 {
-    calculateSum(data, avgContainer, dataAssignments, weights);
+    calculateSum(data, avgContainer, dataAssignments, weights, displacement);
     normalizeSum(avgContainer, weightSums);
 }
 
 void SerialWeightedMultiVectorAverager::calculateSum(const Matrix* const data, Matrix* const avgContainer,
                                                      const std::vector<int_fast32_t>* const dataAssignments,
-                                                     const std::vector<value_t>* const weights)
+                                                     const std::vector<value_t>* const weights,
+                                                     const int_fast32_t displacement)
 {
     for (int_fast32_t i = 0; i < data->getNumData(); i++)
     {
         for (int_fast32_t j = 0; j < data->getNumFeatures(); j++)
         {
-            avgContainer->at(dataAssignments->at(i), j) += weights->at(i) * data->at(i, j);
+            avgContainer->at(dataAssignments->at(displacement + i), j) += weights->at(i) * data->at(i, j);
         }
     }
 }
@@ -48,7 +50,8 @@ void SerialWeightedMultiVectorAverager::normalizeSum(Matrix* const avgContainer,
 
 void OMPWeightedMultiVectorAverager::calculateSum(const Matrix* const data, Matrix* const avgContainer,
                                                   const std::vector<int_fast32_t>* const dataAssignments,
-                                                  const std::vector<value_t>* const weights)
+                                                  const std::vector<value_t>* const weights,
+                                                  const int_fast32_t displacement)
 {
     Matrix& refContainer = *avgContainer;
 
@@ -57,7 +60,7 @@ void OMPWeightedMultiVectorAverager::calculateSum(const Matrix* const data, Matr
     {
         for (int_fast32_t j = 0; j < data->getNumFeatures(); j++)
         {
-            refContainer.at(dataAssignments->at(i), j) += weights->at(i) * data->at(i, j);
+            refContainer.at(dataAssignments->at(displacement + i), j) += weights->at(i) * data->at(i, j);
         }
     }
 }
@@ -102,7 +105,6 @@ void SerialVectorAverager::normalizeSum(std::vector<value_t>* const avgContainer
 
 void OMPVectorAverager::calculateSum(const Matrix* const data, std::vector<value_t>* const avgContainer)
 {
-    // std::vector<value_t> copyContainer(avgContainer->size(), 0);
     std::vector<value_t>& refContainer = *avgContainer;
 
 #pragma omp parallel for shared(data, avgContainer), schedule(static), collapse(2), reduction(+ : refContainer)
@@ -113,8 +115,6 @@ void OMPVectorAverager::calculateSum(const Matrix* const data, std::vector<value
             refContainer[j] += data->at(i, j);
         }
     }
-
-    // std::copy(copyContainer.begin(), copyContainer.end(), avgContainer->begin());
 }
 
 void OMPVectorAverager::normalizeSum(std::vector<value_t>* const avgContainer, const int_fast32_t& numData)

@@ -20,22 +20,15 @@ void TemplateLloyd::maximize()
     } while (changed > minNumChanged);
 }
 
-void SharedMemoryLloyd::calcClusterSums() { pAverager->calculateSum(pData, (*ppClusters), (*ppClustering), pWeights); }
+void SharedMemoryLloyd::calcClusterSums() { pAverager->calculateSum(pData, *ppClusters, *ppClustering, pWeights); }
 
-void SharedMemoryLloyd::averageClusterSums() { pAverager->normalizeSum((*ppClusters), (*ppClusterWeights)); }
+void SharedMemoryLloyd::averageClusterSums() { pAverager->normalizeSum(*ppClusters, *ppClusterWeights); }
 
 int_fast32_t SharedMemoryLloyd::reassignPoints() { return pPointReassigner->reassignPoints(pKmeansData); }
 
 void MPILloyd::calcClusterSums()
 {
-    for (int_fast32_t i = 0; i < pData->getNumData(); i++)
-    {
-        for (int_fast32_t j = 0; j < pData->getNumFeatures(); j++)
-        {
-            (*ppClusters)->at((*ppClustering)->at(pDisplacements->at(*pRank) + i), j) +=
-              pWeights->at(i) * pData->at(i, j);
-        }
-    }
+    pAverager->calculateSum(pData, *ppClusters, *ppClustering, pWeights, pDisplacements->at(*pRank));
 
     MPI_Allreduce(MPI_IN_PLACE, (*ppClusters)->data(), (*ppClusters)->size(), MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
 }
