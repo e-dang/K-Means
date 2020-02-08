@@ -8,6 +8,10 @@
                               std::transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), std::plus<value_t>())) \
                     initializer(omp_priv = decltype(omp_orig)(omp_orig.size(), omp_orig.getMaxNumData(), omp_orig.getNumFeatures()))
 
+#pragma omp declare reduction(+ : std::vector<value_t> : \
+                              std::transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), std::plus<value_t>())) \
+                                initializer(omp_priv = decltype(omp_orig)(omp_orig.size()))
+
 void AbstractWeightedAverager::calculateAverage(const Matrix* const data, Matrix* const avgContainer,
                                                 const std::vector<int_fast32_t>* const dataAssignments,
                                                 const std::vector<value_t>* const weights,
@@ -98,19 +102,19 @@ void SerialVectorAverager::normalizeSum(std::vector<value_t>* const avgContainer
 
 void OMPVectorAverager::calculateSum(const Matrix* const data, std::vector<value_t>* const avgContainer)
 {
-    std::vector<value_t> copyContainer(avgContainer->size(), 0);
-    auto copyContainerData = copyContainer.data();
+    // std::vector<value_t> copyContainer(avgContainer->size(), 0);
+    std::vector<value_t>& refContainer = *avgContainer;
 
-#pragma omp parallel for shared(data, avgContainer), schedule(static), collapse(2), reduction(+ : copyContainerData[:data->getNumFeatures()])
+#pragma omp parallel for shared(data, avgContainer), schedule(static), collapse(2), reduction(+ : refContainer)
     for (int_fast32_t i = 0; i < data->getNumData(); i++)
     {
         for (int_fast32_t j = 0; j < data->getNumFeatures(); j++)
         {
-            copyContainer[j] += data->at(i, j);
+            refContainer[j] += data->at(i, j);
         }
     }
 
-    std::copy(copyContainer.begin(), copyContainer.end(), avgContainer->begin());
+    // std::copy(copyContainer.begin(), copyContainer.end(), avgContainer->begin());
 }
 
 void OMPVectorAverager::normalizeSum(std::vector<value_t>* const avgContainer, const int_fast32_t& numData)
