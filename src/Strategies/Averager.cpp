@@ -1,11 +1,17 @@
 #include "Strategies/Averager.hpp"
 
+#include <algorithm>
+
 #include "omp.h"
 
-void SerialWeightedMultiVectorAverager::calculateAverage(const Matrix* const data, Matrix* const avgContainer,
-                                                         const std::vector<int_fast32_t>* const dataAssignments,
-                                                         const std::vector<value_t>* const weights,
-                                                         const std::vector<value_t>* const weightSums)
+#pragma omp declare reduction(+ : Matrix : \
+                              std::transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), std::plus<value_t>())) \
+                    initializer(omp_priv = decltype(omp_orig)(omp_orig.size(), omp_orig.getMaxNumData(), omp_orig.getNumFeatures()))
+
+void AbstractWeightedAverager::calculateAverage(const Matrix* const data, Matrix* const avgContainer,
+                                                const std::vector<int_fast32_t>* const dataAssignments,
+                                                const std::vector<value_t>* const weights,
+                                                const std::vector<value_t>* const weightSums)
 {
     calculateSum(data, avgContainer, dataAssignments, weights);
     normalizeSum(avgContainer, weightSums);
@@ -32,6 +38,22 @@ void SerialWeightedMultiVectorAverager::normalizeSum(Matrix* const avgContainer,
         for (int_fast32_t j = 0; j < avgContainer->getNumFeatures(); j++)
         {
             avgContainer->at(i, j) /= weightSums->at(i);
+        }
+    }
+}
+
+void OMPWeightedMultiVectorAverager::calculateSum(const Matrix* const data, Matrix* const avgContainer,
+                                                  const std::vector<int_fast32_t>* const dataAssignments,
+                                                  const std::vector<value_t>* const weights)
+{
+    Matrix& refContainer = *avgContainer;
+
+#pragma omp parallel for shared(data, dataAssignments, weights), schedule(static), collapse(2), reduction(+:refContainer)
+    for (int_fast32_t i = 0; i < data->getNumData(); i++)
+    {
+        for (int_fast32_t j = 0; j < data->getNumFeatures(); j++)
+        {
+            refContainer.at(dataAssignments->at(i), j) += weights->at(i) * data->at(i, j);
         }
     }
 }

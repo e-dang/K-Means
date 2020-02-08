@@ -5,10 +5,9 @@
 class AbstractWeightedAverager
 {
 public:
-    virtual void calculateAverage(const Matrix* const data, Matrix* const avgContainer,
-                                  const std::vector<int_fast32_t>* const dataAssignments,
-                                  const std::vector<value_t>* const weights,
-                                  const std::vector<value_t>* const weightSums) = 0;
+    void calculateAverage(const Matrix* const data, Matrix* const avgContainer,
+                          const std::vector<int_fast32_t>* const dataAssignments,
+                          const std::vector<value_t>* const weights, const std::vector<value_t>* const weightSums);
 
     virtual void calculateSum(const Matrix* const data, Matrix* const avgContainer,
                               const std::vector<int_fast32_t>* const dataAssignments,
@@ -20,11 +19,6 @@ public:
 class SerialWeightedMultiVectorAverager : public AbstractWeightedAverager
 {
 public:
-    void calculateAverage(const Matrix* const data, Matrix* const avgContainer,
-                          const std::vector<int_fast32_t>* const dataAssignments,
-                          const std::vector<value_t>* const weights,
-                          const std::vector<value_t>* const weightSums) override;
-
     void calculateSum(const Matrix* const data, Matrix* const avgContainer,
                       const std::vector<int_fast32_t>* const dataAssignments,
                       const std::vector<value_t>* const weights) override;
@@ -32,9 +26,13 @@ public:
     void normalizeSum(Matrix* const avgContainer, const std::vector<value_t>* const weightSums) override;
 };
 
-class OMPWeightedMultiVectorAverager : public SerialWeightedMultiVectorAverager
+class OMPWeightedMultiVectorAverager : public AbstractWeightedAverager
 {
 public:
+    void calculateSum(const Matrix* const data, Matrix* const avgContainer,
+                      const std::vector<int_fast32_t>* const dataAssignments,
+                      const std::vector<value_t>* const weights) override;
+
     void normalizeSum(Matrix* const avgContainer, const std::vector<value_t>* const weightSums) override;
 };
 

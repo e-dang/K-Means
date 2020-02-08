@@ -21,6 +21,13 @@ private:
 public:
     Matrix() {}
 
+    Matrix(const int_fast32_t& size, const int_fast32_t& numRows, const int_fast32_t& numCols)
+    {
+        mData.resize(size);
+        mNumRows = numRows;
+        mNumCols = numCols;
+    }
+
     Matrix(const int_fast32_t& numRows, const int_fast32_t& numCols)
     {
         mData.reserve(numRows * numCols);
@@ -68,6 +75,9 @@ public:
     const value_t at(const int_fast32_t& row, const int_fast32_t& col) const { return *(this->at(row) + col); }
 
     const value_t* at(const int_fast32_t& row) const { return mData.data() + (row * mNumCols); }
+
+    std::vector<value_t>::iterator begin() { return mData.begin(); }
+    std::vector<value_t>::iterator end() { return mData.end(); }
 
     void appendDataPoint(const value_t* datapoint)
     {
