@@ -1,30 +1,64 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 
 #include "Containers/DataClasses.hpp"
 #include "Containers/Definitions.hpp"
+#include "Utils/FileRotator.hpp"
 
-class IWriter
+class AbstractWriter
 {
+protected:
+    FileRotator fileRotator;
+    std::unordered_map<int, std::string> typeMap;
+    std::vector<std::string> runParams;
+
 public:
-    virtual void writeClusters(std::string filepath)   = 0;
-    virtual void writeClustering(std::string filepath) = 0;
+    AbstractWriter(Initializer initializer, Maximizer maximizer, CoresetCreator coresetCreator,
+                   Parallelism parallelism);
+
+    virtual ~AbstractWriter() {}
+
+    void writeClusterResults(std::shared_ptr<ClusterResults> clusterResults, const int_fast64_t& time,
+                             std::string& filepath);
+
+    void writeRunStats(const value_t& error, const int_fast64_t& time, std::string& filepath);
+
+    void writeError(const value_t& error, std::ofstream& file);
+
+    void writeTime(const value_t& time, std::ofstream& file);
+
+    void writeRunParams(std::ofstream& file);
+
+    virtual void writeClusterWeights(std::vector<value_t>* clusterWeights, std::string& filepath) = 0;
+
+    virtual void writeClusters(Matrix* clusters, std::string& filepath) = 0;
+
+    virtual void writeClustering(std::vector<int>* clustering, std::string& filepath) = 0;
+
+    virtual void writeSqDistances(std::vector<value_t>* sqDistances, std::string& filepath) = 0;
+
+protected:
+    std::ofstream openFile(const std::string& filepath, const std::ios::openmode mode);
 };
 
-class ClusterDataWriter : public IWriter
+class ClusterResultWriter : public AbstractWriter
 {
-private:
-    ClusterData clusterData;
-    int_fast32_t numData;
-    int_fast32_t numFeatures;
-
 public:
-    ClusterDataWriter(ClusterData clusterData, int_fast32_t numData, int_fast32_t numFeatures) :
-        clusterData(clusterData), numData(numData), numFeatures(numFeatures){};
-    ~ClusterDataWriter(){};
+    ClusterResultWriter(Initializer initializer, Maximizer maximizer, CoresetCreator coresetCreator,
+                        Parallelism parallelism) :
+        AbstractWriter(initializer, maximizer, coresetCreator, parallelism)
+    {
+    }
 
-    void writeClusters(std::string filepath) override;
-    void writeClustering(std::string filepath) override;
-    void writeTimes(std::vector<double> times, std::string filepath);
+    ~ClusterResultWriter() {}
+
+    void writeClusters(Matrix* clusters, std::string& filepath) override;
+
+    void writeClustering(std::vector<int>* clustering, std::string& filepath) override;
+
+    void writeClusterWeights(std::vector<value_t>* clusterWeights, std::string& filepath) override;
+
+    void writeSqDistances(std::vector<value_t>* sqDistances, std::string& filepath) override;
 };
