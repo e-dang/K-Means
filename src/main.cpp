@@ -9,6 +9,8 @@
 #include "mpi.h"
 #include "sarge/sarge.h"
 
+const int DEFAULT_REPEATS = 10;
+
 void parseFilePath(Sarge& sarge, std::string& filepath)
 {
     if (!sarge.getTextArgument(0, filepath))
@@ -119,7 +121,7 @@ int parseNumRestarts(Sarge& sarge)
         return numRestarts;
     }
 
-    return 10;
+    return DEFAULT_REPEATS;
 }
 
 Initializer parseInitializer(Sarge& sarge)
@@ -258,27 +260,19 @@ void runDistributed(int& argc, char** argv, std::string filepath, const int_fast
     MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
     MPIReader reader;
-    reader.read(filepath, numData, numFeatures);
-    Matrix matrix(reader.getData(), numData / numProcs, numFeatures);
+    Matrix matrix(reader.read(filepath, numData, numFeatures), numData / numProcs, numFeatures);
 
     Kmeans kmeans(initializer, maximizer, coresetCreator, parallelism, std::make_shared<EuclideanDistance>());
 
-    auto start             = std::chrono::high_resolution_clock::now();
-    auto clusterResults    = kmeans.fit(&matrix, numClusters, numRestarts);
-    auto stop              = std::chrono::high_resolution_clock::now();
-    auto durationSerialKPP = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
-
-    ClusterDataWriter writer(clusterResults->mClusterData, numData, numFeatures);
-    std::string serialKppClustersFile =
-      "../data/clusters_serial_kpp_" + std::to_string(numData) + "_" + std::to_string(numFeatures) + ".txt";
-    std::string serialKppClusteringFile =
-      "../data/clustering_serial_kpp_" + std::to_string(numData) + "_" + std::to_string(numFeatures) + ".txt";
-    writer.writeClusters(serialKppClustersFile);
-    writer.writeClustering(serialKppClusteringFile);
+    auto start          = std::chrono::high_resolution_clock::now();
+    auto clusterResults = kmeans.fit(&matrix, numClusters, numRestarts);
+    auto stop           = std::chrono::high_resolution_clock::now();
+    auto duration       = std::chrono::duration_cast<std::chrono::seconds>(stop - start).count();
 
     if (rank == 0)
     {
-        clusterResults->mClusterData.mClusters.display();
+        ClusterResultWriter writer(initializer, maximizer, coresetCreator, parallelism);
+        writer.writeClusterResults(clusterResults, duration, filepath);
     }
 
     MPI_Finalize();
@@ -290,25 +284,19 @@ void runSharedMemory(int& argc, char** argv, std::string filepath, const int_fas
                      CoresetCreator coresetCreator, Parallelism parallelism)
 {
     VectorReader reader;
-    reader.read(filepath, numData, numFeatures);
-    Matrix matrix(reader.getData(), numData, numFeatures);
+    Matrix matrix(reader.read(filepath, numData, numFeatures), numData, numFeatures);
 
     Kmeans kmeans(initializer, maximizer, coresetCreator, parallelism, std::make_shared<EuclideanDistance>());
 
-    auto start             = std::chrono::high_resolution_clock::now();
-    auto clusterResults    = kmeans.fit(&matrix, numClusters, numRestarts);
-    auto stop              = std::chrono::high_resolution_clock::now();
-    auto durationSerialKPP = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
-
-    ClusterDataWriter writer(clusterResults->mClusterData, numData, numFeatures);
-    std::string serialKppClustersFile =
-      "../data/clusters_serial_kpp_" + std::to_string(numData) + "_" + std::to_string(numFeatures) + ".txt";
-    std::string serialKppClusteringFile =
-      "../data/clustering_serial_kpp_" + std::to_string(numData) + "_" + std::to_string(numFeatures) + ".txt";
-    writer.writeClusters(serialKppClustersFile);
-    writer.writeClustering(serialKppClusteringFile);
+    auto start          = std::chrono::high_resolution_clock::now();
+    auto clusterResults = kmeans.fit(&matrix, numClusters, numRestarts);
+    auto stop           = std::chrono::high_resolution_clock::now();
+    auto duration       = std::chrono::duration_cast<std::chrono::seconds>(stop - start).count();
 
     clusterResults->mClusterData.mClusters.display();
+
+    ClusterResultWriter writer(initializer, maximizer, coresetCreator, parallelism);
+    writer.writeClusterResults(clusterResults, duration, filepath);
 }
 
 int main(int argc, char** argv)
