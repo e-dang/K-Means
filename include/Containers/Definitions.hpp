@@ -1,6 +1,6 @@
 #pragma once
 
-#define type_selection 1
+#define type_selection 0
 
 #if type_selection == 1
     #define value_t float
