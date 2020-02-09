@@ -16,7 +16,7 @@ void OMPCoresetDistributionCalculator::calcDistribution(const std::vector<value_
                                                         std::vector<value_t>* const distribution)
 {
     value_t partialQ = 0.5 * (1.0 / sqDistances->size());  // portion of distribution calculation that is constant
-#pragma omp parallel for shared(sqDistances, distanceSum, distribution, partialQ), schedule(static)
+#pragma omp parallel for shared(partialQ), schedule(static)
     for (size_t i = 0; i < sqDistances->size(); i++)
     {
         distribution->at(i) = partialQ + 0.5 * sqDistances->at(i) / distanceSum;

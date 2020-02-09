@@ -52,7 +52,7 @@ int32_t OMPPointReassigner::reassignPoints(KmeansData* const kmeansData)
 {
     int32_t changed = 0;
 
-#pragma omp parallel for shared(kmeansData), schedule(static), reduction(+ : changed)
+#pragma omp parallel for schedule(static), reduction(+ : changed)
     for (int32_t i = 0; i < kmeansData->pData->getNumData(); i++)
     {
         changed += reassignPoint(i, kmeansData);
@@ -66,7 +66,7 @@ int32_t OMPOptimizedPointReassigner::reassignPoints(KmeansData* const kmeansData
     int32_t changed  = 0;
     auto numFeatures = kmeansData->pData->getNumFeatures();
 
-#pragma omp parallel for shared(kmeansData, numFeatures), schedule(static), reduction(+ : changed)
+#pragma omp parallel for shared(numFeatures), schedule(static), reduction(+ : changed)
     for (int32_t i = 0; i < kmeansData->pData->getNumData(); i++)
     {
         auto clusterIdx = kmeansData->clusteringAt(i);

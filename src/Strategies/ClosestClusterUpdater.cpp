@@ -16,7 +16,7 @@ void SerialClosestClusterUpdater::findAndUpdateClosestClusters(KmeansData* const
 
 void OMPClosestClusterUpdater::findAndUpdateClosestClusters(KmeansData* const kmeansData)
 {
-#pragma omp parallel for shared(kmeansData), schedule(static)
+#pragma omp parallel for schedule(static)
     for (int32_t i = 0; i < kmeansData->pData->getNumData(); i++)
     {
         findAndUpdateClosestCluster(i, kmeansData);

@@ -19,7 +19,7 @@ value_t OMPDistanceSumCalculator::calcDistances(const Matrix* const data, const 
                                                 std::shared_ptr<IDistanceFunctor> distanceFunc)
 {
     value_t distanceSum = 0.0;
-#pragma omp parallel for shared(data, point, sqDistances, distanceFunc), schedule(static), reduction(+ : distanceSum)
+#pragma omp parallel for shared(distanceFunc), schedule(static), reduction(+ : distanceSum)
     for (int32_t i = 0; i < data->getNumData(); i++)
     {
         sqDistances->at(i) = std::pow((*distanceFunc)(data->at(i), point->data(), point->size()), 2);
