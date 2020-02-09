@@ -4,19 +4,17 @@ cmake_minimum_required(VERSION 3.0)
 # project name
 project(Kmeans)
 
-# Set the MPI compiler
-set(CMAKE_CXX_COMPILER "mpic++")
-
 # flags
 SET(CMAKE_CXX_FLAGS "-std=c++11 -O3 -Wall -Wpedantic -fopenmp")
-find_package(Boost 1.71.0 COMPONENTS random math)
+add_subdirectory(./libs)
+find_package(MPI REQUIRED)
+find_package(Boost 1.72.0 COMPONENTS random)
 
 # include
-include_directories(./include)
+include_directories(./include ./libs/include ${MPI_INCLUDE_PATH} ${Boost_INCLUDE_DIRS})
 
 # target
 if(Boost_FOUND)
-    include_directories(${Boost_INCLUDE_DIRS})
     add_executable(kmeans ./src/main.cpp
                           ./src/Kmeans/Kmeans.cpp
                           ./src/Kmeans/KmeansFacade.cpp
@@ -38,7 +36,8 @@ if(Boost_FOUND)
                           ./src/Factories/KmeansFactory.cpp
                           ./src/Utils/Reader.cpp
                           ./src/Utils/Writer.cpp
+                          ./src/Utils/FileRotator.cpp
                           ./include/Utils/DistanceFunctors.hpp
                           ./include/Utils/Utils.hpp)
-    target_link_libraries(kmeans ${Boost_LIBRARIES})
+    target_link_libraries(kmeans sarge ${MPI_LIBRARIES} ${Boost_LIBRARIES})
 endif()
