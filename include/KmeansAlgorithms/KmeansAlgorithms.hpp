@@ -24,15 +24,15 @@ protected:
 
     // cluster data
     Matrix** ppClusters;
-    std::vector<int_fast32_t>** ppClustering;
+    std::vector<int32_t>** ppClustering;
     std::vector<value_t>** ppClusterWeights;
     std::vector<value_t>** ppSqDistances;
 
     // chunk data
     const int* pRank;
-    const int_fast32_t* pTotalNumData;
-    const std::vector<int_fast32_t>* pLengths;
-    const std::vector<int_fast32_t>* pDisplacements;
+    const int32_t* pTotalNumData;
+    const std::vector<int32_t>* pLengths;
+    const std::vector<int32_t>* pDisplacements;
 
 public:
     AbstractKmeansAlgorithm(){};

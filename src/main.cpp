@@ -20,10 +20,10 @@ void parseFilePath(Sarge& sarge, std::string& filepath)
     }
 }
 
-int_fast32_t parseNumData(Sarge& sarge)
+int32_t parseNumData(Sarge& sarge)
 {
     std::string rows;
-    int_fast32_t numData;
+    int32_t numData;
     if (sarge.getFlag("rows", rows))
     {
         numData = std::atoi(rows.c_str());
@@ -42,10 +42,10 @@ int_fast32_t parseNumData(Sarge& sarge)
     return numData;
 }
 
-int_fast32_t parseNumFeatures(Sarge& sarge)
+int32_t parseNumFeatures(Sarge& sarge)
 {
     std::string cols;
-    int_fast32_t numFeatures;
+    int32_t numFeatures;
     if (sarge.getFlag("cols", cols))
     {
         numFeatures = std::atoi(cols.c_str());
@@ -64,10 +64,10 @@ int_fast32_t parseNumFeatures(Sarge& sarge)
     return numFeatures;
 }
 
-int_fast32_t parseNumClusters(Sarge& sarge)
+int32_t parseNumClusters(Sarge& sarge)
 {
     std::string clusters;
-    int_fast32_t numClusters;
+    int32_t numClusters;
     if (sarge.getFlag("clusters", clusters))
     {
         numClusters = std::atoi(clusters.c_str());
@@ -86,10 +86,10 @@ int_fast32_t parseNumClusters(Sarge& sarge)
     return numClusters;
 }
 
-int_fast32_t parseSampleSize(Sarge& sarge)
+int32_t parseSampleSize(Sarge& sarge)
 {
     std::string samples;
-    int_fast32_t sampleSize;
+    int32_t sampleSize;
     if (sarge.getFlag("samples", samples))
     {
         sampleSize = std::atoi(samples.c_str());
@@ -180,7 +180,7 @@ Maximizer parseMaximizer(Sarge& sarge)
     return maximizer;
 }
 
-CoresetCreator parseCoresetCreator(Sarge& sarge, int_fast32_t& sampleSize)
+CoresetCreator parseCoresetCreator(Sarge& sarge, int32_t& sampleSize)
 {
     CoresetCreator coresetCreator = None;
     std::string coreset;
@@ -249,9 +249,9 @@ Parallelism parseParallelism(Sarge& sarge)
     return parallelism;
 }
 
-void runDistributed(int& argc, char** argv, std::string filepath, const int_fast32_t& numData,
-                    const int_fast32_t& numFeatures, const int_fast32_t& numClusters, const int_fast32_t& sampleSize,
-                    const int& numRestarts, Initializer initializer, Maximizer maximizer, CoresetCreator coresetCreator,
+void runDistributed(int& argc, char** argv, std::string filepath, const int32_t& numData, const int32_t& numFeatures,
+                    const int32_t& numClusters, const int32_t& sampleSize, const int& numRestarts,
+                    Initializer initializer, Maximizer maximizer, CoresetCreator coresetCreator,
                     Parallelism parallelism)
 {
     int rank = 0, numProcs;
@@ -278,10 +278,10 @@ void runDistributed(int& argc, char** argv, std::string filepath, const int_fast
     MPI_Finalize();
 }
 
-void runSharedMemory(int& argc, char** argv, std::string filepath, const int_fast32_t& numData,
-                     const int_fast32_t& numFeatures, const int_fast32_t& numClusters, const int_fast32_t& sampleSize,
-                     const int& numRestarts, Initializer initializer, Maximizer maximizer,
-                     CoresetCreator coresetCreator, Parallelism parallelism)
+void runSharedMemory(int& argc, char** argv, std::string filepath, const int32_t& numData, const int32_t& numFeatures,
+                     const int32_t& numClusters, const int32_t& sampleSize, const int& numRestarts,
+                     Initializer initializer, Maximizer maximizer, CoresetCreator coresetCreator,
+                     Parallelism parallelism)
 {
     VectorReader reader;
     Matrix matrix(reader.read(filepath, numData, numFeatures), numData, numFeatures);

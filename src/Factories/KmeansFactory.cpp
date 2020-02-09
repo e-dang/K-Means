@@ -2,7 +2,7 @@
 
 AbstractKmeans* KmeansFactory::createKmeans(Initializer initializer, Maximizer maximizer, CoresetCreator coreset,
                                             Parallelism parallelism, std::shared_ptr<IDistanceFunctor> distanceFunc,
-                                            const int_fast32_t& sampleSize)
+                                            const int32_t& sampleSize)
 {
     auto factoryPair  = pAlgFactoryProducer->getAlgFactory(parallelism);
     auto algFactory   = factoryPair.algFactory;

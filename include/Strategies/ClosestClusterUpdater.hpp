@@ -21,7 +21,7 @@ public:
 
     virtual ~AbstractClosestClusterUpdater() {}
 
-    void findAndUpdateClosestCluster(const int_fast32_t& dataIdx, KmeansData* const kmeansData);
+    void findAndUpdateClosestCluster(const int32_t& dataIdx, KmeansData* const kmeansData);
 
     virtual void findAndUpdateClosestClusters(KmeansData* const kmeansData) = 0;
 };

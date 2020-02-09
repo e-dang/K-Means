@@ -5,7 +5,7 @@
 
 void TemplateLloyd::maximize()
 {
-    int_fast32_t changed, minNumChanged = (*pTotalNumData * MIN_PERCENT_CHANGED);
+    int32_t changed, minNumChanged = (*pTotalNumData * MIN_PERCENT_CHANGED);
 
     do
     {
@@ -24,7 +24,7 @@ void SharedMemoryLloyd::calcClusterSums() { pAverager->calculateSum(pData, *ppCl
 
 void SharedMemoryLloyd::averageClusterSums() { pAverager->normalizeSum(*ppClusters, *ppClusterWeights); }
 
-int_fast32_t SharedMemoryLloyd::reassignPoints() { return pPointReassigner->reassignPoints(pKmeansData); }
+int32_t SharedMemoryLloyd::reassignPoints() { return pPointReassigner->reassignPoints(pKmeansData); }
 
 void MPILloyd::calcClusterSums()
 {
@@ -47,9 +47,9 @@ void MPILloyd::averageClusterSums()
     MPI_Bcast((*ppClusters)->data(), (*ppClusters)->size(), mpi_type_t, 0, MPI_COMM_WORLD);
 }
 
-int_fast32_t MPILloyd::reassignPoints()
+int32_t MPILloyd::reassignPoints()
 {
-    int_fast32_t changed = pPointReassigner->reassignPoints(pKmeansData);
+    int32_t changed = pPointReassigner->reassignPoints(pKmeansData);
 
     MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(*pRank), MPI_INT, (*ppClustering)->data(), pLengths->data(),
                    pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);

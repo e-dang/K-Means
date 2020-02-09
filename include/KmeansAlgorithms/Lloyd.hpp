@@ -39,7 +39,7 @@ protected:
 
      * @return int - The number of datapoints whose cluster assignment has changed in the current iteration.
      */
-    virtual int_fast32_t reassignPoints() = 0;
+    virtual int32_t reassignPoints() = 0;
 };
 
 class SharedMemoryLloyd : public TemplateLloyd
@@ -55,7 +55,7 @@ protected:
 
     void averageClusterSums() override;
 
-    int_fast32_t reassignPoints() override;
+    int32_t reassignPoints() override;
 };
 
 class MPILloyd : public TemplateLloyd
@@ -71,5 +71,5 @@ protected:
 
     void averageClusterSums() override;
 
-    int_fast32_t reassignPoints() override;
+    int32_t reassignPoints() override;
 };

@@ -78,7 +78,7 @@ void ClusterResultWriter::writeClusters(Matrix* clusters, std::string& filepath)
 void ClusterResultWriter::writeClustering(std::vector<int>* clustering, std::string& filepath)
 {
     auto file = openFile(fileRotator.getUniqueFileName(filepath, "clustering"), std::ios::binary);
-    file.write(reinterpret_cast<char*>(clustering->data()), sizeof(int_fast32_t) * clustering->size());
+    file.write(reinterpret_cast<char*>(clustering->data()), sizeof(int32_t) * clustering->size());
 }
 
 void ClusterResultWriter::writeClusterWeights(std::vector<value_t>* clusterWeights, std::string& filepath)

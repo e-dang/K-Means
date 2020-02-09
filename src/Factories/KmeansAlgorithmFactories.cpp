@@ -27,7 +27,7 @@ AbstractKmeansMaximizer* AbstractKmeansAlgorithmFactory::createMaximizer(Maximiz
 }
 
 AbstractCoresetCreator* AbstractKmeansAlgorithmFactory::createCoresetCreator(
-  CoresetCreator coresetCreator, const int_fast32_t& sampleSize, std::shared_ptr<IDistanceFunctor> distanceFunc)
+  CoresetCreator coresetCreator, const int32_t& sampleSize, std::shared_ptr<IDistanceFunctor> distanceFunc)
 {
     switch (coresetCreator)
     {

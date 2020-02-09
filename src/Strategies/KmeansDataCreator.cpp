@@ -6,7 +6,7 @@ KmeansData SharedMemoryKmeansDataCreator::create(const Matrix* const data, const
                                                  std::shared_ptr<IDistanceFunctor> distanceFunc)
 {
     return KmeansData(data, weights, distanceFunc, 0, data->getNumData(),
-                      std::vector<int_fast32_t>(1, data->getNumData()), std::vector<int_fast32_t>(1, 0));
+                      std::vector<int32_t>(1, data->getNumData()), std::vector<int32_t>(1, 0));
 }
 
 KmeansData MPIKmeansDataCreator::create(const Matrix* const data, const std::vector<value_t>* const weights,

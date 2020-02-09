@@ -13,23 +13,23 @@
                                 initializer(omp_priv = decltype(omp_orig)(omp_orig.size()))
 
 void AbstractWeightedAverager::calculateAverage(const Matrix* const data, Matrix* const avgContainer,
-                                                const std::vector<int_fast32_t>* const dataAssignments,
+                                                const std::vector<int32_t>* const dataAssignments,
                                                 const std::vector<value_t>* const weights,
                                                 const std::vector<value_t>* const weightSums,
-                                                const int_fast32_t displacement)
+                                                const int32_t displacement)
 {
     calculateSum(data, avgContainer, dataAssignments, weights, displacement);
     normalizeSum(avgContainer, weightSums);
 }
 
 void SerialWeightedMultiVectorAverager::calculateSum(const Matrix* const data, Matrix* const avgContainer,
-                                                     const std::vector<int_fast32_t>* const dataAssignments,
+                                                     const std::vector<int32_t>* const dataAssignments,
                                                      const std::vector<value_t>* const weights,
-                                                     const int_fast32_t displacement)
+                                                     const int32_t displacement)
 {
-    for (int_fast32_t i = 0; i < data->getNumData(); i++)
+    for (int32_t i = 0; i < data->getNumData(); i++)
     {
-        for (int_fast32_t j = 0; j < data->getNumFeatures(); j++)
+        for (int32_t j = 0; j < data->getNumFeatures(); j++)
         {
             avgContainer->at(dataAssignments->at(displacement + i), j) += weights->at(i) * data->at(i, j);
         }
@@ -39,9 +39,9 @@ void SerialWeightedMultiVectorAverager::calculateSum(const Matrix* const data, M
 void SerialWeightedMultiVectorAverager::normalizeSum(Matrix* const avgContainer,
                                                      const std::vector<value_t>* const weightSums)
 {
-    for (int_fast32_t i = 0; i < avgContainer->getNumData(); i++)
+    for (int32_t i = 0; i < avgContainer->getNumData(); i++)
     {
-        for (int_fast32_t j = 0; j < avgContainer->getNumFeatures(); j++)
+        for (int32_t j = 0; j < avgContainer->getNumFeatures(); j++)
         {
             avgContainer->at(i, j) /= weightSums->at(i);
         }
@@ -49,16 +49,15 @@ void SerialWeightedMultiVectorAverager::normalizeSum(Matrix* const avgContainer,
 }
 
 void OMPWeightedMultiVectorAverager::calculateSum(const Matrix* const data, Matrix* const avgContainer,
-                                                  const std::vector<int_fast32_t>* const dataAssignments,
-                                                  const std::vector<value_t>* const weights,
-                                                  const int_fast32_t displacement)
+                                                  const std::vector<int32_t>* const dataAssignments,
+                                                  const std::vector<value_t>* const weights, const int32_t displacement)
 {
     Matrix& refContainer = *avgContainer;
 
 #pragma omp parallel for shared(data, dataAssignments, weights), schedule(static), collapse(2), reduction(+:refContainer)
-    for (int_fast32_t i = 0; i < data->getNumData(); i++)
+    for (int32_t i = 0; i < data->getNumData(); i++)
     {
-        for (int_fast32_t j = 0; j < data->getNumFeatures(); j++)
+        for (int32_t j = 0; j < data->getNumFeatures(); j++)
         {
             refContainer.at(dataAssignments->at(displacement + i), j) += weights->at(i) * data->at(i, j);
         }
@@ -69,9 +68,9 @@ void OMPWeightedMultiVectorAverager::normalizeSum(Matrix* const avgContainer,
                                                   const std::vector<value_t>* const weightSums)
 {
 #pragma omp parallel for shared(avgContainer, weightSums), schedule(static), collapse(2)
-    for (int_fast32_t i = 0; i < avgContainer->getNumData(); i++)
+    for (int32_t i = 0; i < avgContainer->getNumData(); i++)
     {
-        for (int_fast32_t j = 0; j < avgContainer->getNumFeatures(); j++)
+        for (int32_t j = 0; j < avgContainer->getNumFeatures(); j++)
         {
             avgContainer->at(i, j) /= weightSums->at(i);
         }
@@ -86,16 +85,16 @@ void AbstractAverager::calculateAverage(const Matrix* const data, std::vector<va
 
 void SerialVectorAverager::calculateSum(const Matrix* const data, std::vector<value_t>* const avgContainer)
 {
-    for (int_fast32_t i = 0; i < data->getNumData(); i++)
+    for (int32_t i = 0; i < data->getNumData(); i++)
     {
-        for (int_fast32_t j = 0; j < data->getNumFeatures(); j++)
+        for (int32_t j = 0; j < data->getNumFeatures(); j++)
         {
             avgContainer->at(j) += data->at(i, j);
         }
     }
 }
 
-void SerialVectorAverager::normalizeSum(std::vector<value_t>* const avgContainer, const int_fast32_t& numData)
+void SerialVectorAverager::normalizeSum(std::vector<value_t>* const avgContainer, const int32_t& numData)
 {
     for (size_t i = 0; i < avgContainer->size(); i++)
     {
@@ -108,16 +107,16 @@ void OMPVectorAverager::calculateSum(const Matrix* const data, std::vector<value
     std::vector<value_t>& refContainer = *avgContainer;
 
 #pragma omp parallel for shared(data, avgContainer), schedule(static), collapse(2), reduction(+ : refContainer)
-    for (int_fast32_t i = 0; i < data->getNumData(); i++)
+    for (int32_t i = 0; i < data->getNumData(); i++)
     {
-        for (int_fast32_t j = 0; j < data->getNumFeatures(); j++)
+        for (int32_t j = 0; j < data->getNumFeatures(); j++)
         {
             refContainer[j] += data->at(i, j);
         }
     }
 }
 
-void OMPVectorAverager::normalizeSum(std::vector<value_t>* const avgContainer, const int_fast32_t& numData)
+void OMPVectorAverager::normalizeSum(std::vector<value_t>* const avgContainer, const int32_t& numData)
 {
 #pragma omp parallel for shared(avgContainer, numData), schedule(static)
     for (size_t i = 0; i < avgContainer->size(); i++)

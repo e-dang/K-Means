@@ -5,7 +5,7 @@ value_t SerialDistanceSumCalculator::calcDistances(const Matrix* const data, con
                                                    std::shared_ptr<IDistanceFunctor> distanceFunc)
 {
     value_t distanceSum = 0.0;
-    for (int_fast32_t i = 0; i < data->getNumData(); i++)
+    for (int32_t i = 0; i < data->getNumData(); i++)
     {
         sqDistances->at(i) = std::pow((*distanceFunc)(data->at(i), point->data(), point->size()), 2);
         distanceSum += sqDistances->at(i);
@@ -20,7 +20,7 @@ value_t OMPDistanceSumCalculator::calcDistances(const Matrix* const data, const 
 {
     value_t distanceSum = 0.0;
 #pragma omp parallel for shared(data, point, sqDistances, distanceFunc), schedule(static), reduction(+ : distanceSum)
-    for (int_fast32_t i = 0; i < data->getNumData(); i++)
+    for (int32_t i = 0; i < data->getNumData(); i++)
     {
         sqDistances->at(i) = std::pow((*distanceFunc)(data->at(i), point->data(), point->size()), 2);
         distanceSum += sqDistances->at(i);

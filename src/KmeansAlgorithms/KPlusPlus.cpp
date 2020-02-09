@@ -14,7 +14,7 @@ void TemplateKPlusPlus::initialize()
     std::fill((*ppSqDistances)->begin(), (*ppSqDistances)->end(), -1);
 
     // initialize remaining clusters; start from index 1 since we know we have only 1 cluster so far
-    for (int_fast32_t i = 1; i < (*ppClusters)->getMaxNumData(); i++)
+    for (int32_t i = 1; i < (*ppClusters)->getMaxNumData(); i++)
     {
         // find distance between each datapoint and nearest cluster, then update clustering assignment
         findAndUpdateClosestClusters();
@@ -29,8 +29,8 @@ void TemplateKPlusPlus::initialize()
 
 void SharedMemoryKPlusPlus::weightedClusterSelection()
 {
-    value_t randSumFrac  = getRandDouble01() * std::accumulate((*ppSqDistances)->begin(), (*ppSqDistances)->end(), 0.0);
-    int_fast32_t dataIdx = pSelector->select(*ppSqDistances, randSumFrac);
+    value_t randSumFrac = getRandDouble01() * std::accumulate((*ppSqDistances)->begin(), (*ppSqDistances)->end(), 0.0);
+    int32_t dataIdx     = pSelector->select(*ppSqDistances, randSumFrac);
     (*ppClusters)->appendDataPoint(pData->at(dataIdx));
 }
 
@@ -38,7 +38,7 @@ void SharedMemoryKPlusPlus::findAndUpdateClosestClusters() { pUpdater->findAndUp
 
 void MPIKPlusPlus::weightedClusterSelection()
 {
-    int_fast32_t dataIdx;
+    int32_t dataIdx;
     if (*pRank == 0)
     {
         double randSumFrac =
@@ -49,7 +49,7 @@ void MPIKPlusPlus::weightedClusterSelection()
     MPI_Bcast(&dataIdx, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     // find which rank holds the selected datapoint
-    int_fast32_t rank = 0, lengthSum = 0;
+    int32_t rank = 0, lengthSum = 0;
     for (const auto& val : *pLengths)
     {
         lengthSum += val;

@@ -11,9 +11,9 @@
 struct ClusterData
 {
     // Public member variables
-    Matrix mClusters;                       // the cluster centers
-    std::vector<int_fast32_t> mClustering;  // the cluster assignments of each datapoint
-    std::vector<value_t> mClusterWeights;   // the sum of the weights of each datapoint assigned to a cluster
+    Matrix mClusters;                      // the cluster centers
+    std::vector<int32_t> mClustering;      // the cluster assignments of each datapoint
+    std::vector<value_t> mClusterWeights;  // the sum of the weights of each datapoint assigned to a cluster
 
     /**
      * @brief Default constructor.
@@ -27,10 +27,10 @@ struct ClusterData
      * @param numFeatures - The number of features each datapoint has.
      * @param numClusters - The number of clusters that the data is being clustered into.
      */
-    ClusterData(const int_fast32_t& numData, const int_fast32_t& numFeatures, const int_fast32_t& numClusters) :
+    ClusterData(const int32_t& numData, const int32_t& numFeatures, const int32_t& numClusters) :
         mClusters(numClusters, numFeatures)
     {
-        mClustering     = std::vector<int_fast32_t>(numData, -1);
+        mClustering     = std::vector<int32_t>(numData, -1);
         mClusterWeights = std::vector<value_t>(numClusters, 0);
     }
 
@@ -55,10 +55,10 @@ struct ClusterData
 struct KmeansData
 {
     const int mRank;
-    const int_fast32_t mTotalNumData;
-    const std::vector<int_fast32_t> mLengths;
-    const std::vector<int_fast32_t> mDisplacements;
-    const int_fast32_t mDisplacement;
+    const int32_t mTotalNumData;
+    const std::vector<int32_t> mLengths;
+    const std::vector<int32_t> mDisplacements;
+    const int32_t mDisplacement;
 
     const Matrix* const pData;
     const std::vector<value_t>* const pWeights;
@@ -66,13 +66,13 @@ struct KmeansData
 
     // dynamic data that changes each repeat
     Matrix* pClusters;
-    std::vector<int_fast32_t>* pClustering;
+    std::vector<int32_t>* pClustering;
     std::vector<value_t>* pClusterWeights;
     std::vector<value_t>* pSqDistances;
 
     KmeansData(const Matrix* const data, const std::vector<value_t>* const weights,
-               std::shared_ptr<IDistanceFunctor> distanceFunc, const int& rank, const int_fast32_t& totalNumData,
-               const std::vector<int_fast32_t> lengths, const std::vector<int_fast32_t> displacements) :
+               std::shared_ptr<IDistanceFunctor> distanceFunc, const int& rank, const int32_t& totalNumData,
+               const std::vector<int32_t> lengths, const std::vector<int32_t> displacements) :
         mRank(rank),
         mTotalNumData(totalNumData),
         mLengths(lengths),
@@ -91,9 +91,9 @@ struct KmeansData
 
     void setSqDistances(std::vector<value_t>* const sqDistances) { pSqDistances = sqDistances; }
 
-    int_fast32_t& clusteringAt(const int_fast32_t& dataIdx) { return pClustering->at(mDisplacement + dataIdx); }
-    value_t& sqDistancesAt(const int_fast32_t& dataIdx) { return pSqDistances->at(mDisplacement + dataIdx); }
-    value_t& clusterWeightsAt(const int_fast32_t& clusterIdx) { return pClusterWeights->at(clusterIdx); }
+    int32_t& clusteringAt(const int32_t& dataIdx) { return pClustering->at(mDisplacement + dataIdx); }
+    value_t& sqDistancesAt(const int32_t& dataIdx) { return pSqDistances->at(mDisplacement + dataIdx); }
+    value_t& clusterWeightsAt(const int32_t& clusterIdx) { return pClusterWeights->at(clusterIdx); }
 };
 
 /**
@@ -103,7 +103,7 @@ struct KmeansData
 struct ClosestCluster
 {
     // Public member variables
-    int_fast32_t clusterIdx;
+    int32_t clusterIdx;
     double distance;
 };
 
@@ -128,8 +128,8 @@ struct MPIData
 {
     int rank;
     int numProcs;
-    std::vector<int_fast32_t> lengths;
-    std::vector<int_fast32_t> displacements;
+    std::vector<int32_t> lengths;
+    std::vector<int32_t> displacements;
 };
 
 enum Initializer

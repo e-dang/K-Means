@@ -1,6 +1,6 @@
 #include "Strategies/PointReassigner.hpp"
 
-int_fast32_t AbstractPointReassigner::reassignPoint(const int_fast32_t& dataIdx, KmeansData* const kmeansData)
+int32_t AbstractPointReassigner::reassignPoint(const int32_t& dataIdx, KmeansData* const kmeansData)
 {
     auto before = kmeansData->clusteringAt(dataIdx);
 
@@ -13,10 +13,10 @@ int_fast32_t AbstractPointReassigner::reassignPoint(const int_fast32_t& dataIdx,
     return 0;
 }
 
-int_fast32_t SerialPointReassigner::reassignPoints(KmeansData* const kmeansData)
+int32_t SerialPointReassigner::reassignPoints(KmeansData* const kmeansData)
 {
-    int_fast32_t changed = 0;
-    for (int_fast32_t i = 0; i < kmeansData->pData->getNumData(); i++)
+    int32_t changed = 0;
+    for (int32_t i = 0; i < kmeansData->pData->getNumData(); i++)
     {
         changed += reassignPoint(i, kmeansData);
     }
@@ -24,12 +24,12 @@ int_fast32_t SerialPointReassigner::reassignPoints(KmeansData* const kmeansData)
     return changed;
 }
 
-int_fast32_t SerialOptimizedPointReassigner::reassignPoints(KmeansData* const kmeansData)
+int32_t SerialOptimizedPointReassigner::reassignPoints(KmeansData* const kmeansData)
 {
-    int_fast32_t changed = 0;
-    auto numFeatures     = kmeansData->pData->getNumFeatures();
+    int32_t changed  = 0;
+    auto numFeatures = kmeansData->pData->getNumFeatures();
 
-    for (int_fast32_t i = 0; i < kmeansData->pData->getNumData(); i++)
+    for (int32_t i = 0; i < kmeansData->pData->getNumData(); i++)
     {
         auto clusterIdx = kmeansData->clusteringAt(i);
         auto dist       = std::pow(
@@ -48,12 +48,12 @@ int_fast32_t SerialOptimizedPointReassigner::reassignPoints(KmeansData* const km
     return changed;
 }
 
-int_fast32_t OMPPointReassigner::reassignPoints(KmeansData* const kmeansData)
+int32_t OMPPointReassigner::reassignPoints(KmeansData* const kmeansData)
 {
-    int_fast32_t changed = 0;
+    int32_t changed = 0;
 
 #pragma omp parallel for shared(kmeansData), schedule(static), reduction(+ : changed)
-    for (int_fast32_t i = 0; i < kmeansData->pData->getNumData(); i++)
+    for (int32_t i = 0; i < kmeansData->pData->getNumData(); i++)
     {
         changed += reassignPoint(i, kmeansData);
     }
@@ -61,13 +61,13 @@ int_fast32_t OMPPointReassigner::reassignPoints(KmeansData* const kmeansData)
     return changed;
 }
 
-int_fast32_t OMPOptimizedPointReassigner::reassignPoints(KmeansData* const kmeansData)
+int32_t OMPOptimizedPointReassigner::reassignPoints(KmeansData* const kmeansData)
 {
-    int_fast32_t changed = 0;
-    auto numFeatures     = kmeansData->pData->getNumFeatures();
+    int32_t changed  = 0;
+    auto numFeatures = kmeansData->pData->getNumFeatures();
 
 #pragma omp parallel for shared(kmeansData, numFeatures), schedule(static), reduction(+ : changed)
-    for (int_fast32_t i = 0; i < kmeansData->pData->getNumData(); i++)
+    for (int32_t i = 0; i < kmeansData->pData->getNumData(); i++)
     {
         auto clusterIdx = kmeansData->clusteringAt(i);
         auto dist       = std::pow(

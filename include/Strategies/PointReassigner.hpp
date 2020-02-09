@@ -14,9 +14,9 @@ public:
 
     virtual ~AbstractPointReassigner(){};
 
-    int_fast32_t reassignPoint(const int_fast32_t& dataIdx, KmeansData* const kmeansData);
+    int32_t reassignPoint(const int32_t& dataIdx, KmeansData* const kmeansData);
 
-    virtual int_fast32_t reassignPoints(KmeansData* const kmeansData) = 0;
+    virtual int32_t reassignPoints(KmeansData* const kmeansData) = 0;
 };
 
 class SerialPointReassigner : public AbstractPointReassigner
@@ -26,7 +26,7 @@ public:
 
     ~SerialPointReassigner(){};
 
-    int_fast32_t reassignPoints(KmeansData* const kmeansData) override;
+    int32_t reassignPoints(KmeansData* const kmeansData) override;
 };
 
 class SerialOptimizedPointReassigner : public AbstractPointReassigner
@@ -36,7 +36,7 @@ public:
 
     ~SerialOptimizedPointReassigner(){};
 
-    int_fast32_t reassignPoints(KmeansData* const kmeansData) override;
+    int32_t reassignPoints(KmeansData* const kmeansData) override;
 };
 
 class OMPPointReassigner : public AbstractPointReassigner
@@ -46,7 +46,7 @@ public:
 
     ~OMPPointReassigner(){};
 
-    int_fast32_t reassignPoints(KmeansData* const kmeansData) override;
+    int32_t reassignPoints(KmeansData* const kmeansData) override;
 };
 
 class OMPOptimizedPointReassigner : public AbstractPointReassigner
@@ -56,5 +56,5 @@ public:
 
     ~OMPOptimizedPointReassigner(){};
 
-    int_fast32_t reassignPoints(KmeansData* const kmeansData) override;
+    int32_t reassignPoints(KmeansData* const kmeansData) override;
 };

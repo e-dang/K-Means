@@ -15,29 +15,29 @@ class Matrix
 private:
     // Member variables
     std::vector<value_t> mData;
-    int_fast32_t mNumRows;  // this is the number of datapoints in the matrix
-    int_fast32_t mNumCols;  // this is the number of features of each datapoint in the matrix
+    int32_t mNumRows;  // this is the number of datapoints in the matrix
+    int32_t mNumCols;  // this is the number of features of each datapoint in the matrix
 
 public:
     Matrix() {}
 
-    Matrix(const int_fast32_t& size, const int_fast32_t& numRows, const int_fast32_t& numCols)
+    Matrix(const int32_t& size, const int32_t& numRows, const int32_t& numCols)
     {
         mData.resize(size);
         mNumRows = numRows;
         mNumCols = numCols;
     }
 
-    Matrix(const int_fast32_t& numRows, const int_fast32_t& numCols)
+    Matrix(const int32_t& numRows, const int32_t& numCols)
     {
         mData.reserve(numRows * numCols);
         mNumRows = numRows;
         mNumCols = numCols;
     }
 
-    Matrix(std::vector<value_t> data, const int_fast32_t& numRows, const int_fast32_t& numCols)
+    Matrix(std::vector<value_t> data, const int32_t& numRows, const int32_t& numCols)
     {
-        if (static_cast<int_fast32_t>(data.size()) > numRows * numCols)
+        if (static_cast<int32_t>(data.size()) > numRows * numCols)
         {
             throw std::runtime_error("The vector has more data than was specified.");
         }
@@ -61,7 +61,7 @@ public:
      * @param row - The number of the row to retrieve.
      * @return value_t *
      */
-    value_t* at(const int_fast32_t& row) { return mData.data() + (row * mNumCols); }
+    value_t* at(const int32_t& row) { return mData.data() + (row * mNumCols); }
 
     /**
      * @brief Function to access a specific value in the matrix.
@@ -70,11 +70,11 @@ public:
      * @param col - The column number that the value is in.
      * @return value_t&
      */
-    value_t& at(const int_fast32_t& row, const int_fast32_t& col) { return *(this->at(row) + col); }
+    value_t& at(const int32_t& row, const int32_t& col) { return *(this->at(row) + col); }
 
-    const value_t at(const int_fast32_t& row, const int_fast32_t& col) const { return *(this->at(row) + col); }
+    const value_t at(const int32_t& row, const int32_t& col) const { return *(this->at(row) + col); }
 
-    const value_t* at(const int_fast32_t& row) const { return mData.data() + (row * mNumCols); }
+    const value_t* at(const int32_t& row) const { return mData.data() + (row * mNumCols); }
 
     std::vector<value_t>::iterator begin() { return mData.begin(); }
     std::vector<value_t>::iterator end() { return mData.end(); }
@@ -91,15 +91,15 @@ public:
         }
     }
 
-    void fill(const int_fast32_t& val) { std::fill(mData.begin(), mData.end(), val); }
+    void fill(const int32_t& val) { std::fill(mData.begin(), mData.end(), val); }
 
-    void resize(const int_fast32_t& val)
+    void resize(const int32_t& val)
     {
         mData.resize(val * mNumCols);
         mNumRows = val;
     }
 
-    void reserve(const int_fast32_t& val)
+    void reserve(const int32_t& val)
     {
         mData.resize(val * mNumCols);
         if (val > mNumRows)
@@ -108,10 +108,10 @@ public:
 
     value_t* data() { return mData.data(); }
 
-    int_fast32_t size() const { return mData.size(); }
-    int_fast32_t getNumData() const { return mData.size() / mNumCols; }
-    int_fast32_t getMaxNumData() const { return mNumRows; }
-    int_fast32_t getNumFeatures() const { return mNumCols; }
+    int32_t size() const { return mData.size(); }
+    int32_t getNumData() const { return mData.size() / mNumCols; }
+    int32_t getMaxNumData() const { return mNumRows; }
+    int32_t getNumFeatures() const { return mNumCols; }
 
     void operator=(const Matrix& lhs)
     {

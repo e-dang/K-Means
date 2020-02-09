@@ -15,23 +15,23 @@ protected:
     Maximizer mMaximizer;
     CoresetCreator mCoreset;
     Parallelism mParallelism;
-    int_fast32_t mSampleSize;
+    int32_t mSampleSize;
 
 public:
     Kmeans(const Initializer initializer, const Maximizer maximizer, const CoresetCreator coreset,
-           const Parallelism parallelism, std::shared_ptr<IDistanceFunctor> distanceFunc, const int_fast32_t sampleSize = -1);
+           const Parallelism parallelism, std::shared_ptr<IDistanceFunctor> distanceFunc,
+           const int32_t sampleSize = -1);
 
     ~Kmeans(){};
 
-    std::shared_ptr<ClusterResults> fit(const Matrix* const data, const int_fast32_t& numClusters,
-                                        const int& numRestarts);
+    std::shared_ptr<ClusterResults> fit(const Matrix* const data, const int32_t& numClusters, const int& numRestarts);
 
-    std::shared_ptr<ClusterResults> fit(const Matrix* const data, const int_fast32_t& numClusters,
-                                        const int& numRestarts, std::vector<value_t>* weights);
+    std::shared_ptr<ClusterResults> fit(const Matrix* const data, const int32_t& numClusters, const int& numRestarts,
+                                        std::vector<value_t>* weights);
 
     bool setKmeans(const Initializer initializer, const Maximizer maximizer, const CoresetCreator coreset,
                    const Parallelism parallelism, std::shared_ptr<IDistanceFunctor> distanceFunc,
-                   const int_fast32_t sampleSize = -1);
+                   const int32_t sampleSize = -1);
 
     void setDistanceFunc(IDistanceFunctor* distanceFunc) { pKmeans->setDistanceFunc(distanceFunc); }
 

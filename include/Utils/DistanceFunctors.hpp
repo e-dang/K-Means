@@ -18,7 +18,7 @@ public:
      * @param numFeatures - The number of features in each datapoint.
      * @return value_t - The distance between each point.
      */
-    virtual value_t operator()(const value_t* point1, const value_t* point2, const int_fast32_t& numFeatures) = 0;
+    virtual value_t operator()(const value_t* point1, const value_t* point2, const int32_t& numFeatures) = 0;
 };
 
 /**
@@ -35,10 +35,10 @@ public:
      * @param numFeatures - The number of features in each datapoint.
      * @return value_t
      */
-    value_t operator()(const value_t* point1, const value_t* point2, const int_fast32_t& numFeatures)
+    value_t operator()(const value_t* point1, const value_t* point2, const int32_t& numFeatures)
     {
         value_t sum = 0;
-        for (int_fast32_t i = 0; i < numFeatures; i++)
+        for (int32_t i = 0; i < numFeatures; i++)
         {
             sum += std::pow(point1[i] - point2[i], 2);
         }

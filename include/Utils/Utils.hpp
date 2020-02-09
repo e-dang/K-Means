@@ -38,18 +38,18 @@ inline double getRandDouble01MPI()
     return dblDistr();
 }
 
-inline MPIData getMPIData(const int_fast32_t& totalNumData)
+inline MPIData getMPIData(const int32_t& totalNumData)
 {
     int rank, numProcs;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
     // number of datapoints allocated for each process to compute
-    int_fast32_t chunk = totalNumData / numProcs;
-    int_fast32_t scrap = chunk + (totalNumData % numProcs);
+    int32_t chunk = totalNumData / numProcs;
+    int32_t scrap = chunk + (totalNumData % numProcs);
 
-    std::vector<int_fast32_t> lengths(numProcs);        // size of each sub-array to gather
-    std::vector<int_fast32_t> displacements(numProcs);  // index of each sub-array to gather
+    std::vector<int32_t> lengths(numProcs);        // size of each sub-array to gather
+    std::vector<int32_t> displacements(numProcs);  // index of each sub-array to gather
     for (int i = 0; i < numProcs; i++)
     {
         lengths.at(i)       = chunk;
@@ -60,14 +60,14 @@ inline MPIData getMPIData(const int_fast32_t& totalNumData)
     return MPIData{ rank, numProcs, lengths, displacements };
 }
 
-inline int_fast32_t getTotalNumDataMPI(const Matrix* const data)
+inline int32_t getTotalNumDataMPI(const Matrix* const data)
 {
     int rank, numProcs;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
-    int_fast32_t totalNumData = 0;
-    int_fast32_t localNumData = data->getNumData();
+    int32_t totalNumData = 0;
+    int32_t localNumData = data->getNumData();
 
     MPI_Allreduce(&localNumData, &totalNumData, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 

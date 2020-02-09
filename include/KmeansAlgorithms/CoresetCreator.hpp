@@ -11,14 +11,14 @@
 class AbstractCoresetCreator
 {
 protected:
-    int_fast32_t mSampleSize;
+    int32_t mSampleSize;
     std::unique_ptr<IMultiWeightedRandomSelector> pSelector;
     std::unique_ptr<AbstractAverager> pAverager;
     std::unique_ptr<IDistanceSumCalculator> pDistSumCalc;
     std::shared_ptr<IDistanceFunctor> pDistanceFunc;
 
 public:
-    AbstractCoresetCreator(const int_fast32_t& sampleSize, IMultiWeightedRandomSelector* selector,
+    AbstractCoresetCreator(const int32_t& sampleSize, IMultiWeightedRandomSelector* selector,
                            AbstractAverager* averager, IDistanceSumCalculator* distSumCalc,
                            std::shared_ptr<IDistanceFunctor> distanceFunc) :
         mSampleSize(sampleSize),
@@ -50,7 +50,7 @@ protected:
     std::unique_ptr<ICoresetDistributionCalculator> pDistrCalc;
 
 public:
-    SharedMemoryCoresetCreator(const int_fast32_t& sampleSize, IMultiWeightedRandomSelector* selector,
+    SharedMemoryCoresetCreator(const int32_t& sampleSize, IMultiWeightedRandomSelector* selector,
                                AbstractAverager* averager, IDistanceSumCalculator* distSumCalc,
                                ICoresetDistributionCalculator* distrCalc,
                                std::shared_ptr<IDistanceFunctor> distanceFunc) :
@@ -75,26 +75,25 @@ class MPICoresetCreator : public AbstractCoresetCreator
 {
 protected:
     Matrix chunkMeans;
-    std::vector<int_fast32_t> mLengths;
-    std::vector<int_fast32_t> mDisplacements;
+    std::vector<int32_t> mLengths;
+    std::vector<int32_t> mDisplacements;
     std::vector<value_t> mDistanceSums;
     int mRank;
     int mNumProcs;
-    int_fast32_t mTotalNumData;
-    int_fast32_t mNumUniformSamples;
-    int_fast32_t mNumNonUniformSamples;
+    int32_t mTotalNumData;
+    int32_t mNumUniformSamples;
+    int32_t mNumNonUniformSamples;
     value_t mTotalDistanceSum;
 
 public:
-    MPICoresetCreator(const int_fast32_t& sampleSize, IMultiWeightedRandomSelector* selector,
-                      AbstractAverager* averager, IDistanceSumCalculator* distSumCalc,
-                      std::shared_ptr<IDistanceFunctor> distanceFunc) :
+    MPICoresetCreator(const int32_t& sampleSize, IMultiWeightedRandomSelector* selector, AbstractAverager* averager,
+                      IDistanceSumCalculator* distSumCalc, std::shared_ptr<IDistanceFunctor> distanceFunc) :
         AbstractCoresetCreator(sampleSize, selector, averager, distSumCalc, distanceFunc){};
 
     ~MPICoresetCreator() {}
 
 protected:
-    void setTotalNumData(const int_fast32_t& totalNumData)
+    void setTotalNumData(const int32_t& totalNumData)
     {
         auto mpiData   = getMPIData(totalNumData);
         mRank          = mpiData.rank;
@@ -117,15 +116,15 @@ protected:
 
     void appendDataToCoreset(const Matrix* const data, Coreset* const coreset,
                              const std::vector<value_t>* const weights, const std::vector<value_t>* const distribution,
-                             const int_fast32_t& numSamples);
+                             const int32_t& numSamples);
 
-    void calculateSamplingStrategy(std::vector<int_fast32_t>* const uniformSampleCounts,
-                                   std::vector<int_fast32_t>* const nonUniformSampleCounts,
+    void calculateSamplingStrategy(std::vector<int32_t>* const uniformSampleCounts,
+                                   std::vector<int32_t>* const nonUniformSampleCounts,
                                    const value_t& totalDistanceSums);
 
-    void updateUniformSampleCounts(std::vector<int_fast32_t>* const uniformSampleCounts);
+    void updateUniformSampleCounts(std::vector<int32_t>* const uniformSampleCounts);
 
-    void updateNonUniformSampleCounts(std::vector<int_fast32_t>* const nonUniformSampleCounts,
+    void updateNonUniformSampleCounts(std::vector<int32_t>* const nonUniformSampleCounts,
                                       const value_t& totalDistanceSums);
 
     void distributeCoreset(Coreset* const coreset);

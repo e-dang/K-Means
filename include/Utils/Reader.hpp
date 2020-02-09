@@ -10,8 +10,8 @@ class IReader
 public:
     virtual ~IReader() {}
 
-    virtual std::vector<value_t> read(const std::string& filepath, const int_fast32_t& numData,
-                                      const int_fast32_t& numFeatures) = 0;
+    virtual std::vector<value_t> read(const std::string& filepath, const int32_t& numData,
+                                      const int32_t& numFeatures) = 0;
 };
 
 class VectorReader : public IReader
@@ -21,8 +21,7 @@ public:
 
     ~VectorReader() {}
 
-    std::vector<value_t> read(const std::string& filepath, const int_fast32_t& numData,
-                              const int_fast32_t& numFeatures) override;
+    std::vector<value_t> read(const std::string& filepath, const int32_t& numData, const int32_t& numFeatures) override;
 };
 
 class MPIReader : public IReader
@@ -32,6 +31,5 @@ public:
 
     ~MPIReader() {}
 
-    std::vector<value_t> read(const std::string& filepath, const int_fast32_t& numData,
-                              const int_fast32_t& numFeatures) override;
+    std::vector<value_t> read(const std::string& filepath, const int32_t& numData, const int32_t& numFeatures) override;
 };
