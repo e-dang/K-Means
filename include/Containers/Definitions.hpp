@@ -1,7 +1,5 @@
 #pragma once
 
-// typedef float value_t;
-
 #define type_selection 1
 
 #if type_selection == 1
