@@ -54,7 +54,7 @@ void MPICoresetCreator::calcMean(const Matrix* const data, std::vector<value_t>*
     chunkMeans.resize(mNumProcs);
 
     pAverager->calculateSum(data, mean);
-    MPI_Gather(mean->data(), mean->size(), MPI_FLOAT, chunkMeans.data(), mean->size(), MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Gather(mean->data(), mean->size(), mpi_type_t, chunkMeans.data(), mean->size(), mpi_type_t, 0, MPI_COMM_WORLD);
 
     if (mRank == 0)
     {
@@ -64,7 +64,7 @@ void MPICoresetCreator::calcMean(const Matrix* const data, std::vector<value_t>*
         pAverager->normalizeSum(mean, numData);
     }
 
-    MPI_Bcast(mean->data(), mean->size(), MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(mean->data(), mean->size(), mpi_type_t, 0, MPI_COMM_WORLD);
 }
 
 value_t MPICoresetCreator::calcDistsFromMean(const Matrix* const data, const std::vector<value_t>* const mean,
@@ -73,8 +73,8 @@ value_t MPICoresetCreator::calcDistsFromMean(const Matrix* const data, const std
     // calculate local quantization errors
     value_t localDistanceSum = pDistSumCalc->calcDistances(data, mean, sqDistances, pDistanceFunc);
 
-    MPI_Gather(&localDistanceSum, 1, MPI_FLOAT, mDistanceSums.data(), 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
-    MPI_Allreduce(&localDistanceSum, &mTotalDistanceSum, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Gather(&localDistanceSum, 1, mpi_type_t, mDistanceSums.data(), 1, mpi_type_t, 0, MPI_COMM_WORLD);
+    MPI_Allreduce(&localDistanceSum, &mTotalDistanceSum, 1, mpi_type_t, MPI_SUM, MPI_COMM_WORLD);
 
     return localDistanceSum;
 }
@@ -92,7 +92,7 @@ void MPICoresetCreator::calcDistribution(const std::vector<value_t>* const sqDis
         calculateSamplingStrategy(&uniformSampleCounts, &nonUniformSampleCounts, totalDistanceSums);
     }
 
-    MPI_Bcast(&totalDistanceSums, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&totalDistanceSums, 1, mpi_type_t, 0, MPI_COMM_WORLD);
     MPI_Scatter(uniformSampleCounts.data(), 1, MPI_INT, &mNumUniformSamples, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Scatter(nonUniformSampleCounts.data(), 1, MPI_INT, &mNumNonUniformSamples, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
@@ -198,10 +198,10 @@ void MPICoresetCreator::distributeCoreset(Coreset* const coreset)
     // create and fill temporary coreset with data at root
     Coreset fullCoreset{ Matrix(mSampleSize, coreset->data.getNumFeatures()), std::vector<value_t>(mSampleSize) };
     fullCoreset.data.resize(mSampleSize);
-    MPI_Gatherv(coreset->data.data(), coreset->data.size(), MPI_FLOAT, fullCoreset.data.data(), matrixLengths.data(),
-                matrixDisplacements.data(), MPI_FLOAT, 0, MPI_COMM_WORLD);
-    MPI_Gatherv(coreset->weights.data(), coreset->weights.size(), MPI_FLOAT, fullCoreset.weights.data(),
-                numCoresetDataPerProc.data(), vectorDisplacements.data(), MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Gatherv(coreset->data.data(), coreset->data.size(), mpi_type_t, fullCoreset.data.data(), matrixLengths.data(),
+                matrixDisplacements.data(), mpi_type_t, 0, MPI_COMM_WORLD);
+    MPI_Gatherv(coreset->weights.data(), coreset->weights.size(), mpi_type_t, fullCoreset.weights.data(),
+                numCoresetDataPerProc.data(), vectorDisplacements.data(), mpi_type_t, 0, MPI_COMM_WORLD);
 
     // get lengths and displacements for evenly distributing coreset data amoung processes
     auto mpiData        = getMPIData(mSampleSize);
@@ -219,8 +219,8 @@ void MPICoresetCreator::distributeCoreset(Coreset* const coreset)
     // resize and distribute coreset data
     coreset->data.resize(vectorLengths.at(mRank));
     coreset->weights.resize(vectorLengths.at(mRank));
-    MPI_Scatterv(fullCoreset.weights.data(), vectorLengths.data(), vectorDisplacements.data(), MPI_FLOAT,
-                 coreset->weights.data(), coreset->weights.size(), MPI_FLOAT, 0, MPI_COMM_WORLD);
-    MPI_Scatterv(fullCoreset.data.data(), matrixLengths.data(), matrixDisplacements.data(), MPI_FLOAT,
-                 coreset->data.data(), matrixLengths.at(mRank), MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Scatterv(fullCoreset.weights.data(), vectorLengths.data(), vectorDisplacements.data(), mpi_type_t,
+                 coreset->weights.data(), coreset->weights.size(), mpi_type_t, 0, MPI_COMM_WORLD);
+    MPI_Scatterv(fullCoreset.data.data(), matrixLengths.data(), matrixDisplacements.data(), mpi_type_t,
+                 coreset->data.data(), matrixLengths.at(mRank), mpi_type_t, 0, MPI_COMM_WORLD);
 }

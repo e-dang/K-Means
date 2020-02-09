@@ -18,9 +18,9 @@ value_t MPICoresetClusteringFinisher::finishClustering(KmeansData* const kmeansD
     MPI_Allgatherv(MPI_IN_PLACE, kmeansData->mLengths.at(kmeansData->mRank), MPI_INT, kmeansData->pClustering->data(),
                    kmeansData->mLengths.data(), kmeansData->mDisplacements.data(), MPI_INT, MPI_COMM_WORLD);
 
-    MPI_Allgatherv(MPI_IN_PLACE, kmeansData->mLengths.at(kmeansData->mRank), MPI_FLOAT,
+    MPI_Allgatherv(MPI_IN_PLACE, kmeansData->mLengths.at(kmeansData->mRank), mpi_type_t,
                    kmeansData->pSqDistances->data(), kmeansData->mLengths.data(), kmeansData->mDisplacements.data(),
-                   MPI_FLOAT, MPI_COMM_WORLD);
+                   mpi_type_t, MPI_COMM_WORLD);
 
     return std::accumulate(kmeansData->pSqDistances->begin(), kmeansData->pSqDistances->end(), 0.0);
 }

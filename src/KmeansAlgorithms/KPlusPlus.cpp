@@ -69,7 +69,7 @@ void MPIKPlusPlus::weightedClusterSelection()
     }
 
     MPI_Bcast((*ppClustering)->data(), (*ppClustering)->size(), MPI_INT, rank, MPI_COMM_WORLD);
-    MPI_Bcast((*ppClusters)->data(), (*ppClusters)->size(), MPI_FLOAT, rank, MPI_COMM_WORLD);
+    MPI_Bcast((*ppClusters)->data(), (*ppClusters)->size(), mpi_type_t, rank, MPI_COMM_WORLD);
 }
 
 void MPIKPlusPlus::findAndUpdateClosestClusters()
@@ -78,6 +78,6 @@ void MPIKPlusPlus::findAndUpdateClosestClusters()
 
     MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(*pRank), MPI_INT, (*ppClustering)->data(), pLengths->data(),
                    pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
-    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(*pRank), MPI_FLOAT, (*ppSqDistances)->data(), pLengths->data(),
-                   pDisplacements->data(), MPI_FLOAT, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, pLengths->at(*pRank), mpi_type_t, (*ppSqDistances)->data(), pLengths->data(),
+                   pDisplacements->data(), mpi_type_t, MPI_COMM_WORLD);
 }

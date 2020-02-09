@@ -36,7 +36,7 @@ std::vector<value_t> MPIReader::read(const std::string& filepath, const int_fast
     MPI_File_open(MPI_COMM_WORLD, filepath.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
 
     std::vector<value_t> data(numDataPerProc);
-    MPI_File_read_at(fh, offset, data.data(), numDataPerProc, MPI_FLOAT, &status);
+    MPI_File_read_at(fh, offset, data.data(), numDataPerProc, mpi_type_t, &status);
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_File_close(&fh);
 
