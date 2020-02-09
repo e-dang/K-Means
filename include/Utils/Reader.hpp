@@ -8,7 +8,10 @@
 class IReader
 {
 public:
-    virtual void read(std::string filepath, int_fast32_t numData, int_fast32_t numFeatures) = 0;
+    virtual ~IReader() {}
+
+    virtual std::vector<value_t> read(const std::string& filepath, const int_fast32_t& numData,
+                                      const int_fast32_t& numFeatures) = 0;
 };
 
 class VectorReader : public IReader
@@ -17,12 +20,12 @@ private:
     std::vector<value_t> data;
 
 public:
-    VectorReader(){};
-    ~VectorReader(){};
+    VectorReader() {}
 
-    void read(std::string filepath, int_fast32_t numData, int_fast32_t numFeatures) override;
+    ~VectorReader() {}
 
-    std::vector<value_t> getData() { return this->data; }
+    std::vector<value_t> read(const std::string& filepath, const int_fast32_t& numData,
+                              const int_fast32_t& numFeatures) override;
 };
 
 class MPIReader : public IReader
@@ -31,10 +34,10 @@ private:
     std::vector<value_t> data;
 
 public:
-    MPIReader(){};
-    ~MPIReader(){};
+    MPIReader() {}
 
-    void read(std::string filepath, int_fast32_t numData, int_fast32_t numFeatures) override;
+    ~MPIReader() {}
 
-    std::vector<value_t> getData() { return this->data; }
+    std::vector<value_t> read(const std::string& filepath, const int_fast32_t& numData,
+                              const int_fast32_t& numFeatures) override;
 };
