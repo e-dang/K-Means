@@ -16,9 +16,6 @@ public:
 
 class VectorReader : public IReader
 {
-private:
-    std::vector<value_t> data;
-
 public:
     VectorReader() {}
 
@@ -30,9 +27,6 @@ public:
 
 class MPIReader : public IReader
 {
-private:
-    std::vector<value_t> data;
-
 public:
     MPIReader() {}
 

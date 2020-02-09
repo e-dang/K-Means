@@ -17,7 +17,7 @@ std::vector<value_t> VectorReader::read(const std::string& filepath, const int_f
 
     std::vector<value_t> data(numData * numFeatures);
     file.read(reinterpret_cast<char*>(data.data()), sizeof(value_t) * numData * numFeatures);
-
+    file.close();
     return data;
 }
 
