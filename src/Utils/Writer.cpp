@@ -69,7 +69,6 @@ std::ofstream AbstractWriter::openFile(const std::string& filepath, const std::i
 
 void ClusterResultWriter::writeClusters(Matrix* clusters, std::string& filepath)
 {
-    std::cout << fileRotator.getUniqueFileName(filepath, "clusters") << std::endl;
     auto file = openFile(fileRotator.getUniqueFileName(filepath, "clusters"), std::ios::binary);
     file.write(reinterpret_cast<char*>(clusters->data()),
                sizeof(value_t) * clusters->getNumData() * clusters->getNumFeatures());
@@ -78,14 +77,12 @@ void ClusterResultWriter::writeClusters(Matrix* clusters, std::string& filepath)
 
 void ClusterResultWriter::writeClustering(std::vector<int>* clustering, std::string& filepath)
 {
-    std::cout << fileRotator.getUniqueFileName(filepath, "clustering") << std::endl;
     auto file = openFile(fileRotator.getUniqueFileName(filepath, "clustering"), std::ios::binary);
     file.write(reinterpret_cast<char*>(clustering->data()), sizeof(int_fast32_t) * clustering->size());
 }
 
 void ClusterResultWriter::writeClusterWeights(std::vector<value_t>* clusterWeights, std::string& filepath)
 {
-    std::cout << fileRotator.getUniqueFileName(filepath, "clusterWeights") << std::endl;
     auto file = openFile(fileRotator.getUniqueFileName(filepath, "clusterWeights"), std::ios::binary);
     file.write(reinterpret_cast<char*>(clusterWeights->data()), sizeof(value_t) * clusterWeights->size());
     file.close();
