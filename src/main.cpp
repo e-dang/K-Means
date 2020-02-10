@@ -262,7 +262,8 @@ void runDistributed(int& argc, char** argv, std::string filepath, const int32_t&
     MPIReader reader;
     Matrix matrix(reader.read(filepath, numData, numFeatures), numData / numProcs, numFeatures);
 
-    Kmeans kmeans(initializer, maximizer, coresetCreator, parallelism, std::make_shared<EuclideanDistance>());
+    Kmeans kmeans(initializer, maximizer, coresetCreator, parallelism, std::make_shared<EuclideanDistance>(),
+                  sampleSize);
 
     auto start          = std::chrono::high_resolution_clock::now();
     auto clusterResults = kmeans.fit(&matrix, numClusters, numRestarts);
@@ -286,7 +287,8 @@ void runSharedMemory(int& argc, char** argv, std::string filepath, const int32_t
     VectorReader reader;
     Matrix matrix(reader.read(filepath, numData, numFeatures), numData, numFeatures);
 
-    Kmeans kmeans(initializer, maximizer, coresetCreator, parallelism, std::make_shared<EuclideanDistance>());
+    Kmeans kmeans(initializer, maximizer, coresetCreator, parallelism, std::make_shared<EuclideanDistance>(),
+                  sampleSize);
 
     auto start          = std::chrono::high_resolution_clock::now();
     auto clusterResults = kmeans.fit(&matrix, numClusters, numRestarts);
