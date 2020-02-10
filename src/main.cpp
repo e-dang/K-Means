@@ -295,8 +295,6 @@ void runSharedMemory(int& argc, char** argv, std::string filepath, const int32_t
     auto stop           = std::chrono::high_resolution_clock::now();
     auto duration       = std::chrono::duration_cast<std::chrono::seconds>(stop - start).count();
 
-    clusterResults->mClusterData.mClusters.display();
-
     ClusterResultWriter writer(initializer, maximizer, coresetCreator, parallelism);
     writer.writeClusterResults(clusterResults, duration, filepath);
 }
