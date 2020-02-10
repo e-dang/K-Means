@@ -10,4 +10,4 @@ module load gcc/7.2.0
 module load openmpi/3.0.0
 module load boost/1_71_0
 
-./kmeans -r 10000000 -c 50 -k 500 -s 1000000 --kpp --lloyd --coreset --mpi -f "../data/test_10000000_50.txt"
+mpirun ./kmeans -r 10000000 -c 50 -k 500 -s 1000000 --kpp --lloyd --coreset --mpi -f "../data/test_10000000_50.txt"
