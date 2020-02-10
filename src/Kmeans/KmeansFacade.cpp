@@ -62,8 +62,16 @@ bool Kmeans::sampleSizeCheck()
 
 bool Kmeans::isValidSampleSize(const Matrix* const data)
 {
-    if (mSampleSize <= data->getNumData())
-        return true;
+    if (mParallelism == MPI || mParallelism == Hybrid)
+    {
+        if (mSampleSize <= getTotalNumDataMPI(data))
+            return true;
+    }
+    else
+    {
+        if (mSampleSize <= data->getNumData())
+            return true;
+    }
 
     return false;
 }
