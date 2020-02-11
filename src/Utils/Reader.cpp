@@ -36,7 +36,7 @@ std::vector<value_t> MPIReader::read(const std::string& filepath, const int32_t&
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_File_close(&fh);
 
-    int count;
+    int32_t count;
     MPI_Get_count(&status, MPI_INT, &count);
     MPI_Allreduce(MPI_IN_PLACE, &count, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
     if (numData * numFeatures != count / (sizeof(value_t) / sizeof(float)) || count < 0)
