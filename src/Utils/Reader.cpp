@@ -7,7 +7,7 @@
 
 std::vector<value_t> VectorReader::read(const std::string& filepath, const int32_t& numData, const int32_t& numFeatures)
 {
-    std::ifstream file(filepath, std::ios::binary);
+    std::ifstream file(filepath, std::ios::in | std::ios::binary);
     if (!file.is_open())
     {
         throw std::runtime_error("Unable to open specified file");
