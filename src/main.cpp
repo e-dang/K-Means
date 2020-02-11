@@ -259,14 +259,14 @@ void runDistributed(int& argc, char** argv, std::string filepath, const int32_t&
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
-    MPIReader reader;
-    Matrix matrix(reader.read(filepath, numData, numFeatures), numData / numProcs, numFeatures);
+    MPIMatrixReader reader;
+    auto data = reader.read(filepath, numData, numFeatures);
 
     Kmeans kmeans(initializer, maximizer, coresetCreator, parallelism, std::make_shared<EuclideanDistance>(),
                   sampleSize);
 
     auto start          = std::chrono::high_resolution_clock::now();
-    auto clusterResults = kmeans.fit(&matrix, numClusters, numRestarts);
+    auto clusterResults = kmeans.fit(&data, numClusters, numRestarts);
     auto stop           = std::chrono::high_resolution_clock::now();
     auto duration       = std::chrono::duration_cast<std::chrono::seconds>(stop - start).count();
 
@@ -284,14 +284,13 @@ void runSharedMemory(int& argc, char** argv, std::string filepath, const int32_t
                      Initializer initializer, Maximizer maximizer, CoresetCreator coresetCreator,
                      Parallelism parallelism)
 {
-    VectorReader reader;
-    Matrix matrix(reader.read(filepath, numData, numFeatures), numData, numFeatures);
-
+    MatrixReader reader;
+    auto data = reader.read(filepath, numData, numFeatures);
     Kmeans kmeans(initializer, maximizer, coresetCreator, parallelism, std::make_shared<EuclideanDistance>(),
                   sampleSize);
 
     auto start          = std::chrono::high_resolution_clock::now();
-    auto clusterResults = kmeans.fit(&matrix, numClusters, numRestarts);
+    auto clusterResults = kmeans.fit(&data, numClusters, numRestarts);
     auto stop           = std::chrono::high_resolution_clock::now();
     auto duration       = std::chrono::duration_cast<std::chrono::seconds>(stop - start).count();
 

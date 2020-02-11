@@ -6,22 +6,31 @@
 #include "Utils/Utils.hpp"
 #include "mpi.h"
 
-std::vector<value_t> VectorReader::read(const std::string& filepath, const int32_t& numData, const int32_t& numFeatures)
+std::ifstream MatrixReader::openFile(const std::string& filepath)
 {
     std::ifstream file(filepath, std::ios::in | std::ios::binary);
     if (!file.is_open())
     {
-        throw std::runtime_error("Unable to open specified file");
+        std::cerr << "Unable to open file: " << filepath << std::endl;
         exit(1);
     }
 
-    std::vector<value_t> data(numData * numFeatures);
+    return file;
+}
+
+Matrix MatrixReader::read(const std::string& filepath, const int32_t& numData, const int32_t& numFeatures)
+{
+    auto file = openFile(filepath);
+
+    // std::vector<value_t> data(numData * numFeatures);
+    Matrix data(numData * numFeatures, numData, numFeatures);
     file.read(reinterpret_cast<char*>(data.data()), sizeof(value_t) * numData * numFeatures);
     file.close();
+
     return data;
 }
 
-std::vector<value_t> MPIReader::read(const std::string& filepath, const int32_t& numData, const int32_t& numFeatures)
+Matrix MPIMatrixReader::read(const std::string& filepath, const int32_t& numData, const int32_t& numFeatures)
 {
     auto mpiData      = getMPIData(numData);
     auto lengths      = mpiData.lengths[mpiData.rank] * numFeatures;
@@ -31,7 +40,7 @@ std::vector<value_t> MPIReader::read(const std::string& filepath, const int32_t&
 
     MPI_File_open(MPI_COMM_WORLD, filepath.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
 
-    std::vector<value_t> data(lengths);
+    Matrix data(lengths, mpiData.lengths[mpiData.rank], numFeatures);
     MPI_File_read_at(fh, offset, data.data(), lengths, mpi_type_t, &status);
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_File_close(&fh);

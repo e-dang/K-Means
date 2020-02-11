@@ -10,26 +10,27 @@ class IReader
 public:
     virtual ~IReader() {}
 
-    virtual std::vector<value_t> read(const std::string& filepath, const int32_t& numData,
-                                      const int32_t& numFeatures) = 0;
+    virtual Matrix read(const std::string& filepath, const int32_t& numData, const int32_t& numFeatures) = 0;
 };
 
-class VectorReader : public IReader
+class MatrixReader : public IReader
 {
 public:
-    VectorReader() {}
+    MatrixReader() {}
 
-    ~VectorReader() {}
+    ~MatrixReader() {}
 
-    std::vector<value_t> read(const std::string& filepath, const int32_t& numData, const int32_t& numFeatures) override;
+    Matrix read(const std::string& filepath, const int32_t& numData, const int32_t& numFeatures) override;
+
+    std::ifstream openFile(const std::string& filepath);
 };
 
-class MPIReader : public IReader
+class MPIMatrixReader : public IReader
 {
 public:
-    MPIReader() {}
+    MPIMatrixReader() {}
 
-    ~MPIReader() {}
+    ~MPIMatrixReader() {}
 
-    std::vector<value_t> read(const std::string& filepath, const int32_t& numData, const int32_t& numFeatures) override;
+    Matrix read(const std::string& filepath, const int32_t& numData, const int32_t& numFeatures) override;
 };
