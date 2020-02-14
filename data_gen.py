@@ -24,17 +24,17 @@ def generate_data(num_data, num_features, num_clusters, cluster_std, box, data_f
     return data
 
 
-def read_data(filepath, num_data, num_features, data_format='f'):
+def read_data(filepath, num_data, num_features, data_format='d'):
     vals = [[] for _ in range(num_data)]
     with open(filepath, 'rb') as file:
-        data = file.read(4)
+        data = file.read(8)
         i = 0
         while data:
             ind = i // num_features
             # if ind == 10:
             #     break
             vals[ind].append(struct.unpack(data_format, data)[0])
-            data = file.read(4)
+            data = file.read(8)
             i += 1
     ret = np.concatenate([np.array(i) for i in vals]).reshape((-1, num_features))
     return ret[~np.isnan(ret)].reshape((-1, 2))
@@ -74,7 +74,7 @@ BOX = (-100, 100)
 #                      f'test_{NUM_DATA}_{NUM_FEATURES}.txt', f'data_labels_{NUM_DATA}_{NUM_FEATURES}.txt')
 # exit()
 
-data = read_data('../data/test_100000_2.txt', 100000, 2)
-clusters = read_data('../data/clusters_serial_kpp_100000_2.txt', 100000, 2)
-clustering = read_clustering('../data/clustering_serial_kpp_100000_2.txt')
+data = read_data('../data/test_200000_2.txt', 200000, 2)
+clusters = read_data('../data/test_200000_2_clusters_0.txt', 200000, 2)
+clustering = read_clustering('../data/test_200000_2_clustering_0.txt')
 plot_data(data, clusters, clustering)
