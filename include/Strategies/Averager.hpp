@@ -216,10 +216,8 @@ template <typename precision, typename int_size>
 void SerialVectorAverager<precision, int_size>::normalizeSum(std::vector<precision>* const avgContainer,
                                                              const int_size& numData)
 {
-    for (size_t i = 0; i < avgContainer->size(); ++i)
-    {
-        avgContainer->at(i) /= numData;
-    }
+    std::transform(avgContainer->begin(), avgContainer->end(), avgContainer->begin(),
+                   [&numData](const precision& val) { return val / numData; });
 }
 
 template <typename precision, typename int_size>
