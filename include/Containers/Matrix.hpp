@@ -276,7 +276,7 @@ public:
         ++m_Size;
     }
 
-    inline void fill(const int_size& val) { std::fill(begin(), end(), val); }
+    inline void fill(const precision& val) { std::fill(begin(), end(), val); }
 
     inline friend std::ostream& operator<<(std::ostream& os, const Matrix& lhs)
     {
