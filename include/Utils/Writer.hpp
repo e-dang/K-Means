@@ -1,6 +1,7 @@
 #pragma once
 
 #include <fstream>
+#include <iomanip>
 #include <string>
 #include <unordered_map>
 
@@ -13,12 +14,15 @@ template <typename precision = double, typename int_size = int32_t>
 class AbstractWriter
 {
 protected:
+    int m_Digits;
     FileRotator fileRotator;
     std::unordered_map<int, std::string> typeMap;
     std::vector<std::string> runParams;
 
 public:
-    AbstractWriter(Initializer initializer, Maximizer maximizer, CoresetCreator coresetCreator, Parallelism parallelism)
+    AbstractWriter(Initializer initializer, Maximizer maximizer, CoresetCreator coresetCreator, Parallelism parallelism,
+                   const int digits = 8) :
+        m_Digits(digits)
     {
         typeMap[KPP]       = "K++";
         typeMap[OptKPP]    = "OptK++";
@@ -60,9 +64,15 @@ public:
         file.close();
     }
 
-    void writeError(const precision& error, std::ofstream& file) { file << "Error: " << error << std::endl; }
+    void writeError(const precision& error, std::ofstream& file)
+    {
+        file << std::fixed << std::setprecision(m_Digits) << "Error: " << error << std::endl;
+    }
 
-    void writeTime(const precision& time, std::ofstream& file) { file << "Time: " << time << std::endl; }
+    void writeTime(const precision& time, std::ofstream& file)
+    {
+        file << std::fixed << std::setprecision(m_Digits) << "Time: " << time << std::endl;
+    }
 
     void writeRunParams(std::ofstream& file)
     {
