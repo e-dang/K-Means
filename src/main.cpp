@@ -10,7 +10,7 @@
 #include "sarge/sarge.h"
 
 const int DEFAULT_REPEATS = 10;
-
+using namespace HPKmeans;
 void parseFilePath(Sarge& sarge, std::string& filepath)
 {
     if (!sarge.getTextArgument(0, filepath))
@@ -259,20 +259,20 @@ void runDistributed(int& argc, char** argv, std::string filepath, const int32_t&
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
-    MPIMatrixReader reader;
+    MPIMatrixReader<double> reader;
     auto data = reader.read(filepath, numData, numFeatures);
 
-    Kmeans kmeans(initializer, maximizer, coresetCreator, parallelism, std::make_shared<EuclideanDistance>(),
-                  sampleSize);
+    Kmeans<double> kmeans(initializer, maximizer, coresetCreator, parallelism,
+                          std::make_shared<EuclideanDistance<double>>(), sampleSize);
 
     auto start          = std::chrono::high_resolution_clock::now();
     auto clusterResults = kmeans.fit(&data, numClusters, numRestarts);
     auto stop           = std::chrono::high_resolution_clock::now();
-    auto duration       = std::chrono::duration_cast<std::chrono::seconds>(stop - start).count();
+    auto duration       = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
 
     if (rank == 0)
     {
-        ClusterResultWriter writer(initializer, maximizer, coresetCreator, parallelism);
+        ClusterResultWriter<double> writer(initializer, maximizer, coresetCreator, parallelism);
         writer.writeClusterResults(clusterResults, duration, filepath);
     }
 
@@ -284,17 +284,18 @@ void runSharedMemory(int& argc, char** argv, std::string filepath, const int32_t
                      Initializer initializer, Maximizer maximizer, CoresetCreator coresetCreator,
                      Parallelism parallelism)
 {
-    MatrixReader reader;
+    MatrixReader<double> reader;
     auto data = reader.read(filepath, numData, numFeatures);
-    Kmeans kmeans(initializer, maximizer, coresetCreator, parallelism, std::make_shared<EuclideanDistance>(),
-                  sampleSize);
+
+    Kmeans<double> kmeans(initializer, maximizer, coresetCreator, parallelism,
+                          std::make_shared<EuclideanDistance<double>>(), sampleSize);
 
     auto start          = std::chrono::high_resolution_clock::now();
     auto clusterResults = kmeans.fit(&data, numClusters, numRestarts);
     auto stop           = std::chrono::high_resolution_clock::now();
-    auto duration       = std::chrono::duration_cast<std::chrono::seconds>(stop - start).count();
+    auto duration       = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
 
-    ClusterResultWriter writer(initializer, maximizer, coresetCreator, parallelism);
+    ClusterResultWriter<double> writer(initializer, maximizer, coresetCreator, parallelism);
     writer.writeClusterResults(clusterResults, duration, filepath);
 }
 
