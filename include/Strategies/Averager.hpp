@@ -7,6 +7,22 @@
 
 namespace HPKmeans
 {
+#pragma omp declare reduction(+ : std::vector<float> : \
+                              std::transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), std::plus<float>())) \
+                                initializer(omp_priv = decltype(omp_orig)(omp_orig.size()))
+
+#pragma omp declare reduction(+ : std::vector<double> : \
+                              std::transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), std::plus<double>())) \
+                                initializer(omp_priv = decltype(omp_orig)(omp_orig.size()))
+
+#pragma omp declare reduction(+ : Matrix<float, int> : \
+                               std::transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), std::plus<float>())) \
+                                initializer(omp_priv = decltype(omp_orig)(omp_orig.rows(), omp_orig.cols()))
+
+#pragma omp declare reduction(+ : Matrix<double, int> : \
+                              std::transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), std::plus<double>())) \
+                                initializer(omp_priv = decltype(omp_orig)(omp_orig.rows(), omp_orig.cols()))
+
 template <typename precision = double, typename int_size = int32_t>
 class AbstractWeightedAverager
 {
@@ -75,13 +91,11 @@ public:
                 avgContainer->at(dataAssignments->at(displacement + i), j) += weights->at(i) * data->at(i, j);
             }
         }
-        // #pragma omp declare reduction(+ : Matrix<precision, int_size> : \
-//                               std::transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), std::plus<precision>())) \
-//                     initializer(omp_priv = decltype(omp_orig)(omp_orig.rows(), omp_orig.cols()))
 
         //         Matrix<precision, int_size>& refContainer = *avgContainer;
 
-        // #pragma omp parallel for schedule(static), collapse(2), reduction(+ : refContainer)
+        // #pragma omp parallel for shared(data, dataAssignments, weights, displacement), schedule(static), collapse(2),
+        // reduction(+ : refContainer)
         //         for (int32_t i = 0; i < data->size(); i++)
         //         {
         //             for (int32_t j = 0; j < data->cols(); j++)
@@ -153,27 +167,16 @@ public:
     void calculateSum(const Matrix<precision, int_size>* const data,
                       std::vector<precision>* const avgContainer) override
     {
+        std::vector<precision>& refContainer = *avgContainer;
+
+#pragma omp parallel for schedule(static), collapse(2), reduction(+ : refContainer)
         for (int32_t i = 0; i < data->size(); i++)
         {
             for (int32_t j = 0; j < data->cols(); j++)
             {
-                avgContainer->at(j) += data->at(i, j);
+                refContainer[j] += data->at(i, j);
             }
         }
-        // #pragma omp declare reduction(+ : std::vector<precision> : \
-//                               std::transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), std::plus<precision>())) \
-//                                 initializer(omp_priv = decltype(omp_orig)(omp_orig.size()))
-
-        //         std::vector<precision>& refContainer = *avgContainer;
-
-        // #pragma omp parallel for schedule(static), collapse(2), reduction(+ : refContainer)
-        //         for (int32_t i = 0; i < data->size(); i++)
-        //         {
-        //             for (int32_t j = 0; j < data->cols(); j++)
-        //             {
-        //                 refContainer[j] += data->at(i, j);
-        //             }
-        //         }
     }
 
     void normalizeSum(std::vector<precision>* const avgContainer, const int_size& numData) override
