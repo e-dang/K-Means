@@ -169,8 +169,9 @@ struct Coreset
     std::vector<precision> weights;
 
     Coreset(const int_size& numData, const int_size& numFeatures, bool autoReserve = true) :
-        data(numData, numFeatures, autoReserve), weights(numData)
+        data(numData, numFeatures, autoReserve)
     {
+        weights.reserve(numData);
     }
 
     Coreset(Coreset&& other) : data(), weights() { *this = std::move(other); }
