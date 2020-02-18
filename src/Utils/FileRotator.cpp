@@ -2,6 +2,8 @@
 
 #include <fstream>
 
+namespace HPKmeans
+{
 std::string FileRotator::getUniqueFileName(std::string& baseFilepath, std::string identifier)
 {
     std::set<char> delims{ '/' };
@@ -83,3 +85,4 @@ std::string FileRotator::reassemblePath(std::string& newFileName, std::string& e
 
     return newFilePath;
 }
+}  // namespace HPKmeans
