@@ -15,8 +15,9 @@ protected:
     std::unique_ptr<AbstractClosestClusterUpdater<precision, int_size>> pUpdater;
 
 public:
-    AbstractCoresetClusteringFinisher(AbstractClosestClusterUpdater<precision, int_size>* updater) :
-        pUpdater(updater){};
+    AbstractCoresetClusteringFinisher(AbstractClosestClusterUpdater<precision, int_size>* updater) : pUpdater(updater)
+    {
+    }
 
     virtual ~AbstractCoresetClusteringFinisher() = default;
 
@@ -28,16 +29,13 @@ class SharedMemoryCoresetClusteringFinisher : public AbstractCoresetClusteringFi
 {
 public:
     SharedMemoryCoresetClusteringFinisher(AbstractClosestClusterUpdater<precision, int_size>* updater) :
-        AbstractCoresetClusteringFinisher<precision, int_size>(updater){};
+        AbstractCoresetClusteringFinisher<precision, int_size>(updater)
+    {
+    }
 
     ~SharedMemoryCoresetClusteringFinisher() = default;
 
-    precision finishClustering(KmeansData<precision, int_size>* const kmeansData) override
-    {
-        this->pUpdater->findAndUpdateClosestClusters(kmeansData);
-
-        return std::accumulate(kmeansData->sqDistances->begin(), kmeansData->sqDistances->end(), 0.0);
-    }
+    precision finishClustering(KmeansData<precision, int_size>* const kmeansData) override;
 };
 
 template <typename precision = double, typename int_size = int32_t>
@@ -45,22 +43,36 @@ class MPICoresetClusteringFinisher : public AbstractCoresetClusteringFinisher<pr
 {
 public:
     MPICoresetClusteringFinisher(AbstractClosestClusterUpdater<precision, int_size>* updater) :
-        AbstractCoresetClusteringFinisher<precision, int_size>(updater){};
+        AbstractCoresetClusteringFinisher<precision, int_size>(updater)
+    {
+    }
 
     ~MPICoresetClusteringFinisher() = default;
 
-    precision finishClustering(KmeansData<precision, int_size>* const kmeansData) override
-    {
-        this->pUpdater->findAndUpdateClosestClusters(kmeansData);
-
-        MPI_Allgatherv(MPI_IN_PLACE, kmeansData->lengths.at(kmeansData->rank), MPI_INT, kmeansData->clustering->data(),
-                       kmeansData->lengths.data(), kmeansData->displacements.data(), MPI_INT, MPI_COMM_WORLD);
-
-        MPI_Allgatherv(MPI_IN_PLACE, kmeansData->lengths.at(kmeansData->rank), mpi_type_t,
-                       kmeansData->sqDistances->data(), kmeansData->lengths.data(), kmeansData->displacements.data(),
-                       mpi_type_t, MPI_COMM_WORLD);
-
-        return std::accumulate(kmeansData->sqDistances->begin(), kmeansData->sqDistances->end(), 0.0);
-    }
+    precision finishClustering(KmeansData<precision, int_size>* const kmeansData) override;
 };
+
+template <typename precision, typename int_size>
+precision SharedMemoryCoresetClusteringFinisher<precision, int_size>::finishClustering(
+  KmeansData<precision, int_size>* const kmeansData)
+{
+    this->pUpdater->findAndUpdateClosestClusters(kmeansData);
+
+    return std::accumulate(kmeansData->sqDistances->begin(), kmeansData->sqDistances->end(), 0.0);
+}
+
+template <typename precision, typename int_size>
+precision MPICoresetClusteringFinisher<precision, int_size>::finishClustering(
+  KmeansData<precision, int_size>* const kmeansData)
+{
+    this->pUpdater->findAndUpdateClosestClusters(kmeansData);
+
+    MPI_Allgatherv(MPI_IN_PLACE, kmeansData->lengths.at(kmeansData->rank), MPI_INT, kmeansData->clustering->data(),
+                   kmeansData->lengths.data(), kmeansData->displacements.data(), MPI_INT, MPI_COMM_WORLD);
+
+    MPI_Allgatherv(MPI_IN_PLACE, kmeansData->lengths.at(kmeansData->rank), mpi_type_t, kmeansData->sqDistances->data(),
+                   kmeansData->lengths.data(), kmeansData->displacements.data(), mpi_type_t, MPI_COMM_WORLD);
+
+    return std::accumulate(kmeansData->sqDistances->begin(), kmeansData->sqDistances->end(), 0.0);
+}
 }  // namespace HPKmeans

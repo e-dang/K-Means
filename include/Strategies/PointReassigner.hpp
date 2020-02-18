@@ -17,18 +17,7 @@ public:
 
     virtual ~AbstractPointReassigner() = default;
 
-    int_size reassignPoint(const int_size& dataIdx, KmeansData<precision, int_size>* const kmeansData)
-    {
-        auto before = kmeansData->clusteringAt(dataIdx);
-
-        pUpdater->findAndUpdateClosestCluster(dataIdx, kmeansData);
-
-        if (before != kmeansData->clusteringAt(dataIdx))
-        {
-            return 1;
-        }
-        return 0;
-    }
+    int_size reassignPoint(const int_size& dataIdx, KmeansData<precision, int_size>* const kmeansData);
 
     virtual int_size reassignPoints(KmeansData<precision, int_size>* const kmeansData) = 0;
 };
@@ -44,16 +33,7 @@ public:
 
     ~SerialPointReassigner() = default;
 
-    int_size reassignPoints(KmeansData<precision, int_size>* const kmeansData) override
-    {
-        int_size changed = 0;
-        for (int_size i = 0; i < kmeansData->data->size(); i++)
-        {
-            changed += this->reassignPoint(i, kmeansData);
-        }
-
-        return changed;
-    }
+    int_size reassignPoints(KmeansData<precision, int_size>* const kmeansData) override;
 };
 
 template <typename precision = double, typename int_size = int32_t>
@@ -67,29 +47,7 @@ public:
 
     ~SerialOptimizedPointReassigner() = default;
 
-    int_size reassignPoints(KmeansData<precision, int_size>* const kmeansData) override
-    {
-        int_size changed = 0;
-        auto numFeatures = kmeansData->data->cols();
-
-        for (int_size i = 0; i < kmeansData->data->size(); i++)
-        {
-            auto clusterIdx = kmeansData->clusteringAt(i);
-            auto dist       = std::pow(
-              (*kmeansData->distanceFunc)(kmeansData->data->at(i), kmeansData->clusters->at(clusterIdx), numFeatures),
-              2);
-            if (dist > kmeansData->sqDistancesAt(i) || kmeansData->sqDistancesAt(i) < 0)
-            {
-                changed += this->reassignPoint(i, kmeansData);
-            }
-            else
-            {
-                kmeansData->sqDistancesAt(i) = dist;
-            }
-        }
-
-        return changed;
-    }
+    int_size reassignPoints(KmeansData<precision, int_size>* const kmeansData) override;
 };
 
 template <typename precision = double, typename int_size = int32_t>
@@ -103,18 +61,7 @@ public:
 
     ~OMPPointReassigner() = default;
 
-    int_size reassignPoints(KmeansData<precision, int_size>* const kmeansData) override
-    {
-        int_size changed = 0;
-
-#pragma omp parallel for schedule(static), reduction(+ : changed)
-        for (int_size i = 0; i < kmeansData->data->size(); i++)
-        {
-            changed += this->reassignPoint(i, kmeansData);
-        }
-
-        return changed;
-    }
+    int_size reassignPoints(KmeansData<precision, int_size>* const kmeansData) override;
 };
 
 template <typename precision = double, typename int_size = int32_t>
@@ -128,29 +75,98 @@ public:
 
     ~OMPOptimizedPointReassigner() = default;
 
-    int_size reassignPoints(KmeansData<precision, int_size>* const kmeansData) override
+    int_size reassignPoints(KmeansData<precision, int_size>* const kmeansData) override;
+};
+
+template <typename precision, typename int_size>
+int_size AbstractPointReassigner<precision, int_size>::reassignPoint(const int_size& dataIdx,
+                                                                     KmeansData<precision, int_size>* const kmeansData)
+{
+    auto before = kmeansData->clusteringAt(dataIdx);
+
+    pUpdater->findAndUpdateClosestCluster(dataIdx, kmeansData);
+
+    if (before != kmeansData->clusteringAt(dataIdx))
     {
-        int_size changed = 0;
-        auto numFeatures = kmeansData->data->cols();
+        return 1;
+    }
+    return 0;
+}
+
+template <typename precision, typename int_size>
+int_size SerialPointReassigner<precision, int_size>::reassignPoints(KmeansData<precision, int_size>* const kmeansData)
+{
+    int_size changed = 0;
+    for (int_size i = 0; i < kmeansData->data->size(); i++)
+    {
+        changed += this->reassignPoint(i, kmeansData);
+    }
+
+    return changed;
+}
+
+template <typename precision, typename int_size>
+int_size SerialOptimizedPointReassigner<precision, int_size>::reassignPoints(
+  KmeansData<precision, int_size>* const kmeansData)
+{
+    int_size changed = 0;
+    auto numFeatures = kmeansData->data->cols();
+
+    for (int_size i = 0; i < kmeansData->data->size(); i++)
+    {
+        auto clusterIdx = kmeansData->clusteringAt(i);
+        auto dist       = std::pow(
+          (*kmeansData->distanceFunc)(kmeansData->data->at(i), kmeansData->clusters->at(clusterIdx), numFeatures), 2);
+        if (dist > kmeansData->sqDistancesAt(i) || kmeansData->sqDistancesAt(i) < 0)
+        {
+            changed += this->reassignPoint(i, kmeansData);
+        }
+        else
+        {
+            kmeansData->sqDistancesAt(i) = dist;
+        }
+    }
+
+    return changed;
+}
+
+template <typename precision, typename int_size>
+int_size OMPPointReassigner<precision, int_size>::reassignPoints(KmeansData<precision, int_size>* const kmeansData)
+{
+    int_size changed = 0;
+
+#pragma omp parallel for schedule(static), reduction(+ : changed)
+    for (int_size i = 0; i < kmeansData->data->size(); i++)
+    {
+        changed += this->reassignPoint(i, kmeansData);
+    }
+
+    return changed;
+}
+
+template <typename precision, typename int_size>
+int_size OMPOptimizedPointReassigner<precision, int_size>::reassignPoints(
+  KmeansData<precision, int_size>* const kmeansData)
+{
+    int_size changed = 0;
+    auto numFeatures = kmeansData->data->cols();
 
 #pragma omp parallel for shared(numFeatures), schedule(static), reduction(+ : changed)
-        for (int_size i = 0; i < kmeansData->data->size(); i++)
+    for (int_size i = 0; i < kmeansData->data->size(); i++)
+    {
+        auto clusterIdx = kmeansData->clusteringAt(i);
+        auto dist       = std::pow(
+          (*kmeansData->distanceFunc)(kmeansData->data->at(i), kmeansData->clusters->at(clusterIdx), numFeatures), 2);
+        if (dist > kmeansData->sqDistancesAt(i) || kmeansData->sqDistancesAt(i) < 0)
         {
-            auto clusterIdx = kmeansData->clusteringAt(i);
-            auto dist       = std::pow(
-              (*kmeansData->distanceFunc)(kmeansData->data->at(i), kmeansData->clusters->at(clusterIdx), numFeatures),
-              2);
-            if (dist > kmeansData->sqDistancesAt(i) || kmeansData->sqDistancesAt(i) < 0)
-            {
-                changed += this->reassignPoint(i, kmeansData);
-            }
-            else
-            {
-                kmeansData->sqDistancesAt(i) = dist;
-            }
+            changed += this->reassignPoint(i, kmeansData);
         }
-
-        return changed;
+        else
+        {
+            kmeansData->sqDistancesAt(i) = dist;
+        }
     }
-};
+
+    return changed;
+}
 }  // namespace HPKmeans

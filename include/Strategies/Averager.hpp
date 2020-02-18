@@ -27,15 +27,13 @@ template <typename precision = double, typename int_size = int32_t>
 class AbstractWeightedAverager
 {
 public:
+    virtual ~AbstractWeightedAverager() = default;
+
     void calculateAverage(const Matrix<precision, int_size>* const data,
                           Matrix<precision, int_size>* const avgContainer,
                           const std::vector<int_size>* const dataAssignments,
                           const std::vector<precision>* const weights, const std::vector<precision>* const weightSums,
-                          const int_size displacement = 0)
-    {
-        calculateSum(data, avgContainer, dataAssignments, weights, displacement);
-        normalizeSum(avgContainer, weightSums);
-    }
+                          const int_size displacement = 0);
 
     virtual void calculateSum(const Matrix<precision, int_size>* const data,
                               Matrix<precision, int_size>* const avgContainer,
@@ -50,84 +48,37 @@ template <typename precision = double, typename int_size = int32_t>
 class SerialWeightedMultiVectorAverager : public AbstractWeightedAverager<precision, int_size>
 {
 public:
+    ~SerialWeightedMultiVectorAverager() = default;
+
     void calculateSum(const Matrix<precision, int_size>* const data, Matrix<precision, int_size>* const avgContainer,
                       const std::vector<int_size>* const dataAssignments, const std::vector<precision>* const weights,
-                      const int_size displacement = 0) override
-    {
-        for (int32_t i = 0; i < data->size(); i++)
-        {
-            for (int32_t j = 0; j < data->cols(); j++)
-            {
-                avgContainer->at(dataAssignments->at(displacement + i), j) += weights->at(i) * data->at(i, j);
-            }
-        }
-    }
+                      const int_size displacement = 0) override;
 
     void normalizeSum(Matrix<precision, int_size>* const avgContainer,
-                      const std::vector<precision>* const weightSums) override
-    {
-        for (int32_t i = 0; i < avgContainer->size(); i++)
-        {
-            for (int32_t j = 0; j < avgContainer->cols(); j++)
-            {
-                avgContainer->at(i, j) /= weightSums->at(i);
-            }
-        }
-    }
+                      const std::vector<precision>* const weightSums) override;
 };
 
 template <typename precision = double, typename int_size = int32_t>
 class OMPWeightedMultiVectorAverager : public AbstractWeightedAverager<precision, int_size>
 {
 public:
+    ~OMPWeightedMultiVectorAverager() = default;
+
     void calculateSum(const Matrix<precision, int_size>* const data, Matrix<precision, int_size>* const avgContainer,
                       const std::vector<int_size>* const dataAssignments, const std::vector<precision>* const weights,
-                      const int_size displacement = 0) override
-    {
-        for (int32_t i = 0; i < data->size(); i++)
-        {
-            for (int32_t j = 0; j < data->cols(); j++)
-            {
-                avgContainer->at(dataAssignments->at(displacement + i), j) += weights->at(i) * data->at(i, j);
-            }
-        }
-
-        //         Matrix<precision, int_size>& refContainer = *avgContainer;
-
-        // #pragma omp parallel for shared(data, dataAssignments, weights, displacement), schedule(static), collapse(2),
-        // reduction(+ : refContainer)
-        //         for (int32_t i = 0; i < data->size(); i++)
-        //         {
-        //             for (int32_t j = 0; j < data->cols(); j++)
-        //             {
-        //                 refContainer.at(dataAssignments->at(displacement + i), j) += weights->at(i) * data->at(i, j);
-        //             }
-        //         }
-    }
+                      const int_size displacement = 0) override;
 
     void normalizeSum(Matrix<precision, int_size>* const avgContainer,
-                      const std::vector<precision>* const weightSums) override
-    {
-#pragma omp parallel for schedule(static), collapse(2)
-        for (int32_t i = 0; i < avgContainer->size(); i++)
-        {
-            for (int32_t j = 0; j < avgContainer->cols(); j++)
-            {
-                avgContainer->at(i, j) /= weightSums->at(i);
-            }
-        }
-    }
+                      const std::vector<precision>* const weightSums) override;
 };
 
 template <typename precision = double, typename int_size = int32_t>
 class AbstractAverager
 {
 public:
-    void calculateAverage(const Matrix<precision, int_size>* const data, std::vector<precision>* const avgContainer)
-    {
-        calculateSum(data, avgContainer);
-        normalizeSum(avgContainer, data->size());
-    }
+    virtual ~AbstractAverager() = default;
+
+    void calculateAverage(const Matrix<precision, int_size>* const data, std::vector<precision>* const avgContainer);
 
     virtual void calculateSum(const Matrix<precision, int_size>* const data,
                               std::vector<precision>* const avgContainer) = 0;
@@ -139,53 +90,162 @@ template <typename precision = double, typename int_size = int32_t>
 class SerialVectorAverager : public AbstractAverager<precision, int_size>
 {
 public:
-    void calculateSum(const Matrix<precision, int_size>* const data,
-                      std::vector<precision>* const avgContainer) override
-    {
-        for (int32_t i = 0; i < data->size(); i++)
-        {
-            for (int32_t j = 0; j < data->cols(); j++)
-            {
-                avgContainer->at(j) += data->at(i, j);
-            }
-        }
-    }
+    ~SerialVectorAverager() = default;
 
-    void normalizeSum(std::vector<precision>* const avgContainer, const int_size& numData) override
-    {
-        for (size_t i = 0; i < avgContainer->size(); i++)
-        {
-            avgContainer->at(i) /= numData;
-        }
-    }
+    void calculateSum(const Matrix<precision, int_size>* const data,
+                      std::vector<precision>* const avgContainer) override;
+
+    void normalizeSum(std::vector<precision>* const avgContainer, const int_size& numData) override;
 };
 
 template <typename precision = double, typename int_size = int32_t>
 class OMPVectorAverager : public AbstractAverager<precision, int_size>
 {
 public:
+    ~OMPVectorAverager() = default;
+
     void calculateSum(const Matrix<precision, int_size>* const data,
-                      std::vector<precision>* const avgContainer) override
+                      std::vector<precision>* const avgContainer) override;
+
+    void normalizeSum(std::vector<precision>* const avgContainer, const int_size& numData) override;
+};
+
+template <typename precision, typename int_size>
+void AbstractWeightedAverager<precision, int_size>::calculateAverage(const Matrix<precision, int_size>* const data,
+                                                                     Matrix<precision, int_size>* const avgContainer,
+                                                                     const std::vector<int_size>* const dataAssignments,
+                                                                     const std::vector<precision>* const weights,
+                                                                     const std::vector<precision>* const weightSums,
+                                                                     const int_size displacement)
+{
+    calculateSum(data, avgContainer, dataAssignments, weights, displacement);
+    normalizeSum(avgContainer, weightSums);
+}
+
+template <typename precision, typename int_size>
+void SerialWeightedMultiVectorAverager<precision, int_size>::calculateSum(
+  const Matrix<precision, int_size>* const data, Matrix<precision, int_size>* const avgContainer,
+  const std::vector<int_size>* const dataAssignments, const std::vector<precision>* const weights,
+  const int_size displacement)
+{
+    for (int32_t i = 0; i < data->size(); i++)
     {
-        std::vector<precision>& refContainer = *avgContainer;
+        for (int32_t j = 0; j < data->cols(); j++)
+        {
+            avgContainer->at(dataAssignments->at(displacement + i), j) += weights->at(i) * data->at(i, j);
+        }
+    }
+}
+
+template <typename precision, typename int_size>
+void SerialWeightedMultiVectorAverager<precision, int_size>::normalizeSum(
+  Matrix<precision, int_size>* const avgContainer, const std::vector<precision>* const weightSums)
+{
+    for (int32_t i = 0; i < avgContainer->size(); i++)
+    {
+        for (int32_t j = 0; j < avgContainer->cols(); j++)
+        {
+            avgContainer->at(i, j) /= weightSums->at(i);
+        }
+    }
+}
+
+template <typename precision, typename int_size>
+void OMPWeightedMultiVectorAverager<precision, int_size>::calculateSum(
+  const Matrix<precision, int_size>* const data, Matrix<precision, int_size>* const avgContainer,
+  const std::vector<int_size>* const dataAssignments, const std::vector<precision>* const weights,
+  const int_size displacement)
+{
+    for (int32_t i = 0; i < data->size(); i++)
+    {
+        for (int32_t j = 0; j < data->cols(); j++)
+        {
+            avgContainer->at(dataAssignments->at(displacement + i), j) += weights->at(i) * data->at(i, j);
+        }
+    }
+
+    //         Matrix<precision, int_size>& refContainer = *avgContainer;
+
+    // #pragma omp parallel for shared(data, dataAssignments, weights, displacement), schedule(static), collapse(2),
+    // reduction(+ : refContainer)
+    //         for (int32_t i = 0; i < data->size(); i++)
+    //         {
+    //             for (int32_t j = 0; j < data->cols(); j++)
+    //             {
+    //                 refContainer.at(dataAssignments->at(displacement + i), j) += weights->at(i) * data->at(i, j);
+    //             }
+    //         }
+}
+
+template <typename precision, typename int_size>
+void OMPWeightedMultiVectorAverager<precision, int_size>::normalizeSum(Matrix<precision, int_size>* const avgContainer,
+                                                                       const std::vector<precision>* const weightSums)
+{
+#pragma omp parallel for schedule(static), collapse(2)
+    for (int32_t i = 0; i < avgContainer->size(); i++)
+    {
+        for (int32_t j = 0; j < avgContainer->cols(); j++)
+        {
+            avgContainer->at(i, j) /= weightSums->at(i);
+        }
+    }
+}
+
+template <typename precision, typename int_size>
+void AbstractAverager<precision, int_size>::calculateAverage(const Matrix<precision, int_size>* const data,
+                                                             std::vector<precision>* const avgContainer)
+{
+    calculateSum(data, avgContainer);
+    normalizeSum(avgContainer, data->size());
+}
+
+template <typename precision, typename int_size>
+void SerialVectorAverager<precision, int_size>::calculateSum(const Matrix<precision, int_size>* const data,
+                                                             std::vector<precision>* const avgContainer)
+{
+    for (int32_t i = 0; i < data->size(); i++)
+    {
+        for (int32_t j = 0; j < data->cols(); j++)
+        {
+            avgContainer->at(j) += data->at(i, j);
+        }
+    }
+}
+
+template <typename precision, typename int_size>
+void SerialVectorAverager<precision, int_size>::normalizeSum(std::vector<precision>* const avgContainer,
+                                                             const int_size& numData)
+{
+    for (size_t i = 0; i < avgContainer->size(); i++)
+    {
+        avgContainer->at(i) /= numData;
+    }
+}
+
+template <typename precision, typename int_size>
+void OMPVectorAverager<precision, int_size>::calculateSum(const Matrix<precision, int_size>* const data,
+                                                          std::vector<precision>* const avgContainer)
+{
+    std::vector<precision>& refContainer = *avgContainer;
 
 #pragma omp parallel for schedule(static), collapse(2), reduction(+ : refContainer)
-        for (int32_t i = 0; i < data->size(); i++)
-        {
-            for (int32_t j = 0; j < data->cols(); j++)
-            {
-                refContainer[j] += data->at(i, j);
-            }
-        }
-    }
-
-    void normalizeSum(std::vector<precision>* const avgContainer, const int_size& numData) override
+    for (int32_t i = 0; i < data->size(); i++)
     {
-#pragma omp parallel for schedule(static)
-        for (size_t i = 0; i < avgContainer->size(); i++)
+        for (int32_t j = 0; j < data->cols(); j++)
         {
-            avgContainer->at(i) /= numData;
+            refContainer[j] += data->at(i, j);
         }
     }
-};
+}
+
+template <typename precision, typename int_size>
+void OMPVectorAverager<precision, int_size>::normalizeSum(std::vector<precision>* const avgContainer,
+                                                          const int_size& numData)
+{
+#pragma omp parallel for schedule(static)
+    for (size_t i = 0; i < avgContainer->size(); i++)
+    {
+        avgContainer->at(i) /= numData;
+    }
+}
 }  // namespace HPKmeans
