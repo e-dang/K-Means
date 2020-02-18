@@ -13,6 +13,8 @@ template <typename precision>
 class IDistanceFunctor
 {
 public:
+    virtual ~IDistanceFunctor() = default;
+
     /**
      * @brief Overloaded function call operator.
      *
@@ -31,6 +33,8 @@ template <typename precision>
 class EuclideanDistance : public IDistanceFunctor<precision>
 {
 public:
+    ~EuclideanDistance() = default;
+
     /**
      * @brief Overloaded function call operator that calculates the Euclidean distance between two points.
      *
