@@ -38,25 +38,11 @@ protected:
     const std::vector<int_size>* pDisplacements;
 
 public:
-    AbstractKmeansAlgorithm() {}
+    AbstractKmeansAlgorithm() = default;
 
     virtual ~AbstractKmeansAlgorithm() = default;
 
-    void setKmeansData(KmeansData<precision, int_size>* kmeansData)
-    {
-        pKmeansData      = kmeansData;
-        pData            = kmeansData->data;
-        pWeights         = kmeansData->weights;
-        ppClusters       = &kmeansData->clusters;
-        ppClustering     = &kmeansData->clustering;
-        ppClusterWeights = &kmeansData->clusterWeights;
-        ppSqDistances    = &kmeansData->sqDistances;
-        pLengths         = &kmeansData->lengths;
-        pRank            = &kmeansData->rank;
-        pTotalNumData    = &kmeansData->totalNumData;
-        pDisplacements   = &kmeansData->displacements;
-        pDistanceFunc    = kmeansData->distanceFunc;
-    }
+    void setKmeansData(KmeansData<precision, int_size>* kmeansData);
 };
 
 /**
@@ -105,4 +91,20 @@ public:
     virtual void maximize() = 0;
 };
 
+template <typename precision, typename int_size>
+void AbstractKmeansAlgorithm<precision, int_size>::setKmeansData(KmeansData<precision, int_size>* kmeansData)
+{
+    pKmeansData      = kmeansData;
+    pData            = kmeansData->data;
+    pWeights         = kmeansData->weights;
+    ppClusters       = &kmeansData->clusters;
+    ppClustering     = &kmeansData->clustering;
+    ppClusterWeights = &kmeansData->clusterWeights;
+    ppSqDistances    = &kmeansData->sqDistances;
+    pLengths         = &kmeansData->lengths;
+    pRank            = &kmeansData->rank;
+    pTotalNumData    = &kmeansData->totalNumData;
+    pDisplacements   = &kmeansData->displacements;
+    pDistanceFunc    = kmeansData->distanceFunc;
+}
 }  // namespace HPKmeans
