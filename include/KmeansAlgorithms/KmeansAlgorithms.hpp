@@ -8,51 +8,54 @@
 #include "Strategies/PointReassigner.hpp"
 #include "Utils/DistanceFunctors.hpp"
 
+namespace HPKmeans
+{
 /**
  * @brief Abstract class that all Kmeans algorithms, such as initializers and maximizers will derive from. This class
  *        contains code that is used to set up each of these algorithms.
  */
+template <typename precision = double, typename int_size = int32_t>
 class AbstractKmeansAlgorithm
 {
 protected:
-    KmeansData* pKmeansData;  // useful for passing data to strategy pattern algorithms
+    KmeansData<precision, int_size>* pKmeansData;  // useful for passing data to strategy pattern algorithms
 
     // user data
-    const Matrix* pData;
-    const std::vector<value_t>* pWeights;
-    std::shared_ptr<IDistanceFunctor> pDistanceFunc;
+    const Matrix<precision, int_size>* pData;
+    const std::vector<precision>* pWeights;
+    std::shared_ptr<IDistanceFunctor<precision>> pDistanceFunc;
 
     // cluster data
-    Matrix** ppClusters;
-    std::vector<int32_t>** ppClustering;
-    std::vector<value_t>** ppClusterWeights;
-    std::vector<value_t>** ppSqDistances;
+    Matrix<precision, int_size>** ppClusters;
+    std::vector<int_size>** ppClustering;
+    std::vector<precision>** ppClusterWeights;
+    std::vector<precision>** ppSqDistances;
 
     // chunk data
     const int* pRank;
-    const int32_t* pTotalNumData;
-    const std::vector<int32_t>* pLengths;
-    const std::vector<int32_t>* pDisplacements;
+    const int_size* pTotalNumData;
+    const std::vector<int_size>* pLengths;
+    const std::vector<int_size>* pDisplacements;
 
 public:
-    AbstractKmeansAlgorithm(){};
+    AbstractKmeansAlgorithm() {}
 
-    virtual ~AbstractKmeansAlgorithm(){};
+    virtual ~AbstractKmeansAlgorithm() = default;
 
-    void setKmeansData(KmeansData* kmeansData)
+    void setKmeansData(KmeansData<precision, int_size>* kmeansData)
     {
         pKmeansData      = kmeansData;
-        pData            = kmeansData->pData;
-        pWeights         = kmeansData->pWeights;
-        ppClusters       = &kmeansData->pClusters;
-        ppClustering     = &kmeansData->pClustering;
-        ppClusterWeights = &kmeansData->pClusterWeights;
-        ppSqDistances    = &kmeansData->pSqDistances;
-        pLengths         = &kmeansData->mLengths;
-        pRank            = &kmeansData->mRank;
-        pTotalNumData    = &kmeansData->mTotalNumData;
-        pDisplacements   = &kmeansData->mDisplacements;
-        pDistanceFunc    = kmeansData->pDistanceFunc;
+        pData            = kmeansData->data;
+        pWeights         = kmeansData->weights;
+        ppClusters       = &kmeansData->clusters;
+        ppClustering     = &kmeansData->clustering;
+        ppClusterWeights = &kmeansData->clusterWeights;
+        ppSqDistances    = &kmeansData->sqDistances;
+        pLengths         = &kmeansData->lengths;
+        pRank            = &kmeansData->rank;
+        pTotalNumData    = &kmeansData->totalNumData;
+        pDisplacements   = &kmeansData->displacements;
+        pDistanceFunc    = kmeansData->distanceFunc;
     }
 };
 
@@ -60,15 +63,16 @@ public:
  * @brief Abstract class that defines the interface for Kmeans initialization algorithms, such as K++ or random
  *        initialization.
  */
-class AbstractKmeansInitializer : public AbstractKmeansAlgorithm
+template <typename precision = double, typename int_size = int32_t>
+class AbstractKmeansInitializer : public AbstractKmeansAlgorithm<precision, int_size>
 {
 protected:
-    std::unique_ptr<AbstractClosestClusterUpdater> pUpdater;
+    std::unique_ptr<AbstractClosestClusterUpdater<precision, int_size>> pUpdater;
 
 public:
-    AbstractKmeansInitializer(AbstractClosestClusterUpdater* updater) : pUpdater(updater) {}
+    AbstractKmeansInitializer(AbstractClosestClusterUpdater<precision, int_size>* updater) : pUpdater(updater) {}
 
-    virtual ~AbstractKmeansInitializer(){};
+    virtual ~AbstractKmeansInitializer() = default;
 
     /**
      * @brief Interface that Kmeans initialization algorithms must follow for initializing the clusters.
@@ -79,18 +83,20 @@ public:
 /**
  * @brief Abstract class that defines the interface for Kmeans maximization algorithms, such as Lloyd's algorithm.
  */
-class AbstractKmeansMaximizer : public AbstractKmeansAlgorithm
+template <typename precision = double, typename int_size = int32_t>
+class AbstractKmeansMaximizer : public AbstractKmeansAlgorithm<precision, int_size>
 {
 protected:
-    const double MIN_PERCENT_CHANGED = 0.0001;  // the % amount of data points allowed to changed before going to next
-                                                // iteration
+    const precision MIN_PERCENT_CHANGED = 0.0001;  // the % amount of data points allowed to changed before going to
+                                                   // next iteration
 
-    std::unique_ptr<AbstractPointReassigner> pPointReassigner;
+    std::unique_ptr<AbstractPointReassigner<precision, int_size>> pPointReassigner;
 
 public:
-    AbstractKmeansMaximizer(AbstractPointReassigner* pointReassigner) : pPointReassigner(pointReassigner){};
+    AbstractKmeansMaximizer(AbstractPointReassigner<precision, int_size>* pointReassigner) :
+        pPointReassigner(pointReassigner){};
 
-    virtual ~AbstractKmeansMaximizer(){};
+    virtual ~AbstractKmeansMaximizer() = default;
 
     /**
      * @brief Interface that Kmeans maximization algorithms must follow for finding the best clustering given a set of
@@ -98,3 +104,5 @@ public:
      */
     virtual void maximize() = 0;
 };
+
+}  // namespace HPKmeans

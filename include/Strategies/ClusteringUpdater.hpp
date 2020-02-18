@@ -3,58 +3,112 @@
 #include "Containers/DataClasses.hpp"
 #include "Containers/Definitions.hpp"
 
+namespace HPKmeans
+{
+template <typename precision = double, typename int_size = int32_t>
 class AbstractClusteringDataUpdater
 {
 public:
-    virtual ~AbstractClusteringDataUpdater(){};
+    virtual ~AbstractClusteringDataUpdater() = default;
 
-    virtual void update(const int32_t& dataIdx, const ClosestCluster& closestCluster, KmeansData* const kmeansData);
+    virtual void update(const int_size& dataIdx, const ClosestCluster<precision, int_size>& closestCluster,
+                        KmeansData<precision, int_size>* const kmeansData)
+    {
+        if (kmeansData->sqDistancesAt(dataIdx) > closestCluster.distance || kmeansData->sqDistancesAt(dataIdx) < 0)
+        {
+            int_size& clusterAssignment = kmeansData->clusteringAt(dataIdx);
+            if (clusterAssignment != closestCluster.clusterIdx)
+            {
+                updateClusterWeights(dataIdx, clusterAssignment, closestCluster.clusterIdx, kmeansData);
+                clusterAssignment = closestCluster.clusterIdx;
+            }
+            kmeansData->sqDistancesAt(dataIdx) = closestCluster.distance;
+        }
+    }
 
-    virtual void updateClusterWeights(const int32_t& dataIdx, const int32_t& prevAssignment,
-                                      const int32_t& newAssignment, KmeansData* const kmeansData) = 0;
+    virtual void updateClusterWeights(const int_size& dataIdx, const int_size& prevAssignment,
+                                      const int_size& newAssignment,
+                                      KmeansData<precision, int_size>* const kmeansData) = 0;
 };
 
-class ClusteringDataUpdater : public AbstractClusteringDataUpdater
+template <typename precision = double, typename int_size = int32_t>
+class ClusteringDataUpdater : public AbstractClusteringDataUpdater<precision, int_size>
 {
 public:
-    ~ClusteringDataUpdater() {}
+    ~ClusteringDataUpdater() = default;
 
-    void updateClusterWeights(const int32_t& dataIdx, const int32_t& prevAssignment, const int32_t& newAssignment,
-                              KmeansData* const kmeansData) override;
+    void updateClusterWeights(const int_size& dataIdx, const int_size& prevAssignment, const int_size& newAssignment,
+                              KmeansData<precision, int_size>* const kmeansData) override
+    {
+        precision weight = kmeansData->weights->at(dataIdx);
+        if (prevAssignment >= 0 && kmeansData->clusterWeightsAt(prevAssignment) > 0)
+            kmeansData->clusterWeightsAt(prevAssignment) -= weight;
+        kmeansData->clusterWeightsAt(newAssignment) += weight;
+    }
 };
 
-class AtomicClusteringDataUpdater : public AbstractClusteringDataUpdater
+template <typename precision = double, typename int_size = int32_t>
+class AtomicClusteringDataUpdater : public AbstractClusteringDataUpdater<precision, int_size>
 {
 public:
-    ~AtomicClusteringDataUpdater() {}
+    ~AtomicClusteringDataUpdater() = default;
 
-    void updateClusterWeights(const int32_t& dataIdx, const int32_t& prevAssignment, const int32_t& newAssignment,
-                              KmeansData* const kmeansData) override;
+    void updateClusterWeights(const int_size& dataIdx, const int_size& prevAssignment, const int_size& newAssignment,
+                              KmeansData<precision, int_size>* const kmeansData) override
+    {
+        precision weight = kmeansData->weights->at(dataIdx);
+        if (prevAssignment >= 0 && kmeansData->clusterWeightsAt(prevAssignment) > 0)
+#pragma omp atomic
+            kmeansData->clusterWeightsAt(prevAssignment) -= weight;
+#pragma omp atomic
+        kmeansData->clusterWeightsAt(newAssignment) += weight;
+    }
 };
 
-class DistributedClusteringDataUpdater : public AbstractClusteringDataUpdater
+template <typename precision = double, typename int_size = int32_t>
+class DistributedClusteringDataUpdater : public AbstractClusteringDataUpdater<precision, int_size>
 {
 public:
-    ~DistributedClusteringDataUpdater() {}
+    ~DistributedClusteringDataUpdater() = default;
 
-    void updateClusterWeights(const int32_t& dataIdx, const int32_t& prevAssignment, const int32_t& newAssignment,
-                              KmeansData* const kmeansData) override;
+    void updateClusterWeights(const int_size& dataIdx, const int_size& prevAssignment, const int_size& newAssignment,
+                              KmeansData<precision, int_size>* const kmeansData) override
+    {
+        precision weight = kmeansData->weights->at(dataIdx);
+        if (prevAssignment >= 0)
+            kmeansData->clusterWeightsAt(prevAssignment) -= weight;
+        kmeansData->clusterWeightsAt(newAssignment) += weight;
+    }
 };
 
-class AtomicDistributedClusteringDataUpdater : public AbstractClusteringDataUpdater
+template <typename precision = double, typename int_size = int32_t>
+class AtomicDistributedClusteringDataUpdater : public AbstractClusteringDataUpdater<precision, int_size>
 {
 public:
-    ~AtomicDistributedClusteringDataUpdater() {}
+    ~AtomicDistributedClusteringDataUpdater() = default;
 
-    void updateClusterWeights(const int32_t& dataIdx, const int32_t& prevAssignment, const int32_t& newAssignment,
-                              KmeansData* const kmeansData);
+    void updateClusterWeights(const int_size& dataIdx, const int_size& prevAssignment, const int_size& newAssignment,
+                              KmeansData<precision, int_size>* const kmeansData)
+    {
+        precision weight = kmeansData->weights->at(dataIdx);
+        if (prevAssignment >= 0)
+#pragma omp atomic
+            kmeansData->clusterWeightsAt(prevAssignment) -= weight;
+#pragma omp atomic
+        kmeansData->clusterWeightsAt(newAssignment) += weight;
+    }
 };
 
-class CoresetClusteringDataUpdater : public AbstractClusteringDataUpdater
+template <typename precision = double, typename int_size = int32_t>
+class CoresetClusteringDataUpdater : public AbstractClusteringDataUpdater<precision, int_size>
 {
 public:
-    ~CoresetClusteringDataUpdater() {}
+    ~CoresetClusteringDataUpdater() = default;
 
-    void updateClusterWeights(const int32_t& dataIdx, const int32_t& prevAssignment, const int32_t& newAssignment,
-                              KmeansData* const kmeansData) override;
+    void updateClusterWeights(const int_size& dataIdx, const int_size& prevAssignment, const int_size& newAssignment,
+                              KmeansData<precision, int_size>* const kmeansData) override
+    {
+        // no operations here
+    }
 };
+}  // namespace HPKmeans

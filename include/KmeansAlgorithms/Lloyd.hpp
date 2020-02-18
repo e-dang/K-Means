@@ -3,26 +3,47 @@
 #include "KmeansAlgorithms/KmeansAlgorithms.hpp"
 #include "Strategies/Averager.hpp"
 #include "Strategies/PointReassigner.hpp"
-
+#include "mpi.h"
+namespace HPKmeans
+{
 /**
  * @brief Implementation of a Kmeans maximization algorithm. Given a set of initialized clusters, this class will
  *        optimize the clusters using Lloyd's algorithm.
  */
-class TemplateLloyd : public AbstractKmeansMaximizer
+template <typename precision = double, typename int_size = int32_t>
+class TemplateLloyd : public AbstractKmeansMaximizer<precision, int_size>
 {
+    // using HPKmeans::AbstractKmeansMaximizer<precision, int_size>;
+
 protected:
-    std::unique_ptr<AbstractWeightedAverager> pAverager;
+    std::unique_ptr<AbstractWeightedAverager<precision, int_size>> pAverager;
 
 public:
-    TemplateLloyd(AbstractPointReassigner* pointReassigner, AbstractWeightedAverager* averager) :
-        AbstractKmeansMaximizer(pointReassigner), pAverager(averager){};
+    TemplateLloyd(AbstractPointReassigner<precision, int_size>* pointReassigner,
+                  AbstractWeightedAverager<precision, int_size>* averager) :
+        AbstractKmeansMaximizer<precision, int_size>(pointReassigner), pAverager(averager){};
 
-    virtual ~TemplateLloyd(){};
+    virtual ~TemplateLloyd() = default;
 
     /**
      * @brief Top level function for running Lloyd's algorithm on a set of pre-initialized clusters.
      */
-    void maximize() final;
+    void maximize() final
+    {
+        int_size changed, minNumChanged = (*(this->pTotalNumData) * this->MIN_PERCENT_CHANGED);
+
+        do
+        {
+            (*(this->ppClusters))->fill(0);
+
+            calcClusterSums();
+
+            averageClusterSums();
+
+            changed = reassignPoints();
+
+        } while (changed > minNumChanged);
+    }
 
 protected:
     /**
@@ -39,37 +60,78 @@ protected:
 
      * @return int - The number of datapoints whose cluster assignment has changed in the current iteration.
      */
-    virtual int32_t reassignPoints() = 0;
+    virtual int_size reassignPoints() = 0;
 };
 
-class SharedMemoryLloyd : public TemplateLloyd
+template <typename precision = double, typename int_size = int32_t>
+class SharedMemoryLloyd : public TemplateLloyd<precision, int_size>
 {
 public:
-    SharedMemoryLloyd(AbstractPointReassigner* pointReassigner, AbstractWeightedAverager* averager) :
-        TemplateLloyd(pointReassigner, averager){};
+    SharedMemoryLloyd(AbstractPointReassigner<precision, int_size>* pointReassigner,
+                      AbstractWeightedAverager<precision, int_size>* averager) :
+        TemplateLloyd<precision, int_size>(pointReassigner, averager){};
 
-    ~SharedMemoryLloyd(){};
+    ~SharedMemoryLloyd() = default;
 
 protected:
-    void calcClusterSums() override;
+    void calcClusterSums() override
+    {
+        this->pAverager->calculateSum(this->pData, *(this->ppClusters), *(this->ppClustering), this->pWeights);
+    }
 
-    void averageClusterSums() override;
+    void averageClusterSums() override
+    {
+        this->pAverager->normalizeSum(*(this->ppClusters), *(this->ppClusterWeights));
+    }
 
-    int32_t reassignPoints() override;
+    int_size reassignPoints() override { return this->pPointReassigner->reassignPoints(this->pKmeansData); }
 };
 
-class MPILloyd : public TemplateLloyd
+template <typename precision = double, typename int_size = int32_t>
+class MPILloyd : public TemplateLloyd<precision, int_size>
 {
 public:
-    MPILloyd(AbstractPointReassigner* pointReassigner, AbstractWeightedAverager* averager) :
-        TemplateLloyd(pointReassigner, averager){};
+    MPILloyd(AbstractPointReassigner<precision, int_size>* pointReassigner,
+             AbstractWeightedAverager<precision, int_size>* averager) :
+        TemplateLloyd<precision, int_size>(pointReassigner, averager){};
 
-    ~MPILloyd(){};
+    ~MPILloyd() = default;
 
 protected:
-    void calcClusterSums() override;
+    void calcClusterSums() override
+    {
+        this->pAverager->calculateSum(this->pData, *(this->ppClusters), *(this->ppClustering), this->pWeights,
+                                      this->pDisplacements->at(*(this->pRank)));
 
-    void averageClusterSums() override;
+        MPI_Allreduce(MPI_IN_PLACE, (*(this->ppClusters))->data(), (*(this->ppClusters))->elements(), mpi_type_t,
+                      MPI_SUM, MPI_COMM_WORLD);
+    }
 
-    int32_t reassignPoints() override;
+    void averageClusterSums() override
+    {
+        std::vector<precision> copyWeights((*(this->ppClusterWeights))->size());
+        MPI_Reduce((*(this->ppClusterWeights))->data(), copyWeights.data(), copyWeights.size(), mpi_type_t, MPI_SUM, 0,
+                   MPI_COMM_WORLD);
+
+        if (*(this->pRank) == 0)
+        {
+            this->pAverager->normalizeSum(*(this->ppClusters), &copyWeights);
+        }
+
+        MPI_Bcast((*(this->ppClusters))->data(), (*(this->ppClusters))->elements(), mpi_type_t, 0, MPI_COMM_WORLD);
+    }
+
+    int_size reassignPoints() override
+    {
+        int_size changed = this->pPointReassigner->reassignPoints(this->pKmeansData);
+
+        MPI_Allgatherv(MPI_IN_PLACE, this->pLengths->at(*(this->pRank)), MPI_INT, (*(this->ppClustering))->data(),
+                       this->pLengths->data(), this->pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
+        MPI_Allreduce(MPI_IN_PLACE, &changed, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+        MPI_Allgatherv(MPI_IN_PLACE, this->pLengths->at(*(this->pRank)), mpi_type_t, (*this->ppSqDistances)->data(),
+                       this->pLengths->data(), this->pDisplacements->data(), mpi_type_t, MPI_COMM_WORLD);
+
+        return changed;
+    }
 };
+}  // namespace HPKmeans

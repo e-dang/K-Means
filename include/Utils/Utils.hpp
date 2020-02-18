@@ -9,7 +9,8 @@
 #include "mpi.h"
 
 typedef boost::mt19937 RNGType;
-
+namespace HPKmeans
+{
 inline int64_t getTime()
 {
     return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch())
@@ -38,18 +39,19 @@ inline double getRandDouble01MPI()
     return dblDistr();
 }
 
-inline MPIData getMPIData(const int32_t& totalNumData)
+template <typename int_size>
+inline MPIData<int_size> getMPIData(const int_size& totalNumData)
 {
     int rank, numProcs;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
     // number of datapoints allocated for each process to compute
-    int32_t chunk = totalNumData / numProcs;
-    int32_t scrap = chunk + (totalNumData % numProcs);
+    int_size chunk = totalNumData / numProcs;
+    int_size scrap = chunk + (totalNumData % numProcs);
 
-    std::vector<int32_t> lengths(numProcs);        // size of each sub-array to gather
-    std::vector<int32_t> displacements(numProcs);  // index of each sub-array to gather
+    std::vector<int_size> lengths(numProcs);        // size of each sub-array to gather
+    std::vector<int_size> displacements(numProcs);  // index of each sub-array to gather
     for (int i = 0; i < numProcs; i++)
     {
         lengths.at(i)       = chunk;
@@ -57,19 +59,21 @@ inline MPIData getMPIData(const int32_t& totalNumData)
     }
     lengths.at(numProcs - 1) = scrap;
 
-    return MPIData{ rank, numProcs, lengths, displacements };
+    return MPIData<int_size>(rank, numProcs, lengths, displacements);
 }
 
-inline int32_t getTotalNumDataMPI(const Matrix* const data)
+template <typename precision, typename int_size>
+inline int_size getTotalNumDataMPI(const Matrix<precision, int_size>* const data)
 {
     int rank, numProcs;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
-    int32_t totalNumData = 0;
-    int32_t localNumData = data->getNumData();
+    int_size totalNumData = 0;
+    int_size localNumData = data->rows();
 
     MPI_Allreduce(&localNumData, &totalNumData, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
     return totalNumData;
 }
+}  // namespace HPKmeans

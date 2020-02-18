@@ -4,9 +4,12 @@
 
 #include "Containers/Definitions.hpp"
 
+namespace HPKmeans
+{
 /**
  * @brief An interface for functor classes that calculate distances between points.
  */
+template <typename precision>
 class IDistanceFunctor
 {
 public:
@@ -16,15 +19,16 @@ public:
      * @param point1 - The first datapoint.
      * @param point2 - The second datapoint.
      * @param numFeatures - The number of features in each datapoint.
-     * @return value_t - The distance between each point.
+     * @return precision - The distance between each point.
      */
-    virtual value_t operator()(const value_t* point1, const value_t* point2, const int32_t& numFeatures) = 0;
+    virtual precision operator()(const precision* point1, const precision* point2, const int32_t& numFeatures) = 0;
 };
 
 /**
  * @brief Implementation of IDistanceFunctor that calculates the Euclidean distance between two points.
  */
-class EuclideanDistance : public IDistanceFunctor
+template <typename precision>
+class EuclideanDistance : public IDistanceFunctor<precision>
 {
 public:
     /**
@@ -33,11 +37,11 @@ public:
      * @param point1 - The first datapoint.
      * @param point2 - The second datapoint.
      * @param numFeatures - The number of features in each datapoint.
-     * @return value_t
+     * @return precision
      */
-    value_t operator()(const value_t* point1, const value_t* point2, const int32_t& numFeatures)
+    precision operator()(const precision* point1, const precision* point2, const int32_t& numFeatures)
     {
-        value_t sum = 0;
+        precision sum = 0.0;
         for (int32_t i = 0; i < numFeatures; i++)
         {
             sum += std::pow(point1[i] - point2[i], 2);
@@ -46,3 +50,4 @@ public:
         return std::sqrt(sum);
     }
 };
+}  // namespace HPKmeans

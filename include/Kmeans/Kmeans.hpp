@@ -10,24 +10,30 @@
 #include "Strategies/CoresetClusteringFinisher.hpp"
 #include "Strategies/KmeansDataCreator.hpp"
 #include "Utils/DistanceFunctors.hpp"
-
+#include "mpi.h"
+namespace HPKmeans
+{
 /**
  * @brief Abstract class that defines the interface for using a Kmeans class, which wraps an initialization and
  *        maximization algorithm together, along with a distance metric functor in order to cluster data. In addition
  *        this class also defines the member variables, setters, getters, and helper functions that each Kmeans
  *        concretion will need to function.
  */
+template <typename precision = double, typename int_size = int32_t>
 class AbstractKmeans
 {
 protected:
-    std::unique_ptr<AbstractKmeansInitializer> pInitializer;
-    std::unique_ptr<AbstractKmeansMaximizer> pMaximizer;
-    std::unique_ptr<IKmeansDataCreator> pDataCreator;
-    std::shared_ptr<IDistanceFunctor> pDistanceFunc;
+    std::unique_ptr<AbstractKmeansInitializer<precision, int_size>> pInitializer;
+    std::unique_ptr<AbstractKmeansMaximizer<precision, int_size>> pMaximizer;
+    std::unique_ptr<IKmeansDataCreator<precision, int_size>> pDataCreator;
+    std::shared_ptr<IDistanceFunctor<precision>> pDistanceFunc;
 
 public:
-    AbstractKmeans(IKmeansDataCreator* dataCreator, std::shared_ptr<IDistanceFunctor> distanceFunc) :
-        pDataCreator(dataCreator), pDistanceFunc(distanceFunc){};
+    AbstractKmeans(IKmeansDataCreator<precision, int_size>* dataCreator,
+                   std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) :
+        pDataCreator(dataCreator), pDistanceFunc(distanceFunc)
+    {
+    }
 
     /**
      * @brief Constructor for AbstractKmeans.
@@ -37,14 +43,16 @@ public:
      * @param distanceFunc - A pointer to a functor class used to calculate the distance between points, such as the
      *                       euclidean distance.
      */
-    AbstractKmeans(AbstractKmeansInitializer* initializer, AbstractKmeansMaximizer* maximizer,
-                   IKmeansDataCreator* dataCreator, std::shared_ptr<IDistanceFunctor> distanceFunc) :
+    AbstractKmeans(AbstractKmeansInitializer<precision, int_size>* initializer,
+                   AbstractKmeansMaximizer<precision, int_size>* maximizer,
+                   IKmeansDataCreator<precision, int_size>* dataCreator,
+                   std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) :
         pInitializer(initializer), pMaximizer(maximizer), pDataCreator(dataCreator), pDistanceFunc(distanceFunc){};
 
     /**
      * @brief Destroy the Abstract Kmeans object.
      */
-    virtual ~AbstractKmeans(){};
+    virtual ~AbstractKmeans() = default;
 
     /**
      * @brief Overloaded interface for the top level function that initiates the clustering process, where the weights
@@ -56,8 +64,9 @@ public:
      * @param numClusters - The number of clusters to cluster the data into.
      * @param numRestarts - The number of times to repeat the clustering process.
      */
-    virtual std::shared_ptr<ClusterResults> fit(const Matrix* const data, const int32_t& numClusters,
-                                                const int& numRestarts) = 0;
+    virtual std::shared_ptr<ClusterResults<precision, int_size>> fit(const Matrix<precision, int_size>* const data,
+                                                                     const int_size& numClusters,
+                                                                     const int& numRestarts) = 0;
 
     /**
      * @brief Interface for the top level function that initiates the clustering process.
@@ -67,19 +76,45 @@ public:
      * @param numRestarts - The number of times to repeat the clustering process.
      * @param weights - The weights for each datapoint in the matrix.
      */
-    virtual std::shared_ptr<ClusterResults> fit(const Matrix* const data, const int32_t& numClusters,
-                                                const int& numRestarts, const std::vector<value_t>* const weights) = 0;
+    virtual std::shared_ptr<ClusterResults<precision, int_size>> fit(const Matrix<precision, int_size>* const data,
+                                                                     const int_size& numClusters,
+                                                                     const int& numRestarts,
+                                                                     const std::vector<precision>* const weights) = 0;
 
     /**
      * @brief Set the distanceFunc member variable.
      *
      * @param distanceFunc - A pointer to an implementation of the IDistanceFunctor class.
      */
-    void setDistanceFunc(IDistanceFunctor* distanceFunc) { pDistanceFunc.reset(distanceFunc); }
+    void setDistanceFunc(IDistanceFunctor<precision>* distanceFunc) { pDistanceFunc.reset(distanceFunc); }
 
 protected:
-    std::shared_ptr<ClusterResults> run(const Matrix* const data, const int32_t& numClusters, const int& numRestarts,
-                                        KmeansData* const kmeansData);
+    std::shared_ptr<ClusterResults<precision, int_size>> run(const Matrix<precision, int_size>* const data,
+                                                             const int_size& numClusters, const int& numRestarts,
+                                                             KmeansData<precision, int_size>* const kmeansData)
+    {
+        std::shared_ptr<ClusterResults<precision, int_size>> clusterResults =
+          std::make_shared<ClusterResults<precision, int_size>>();
+
+        pInitializer->setKmeansData(kmeansData);
+        pMaximizer->setKmeansData(kmeansData);
+
+        for (int i = 0; i < numRestarts; i++)
+        {
+            std::vector<precision> distances(kmeansData->totalNumData, 1);
+            ClusterData<precision, int_size> clusterData(kmeansData->totalNumData, data->cols(), numClusters);
+
+            kmeansData->setClusterData(&clusterData);
+            kmeansData->setSqDistances(&distances);
+
+            pInitializer->initialize();
+            pMaximizer->maximize();
+
+            compareResults(&clusterData, &distances, clusterResults);
+        }
+
+        return clusterResults;
+    }
 
     /**
      * @brief Helper function that takes in the resulting clusterData and squared distances of each datapoint to their
@@ -89,59 +124,101 @@ protected:
      * @param clusterData - The clusterData from the current run.
      * @param sqDistances - The square distances from each to point to their assigned cluster.
      */
-    void compareResults(ClusterData* const clusterData, std::vector<value_t>* const sqDistances,
-                        std::shared_ptr<ClusterResults> clusterResults)
+    void compareResults(ClusterData<precision, int_size>* const clusterData, std::vector<precision>* const sqDistances,
+                        std::shared_ptr<ClusterResults<precision, int_size>> clusterResults)
     {
-        value_t currError = std::accumulate(sqDistances->begin(), sqDistances->end(), 0.0);
+        precision currError = std::accumulate(sqDistances->begin(), sqDistances->end(), 0.0);
 
-        if (clusterResults->mError > currError || clusterResults->mError < 0)
+        if (clusterResults->error > currError || clusterResults->error < 0)
         {
-            clusterResults->mError       = currError;
-            clusterResults->mClusterData = *clusterData;
-            clusterResults->mSqDistances = *sqDistances;
+            clusterResults->error       = currError;
+            clusterResults->clusterData = std::move(*clusterData);
+            clusterResults->sqDistances = std::move(*sqDistances);
         }
     }
 };
 
-class WeightedKmeans : public AbstractKmeans
+template <typename precision = double, typename int_size = int32_t>
+class WeightedKmeans : public AbstractKmeans<precision, int_size>
 {
 public:
-    WeightedKmeans(AbstractKmeansInitializer* initializer, AbstractKmeansMaximizer* maximizer,
-                   IKmeansDataCreator* dataCreator, std::shared_ptr<IDistanceFunctor> distanceFunc) :
-        AbstractKmeans(initializer, maximizer, dataCreator, distanceFunc){};
+    WeightedKmeans(AbstractKmeansInitializer<precision, int_size>* initializer,
+                   AbstractKmeansMaximizer<precision, int_size>* maximizer,
+                   IKmeansDataCreator<precision, int_size>* dataCreator,
+                   std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) :
+        AbstractKmeans<precision, int_size>(initializer, maximizer, dataCreator, distanceFunc){};
 
-    ~WeightedKmeans(){};
+    ~WeightedKmeans() = default;
 
-    std::shared_ptr<ClusterResults> fit(const Matrix* const data, const int32_t& numClusters,
-                                        const int& numRestarts) override;
+    std::shared_ptr<ClusterResults<precision, int_size>> fit(const Matrix<precision, int_size>* const data,
+                                                             const int_size& numClusters,
+                                                             const int& numRestarts) override
+    {
+        std::vector<precision> weights(data->rows(), 1);
+        return fit(data, numClusters, numRestarts, &weights);
+    }
 
-    std::shared_ptr<ClusterResults> fit(const Matrix* const data, const int32_t& numClusters, const int& numRestarts,
-                                        const std::vector<value_t>* const weights) override;
+    std::shared_ptr<ClusterResults<precision, int_size>> fit(const Matrix<precision, int_size>* const data,
+                                                             const int_size& numClusters, const int& numRestarts,
+                                                             const std::vector<precision>* const weights) override
+    {
+        auto kmeansData = this->pDataCreator->create(data, weights, this->pDistanceFunc);
+        return this->run(data, numClusters, numRestarts, &kmeansData);
+    }
 };
 
-class CoresetKmeans : public AbstractKmeans
+template <typename precision = double, typename int_size = int32_t>
+class CoresetKmeans : public AbstractKmeans<precision, int_size>
 {
 private:
-    int32_t mSampleSize;
-    std::unique_ptr<AbstractKmeans> pKmeans;
-    std::unique_ptr<AbstractCoresetCreator> pCreator;
-    std::unique_ptr<AbstractCoresetClusteringFinisher> pFinisher;
+    int_size mSampleSize;
+    std::unique_ptr<AbstractKmeans<precision, int_size>> pKmeans;
+    std::unique_ptr<AbstractCoresetCreator<precision, int_size>> pCreator;
+    std::unique_ptr<AbstractCoresetClusteringFinisher<precision, int_size>> pFinisher;
 
 public:
-    CoresetKmeans(const int32_t& sampleSize, AbstractKmeans* kmeans, AbstractCoresetCreator* creator,
-                  AbstractCoresetClusteringFinisher* finisher, IKmeansDataCreator* dataCreator,
-                  std::shared_ptr<IDistanceFunctor> distanceFunc) :
-        AbstractKmeans(dataCreator, distanceFunc),
+    CoresetKmeans(const int_size& sampleSize, AbstractKmeans<precision, int_size>* kmeans,
+                  AbstractCoresetCreator<precision, int_size>* creator,
+                  AbstractCoresetClusteringFinisher<precision, int_size>* finisher,
+                  IKmeansDataCreator<precision, int_size>* dataCreator,
+                  std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) :
+        AbstractKmeans<precision, int_size>(dataCreator, distanceFunc),
         mSampleSize(sampleSize),
         pKmeans(kmeans),
         pCreator(creator),
         pFinisher(finisher){};
 
-    ~CoresetKmeans(){};
+    ~CoresetKmeans() = default;
 
-    std::shared_ptr<ClusterResults> fit(const Matrix* const data, const int32_t& numClusters,
-                                        const int& numRestarts) override;
+    std::shared_ptr<ClusterResults<precision, int_size>> fit(const Matrix<precision, int_size>* const data,
+                                                             const int_size& numClusters,
+                                                             const int& numRestarts) override
+    {
+        auto kmeansData = this->pDataCreator->create(data, nullptr, this->pDistanceFunc);
+        Coreset<precision, int_size> coreset(mSampleSize, data->cols(), false);
 
-    std::shared_ptr<ClusterResults> fit(const Matrix* const data, const int32_t& numClusters, const int& numRestarts,
-                                        const std::vector<value_t>* const weights) override;
+        pCreator->createCoreset(data, &coreset);
+
+        auto clusterResults = pKmeans->fit(&coreset.data, numClusters, numRestarts, &coreset.weights);
+        clusterResults->clusterData.clustering.resize(kmeansData.totalNumData);
+        clusterResults->sqDistances.resize(kmeansData.totalNumData);
+        std::fill(clusterResults->clusterData.clustering.begin(), clusterResults->clusterData.clustering.end(), -1);
+        std::fill(clusterResults->sqDistances.begin(), clusterResults->sqDistances.end(), -1);
+
+        kmeansData.setClusterData(&clusterResults->clusterData);
+        kmeansData.setSqDistances(&clusterResults->sqDistances);
+
+        clusterResults->error = pFinisher->finishClustering(&kmeansData);
+
+        return clusterResults;
+    }
+
+    std::shared_ptr<ClusterResults<precision, int_size>> fit(const Matrix<precision, int_size>* const data,
+                                                             const int_size& numClusters, const int& numRestarts,
+                                                             const std::vector<precision>* const weights) override
+    {
+        throw std::runtime_error("Should not be calling this func.");
+        return nullptr;
+    }
 };
+}  // namespace HPKmeans

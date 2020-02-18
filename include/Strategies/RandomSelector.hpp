@@ -4,14 +4,19 @@
 #include <vector>
 
 #include "Containers/Definitions.hpp"
+#include "Utils/Utils.hpp"
 
+namespace HPKmeans
+{
+template <typename precision = double, typename int_size = int32_t>
 class IWeightedRandomSelector
 {
 public:
-    virtual int32_t select(const std::vector<value_t>* const weights, value_t randomSumFrac) = 0;
+    virtual int_size select(const std::vector<precision>* const weights, precision randomSumFrac) = 0;
 };
 
-class SingleWeightedRandomSelector : public IWeightedRandomSelector
+template <typename precision = double, typename int_size = int32_t>
+class SingleWeightedRandomSelector : public IWeightedRandomSelector<precision, int_size>
 {
 public:
     /**
@@ -25,13 +30,25 @@ public:
      * @param randomFrac - A random float used in the algorithm to perform the random selection, [0, 1).
      * @return int - The selected index.
      */
-    int32_t select(const std::vector<value_t>* const weights, value_t randomSumFrac) override;
+    int_size select(const std::vector<precision>* const weights, precision randomSumFrac) override
+    {
+        for (size_t i = 0; i < weights->size(); i++)
+        {
+            if ((randomSumFrac -= weights->at(i)) <= 0)
+            {
+                return i;
+            }
+        }
+
+        return static_cast<int_size>(weights->size()) - 1;
+    }
 };
 
+template <typename precision = double, typename int_size = int32_t>
 class IMultiWeightedRandomSelector
 {
 public:
-    virtual std::vector<int32_t> select(const std::vector<value_t>* const weights, const int32_t& sampleSize) = 0;
+    virtual std::vector<int_size> select(const std::vector<precision>* const weights, const int_size& sampleSize) = 0;
 };
 
 /**
@@ -39,8 +56,34 @@ public:
  *        https://stackoverflow.com/questions/53632441/c-sampling-from-discrete-distribution-without-replacement
  *
  */
-class MultiWeightedRandomSelector : public IMultiWeightedRandomSelector
+template <typename precision = double, typename int_size = int32_t>
+class MultiWeightedRandomSelector : public IMultiWeightedRandomSelector<precision, int_size>
 {
 public:
-    std::vector<int32_t> select(const std::vector<value_t>* const weights, const int32_t& sampleSize) override;
+    std::vector<int_size> select(const std::vector<precision>* const weights, const int_size& sampleSize) override
+    {
+        std::vector<double> vals;
+        for (const auto& val : *weights)
+        {
+            vals.push_back(std::pow(getRandDouble01(), 1.0 / val));
+        }
+
+        std::vector<std::pair<int_size, precision>> valsWithIndices;
+        for (size_t i = 0; i < vals.size(); i++)
+        {
+            valsWithIndices.emplace_back(i, vals[i]);
+        }
+        std::sort(
+          valsWithIndices.begin(), valsWithIndices.end(),
+          [](std::pair<int_size, precision> x, std::pair<int_size, precision> y) { return x.second > y.second; });
+
+        std::vector<int_size> samples;
+        for (int_size i = 0; i < sampleSize; i++)
+        {
+            samples.emplace_back(valsWithIndices[i].first);
+        }
+
+        return samples;
+    }
 };
+}  // namespace HPKmeans

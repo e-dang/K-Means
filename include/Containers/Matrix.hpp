@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <iostream>
+#include <iterator>
 #include <vector>
 
 #include "Containers/Definitions.hpp"
@@ -131,7 +132,8 @@
 //         std::cout << std::endl;
 //     }
 // };
-
+namespace HPKmeans
+{
 template <typename precision = double, typename int_size = int32_t>
 class Matrix
 {
@@ -235,7 +237,7 @@ public:
 
     Matrix() noexcept : p_Data(nullptr), m_Rows(0), m_Cols(0), m_Capacity(0), m_Size(0) {}
 
-    Matrix(const int_size& numRows, const int_size& numCols) :
+    Matrix(const int_size& numRows, const int_size& numCols, bool autoReserve = true) :
         p_Data(nullptr), m_Rows(numRows), m_Cols(numCols), m_Capacity(numRows * numCols), m_Size(0)
     {
         if (!isValidNumRows() || !isValidNumCols() || !isValidNumCols())
@@ -246,6 +248,8 @@ public:
         }
 
         p_Data = new precision[m_Capacity];
+        if (autoReserve)
+            reserve(m_Rows);
     }
 
     Matrix(const Matrix& other) noexcept :
@@ -258,9 +262,9 @@ public:
         std::copy(other.p_Data, other.p_Data + other.elements(), p_Data);
     }
 
-    Matrix(Matrix&& rhs) noexcept : p_Data(nullptr), m_Rows(0), m_Cols(0), m_Capacity(0), m_Size(0)
+    Matrix(Matrix&& other) noexcept : p_Data(nullptr), m_Rows(0), m_Cols(0), m_Capacity(0), m_Size(0)
     {
-        *this = std::move(rhs);
+        *this = std::move(other);
     }
 
     ~Matrix()
@@ -317,6 +321,13 @@ public:
     inline int_size elements() const noexcept { return m_Size * m_Cols; }
     inline int_size size() const noexcept { return m_Size; }
     inline bool empty() const noexcept { return m_Size; }
+    inline void reserve(const int_size& space)
+    {
+        if (space < 0 || (m_Size + space) * m_Cols > m_Capacity)
+            throw std::length_error("Cannot reserve space less than zero or greater than the capacity.");
+
+        m_Size += space;
+    }
 
     inline precision* at(const int_size& row)
     {
@@ -422,3 +433,4 @@ private:
         return true;
     }
 };
+}  // namespace HPKmeans

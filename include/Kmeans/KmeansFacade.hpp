@@ -4,36 +4,77 @@
 #include "Containers/Definitions.hpp"
 #include "Factories/KmeansFactory.hpp"
 #include "Kmeans/Kmeans.hpp"
-
+namespace HPKmeans
+{
+template <typename precision = double, typename int_size = int32_t>
 class Kmeans
 {
 protected:
-    std::unique_ptr<AbstractKmeans> pKmeans;
-    std::unique_ptr<KmeansFactory> pFactory;
+    std::unique_ptr<AbstractKmeans<precision, int_size>> pKmeans;
+    std::unique_ptr<KmeansFactory<precision, int_size>> pFactory;
 
     Initializer mInitializer;
     Maximizer mMaximizer;
     CoresetCreator mCoreset;
     Parallelism mParallelism;
-    int32_t mSampleSize;
+    int_size mSampleSize;
 
 public:
     Kmeans(const Initializer initializer, const Maximizer maximizer, const CoresetCreator coreset,
-           const Parallelism parallelism, std::shared_ptr<IDistanceFunctor> distanceFunc,
-           const int32_t sampleSize = -1);
+           const Parallelism parallelism, std::shared_ptr<IDistanceFunctor<precision>> distanceFunc,
+           const int_size sampleSize = -1) :
+        pKmeans(nullptr),
+        pFactory(new KmeansFactory<precision, int_size>()),
+        mInitializer(initializer),
+        mMaximizer(maximizer),
+        mCoreset(coreset),
+        mParallelism(parallelism),
+        mSampleSize(sampleSize)
+    {
+        setKmeans(initializer, maximizer, coreset, parallelism, distanceFunc, sampleSize);
+    }
 
-    ~Kmeans(){};
+    ~Kmeans() = default;
 
-    std::shared_ptr<ClusterResults> fit(const Matrix* const data, const int32_t& numClusters, const int& numRestarts);
+    std::shared_ptr<ClusterResults<precision, int_size>> fit(const Matrix<precision, int_size>* const data,
+                                                             const int_size& numClusters, const int& numRestarts)
+    {
+        if (isValidSampleSize(data) && pKmeans != nullptr)
+            return pKmeans->fit(data, numClusters, numRestarts);
 
-    std::shared_ptr<ClusterResults> fit(const Matrix* const data, const int32_t& numClusters, const int& numRestarts,
-                                        std::vector<value_t>* weights);
+        return nullptr;
+    }
+
+    std::shared_ptr<ClusterResults<precision, int_size>> fit(const Matrix<precision, int_size>* const data,
+                                                             const int_size& numClusters, const int& numRestarts,
+                                                             std::vector<precision>* weights)
+    {
+        if (isValidSampleSize(data) && pKmeans != nullptr)
+            return pKmeans->fit(data, numClusters, numRestarts, weights);
+
+        return nullptr;
+    }
 
     bool setKmeans(const Initializer initializer, const Maximizer maximizer, const CoresetCreator coreset,
-                   const Parallelism parallelism, std::shared_ptr<IDistanceFunctor> distanceFunc,
-                   const int32_t sampleSize = -1);
+                   const Parallelism parallelism, std::shared_ptr<IDistanceFunctor<precision>> distanceFunc,
+                   const int_size sampleSize = -1)
+    {
+        if (sampleSizeCheck())
+        {
+            setInitializer(initializer);
+            setMaximizer(maximizer);
+            setCoresetCreator(coreset);
+            setParallelism(parallelism);
+            pKmeans = std::unique_ptr<AbstractKmeans<precision, int_size>>(
+              pFactory->createKmeans(initializer, maximizer, coreset, parallelism, distanceFunc, sampleSize));
 
-    void setDistanceFunc(IDistanceFunctor* distanceFunc) { pKmeans->setDistanceFunc(distanceFunc); }
+            return true;
+        }
+
+        return false;
+    }
+
+    void setDistanceFunc(IDistanceFunctor<precision>* distanceFunc) { pKmeans->setDistanceFunc(distanceFunc); }
 
 private:
     void setInitializer(const Initializer initializer) { mInitializer = initializer; }
@@ -44,7 +85,29 @@ private:
 
     void setParallelism(const Parallelism parallelism) { mParallelism = parallelism; }
 
-    bool sampleSizeCheck();
+    bool sampleSizeCheck()
+    {
+        if (mCoreset == None || (mCoreset != None && mSampleSize >= 0))
+            return true;
 
-    bool isValidSampleSize(const Matrix* const data);
+        std::cout << "A sample size must be given when using CoresetKmeans." << std::endl;
+        return false;
+    }
+
+    bool isValidSampleSize(const Matrix<precision, int_size>* const data)
+    {
+        if (mParallelism == MPI || mParallelism == Hybrid)
+        {
+            if (mSampleSize <= getTotalNumDataMPI(data))
+                return true;
+        }
+        else
+        {
+            if (mSampleSize <= data->rows())
+                return true;
+        }
+
+        return false;
+    }
 };
+}  // namespace HPKmeans

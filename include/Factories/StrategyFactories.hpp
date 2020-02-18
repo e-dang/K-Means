@@ -11,192 +11,304 @@
 #include "Strategies/PointReassigner.hpp"
 #include "Strategies/RandomSelector.hpp"
 
+namespace HPKmeans
+{
+template <typename precision = double, typename int_size = int32_t>
 class AbstractStrategyFactory
 {
 public:
-    AbstractStrategyFactory(){};
+    virtual ~AbstractStrategyFactory() = default;
 
-    virtual ~AbstractStrategyFactory(){};
+    IClosestClusterFinder<precision, int_size>* createClosestClusterFinder(Variant variant)
+    {
+        switch (variant)
+        {
+            case (Reg):
+                return new ClosestClusterFinder<precision, int_size>();
+            case (Opt):
+                return new ClosestNewClusterFinder<precision, int_size>();
+            default:
+                throw std::runtime_error("Invalid ClosestClusterFinder variant specified.");
+        }
+    }
 
-    IClosestClusterFinder* createClosestClusterFinder(Variant variant);
+    AbstractClosestClusterUpdater<precision, int_size>* createClosestClusterUpdater(Variant variant)
+    {
+        switch (variant)
+        {
+            case (SpecificCoreset):
+                return new SerialClosestClusterUpdater<precision, int_size>(createClosestClusterFinder(Reg),
+                                                                            createCoresetClusteringDataUpdater());
+            default:
+                return new SerialClosestClusterUpdater<precision, int_size>(createClosestClusterFinder(variant),
+                                                                            createClusteringDataUpdater());
+        }
+    }
 
-    AbstractClosestClusterUpdater* createClosestClusterUpdater(Variant variant);
+    AbstractPointReassigner<precision, int_size>* createPointReassigner(Variant variant)
+    {
+        switch (variant)
+        {
+            case (Reg):
+                return createRegPointReassigner();
+            case (Opt):
+                return createOptPointReassigner();
+            default:
+                throw std::runtime_error("Invalid PointReassigner variant specified.");
+        }
+    }
 
-    AbstractPointReassigner* createPointReassigner(Variant variant);
+    IMultiWeightedRandomSelector<precision, int_size>* createMultiWeightedRandomSelector()
+    {
+        return new MultiWeightedRandomSelector<precision, int_size>();
+    };
 
-    IMultiWeightedRandomSelector* createMultiWeightedRandomSelector() { return new MultiWeightedRandomSelector(); };
+    IWeightedRandomSelector<precision, int_size>* createWeightedRandomSelector()
+    {
+        return new SingleWeightedRandomSelector<precision, int_size>();
+    };
 
-    IWeightedRandomSelector* createWeightedRandomSelector() { return new SingleWeightedRandomSelector(); };
+    AbstractClusteringDataUpdater<precision, int_size>* createCoresetClusteringDataUpdater()
+    {
+        return new CoresetClusteringDataUpdater<precision, int_size>();
+    }
 
-    AbstractClusteringDataUpdater* createCoresetClusteringDataUpdater() { return new CoresetClusteringDataUpdater(); }
+    virtual AbstractClusteringDataUpdater<precision, int_size>* createClusteringDataUpdater() = 0;
 
-    virtual AbstractClusteringDataUpdater* createClusteringDataUpdater() = 0;
+    virtual AbstractWeightedAverager<precision, int_size>* createWeightedAverager() = 0;
 
-    virtual AbstractWeightedAverager* createWeightedAverager() = 0;
+    virtual AbstractAverager<precision, int_size>* createVectorAverager() = 0;
 
-    virtual AbstractAverager* createVectorAverager() = 0;
+    virtual IDistanceSumCalculator<precision, int_size>* createDistanceSumCalculator() = 0;
 
-    virtual IDistanceSumCalculator* createDistanceSumCalculator() = 0;
+    virtual ICoresetDistributionCalculator<precision, int_size>* createCoresetDistributionCalculator() = 0;
 
-    virtual ICoresetDistributionCalculator* createCoresetDistributionCalculator() = 0;
+    virtual IKmeansDataCreator<precision, int_size>* createKmeansDataCreator() = 0;
 
-    virtual IKmeansDataCreator* createKmeansDataCreator() = 0;
+    virtual AbstractCoresetClusteringFinisher<precision, int_size>* createCoresetClusteringFinisher() = 0;
 
-    virtual AbstractCoresetClusteringFinisher* createCoresetClusteringFinisher() = 0;
+    virtual AbstractPointReassigner<precision, int_size>* createRegPointReassigner() = 0;
 
-    virtual AbstractPointReassigner* createRegPointReassigner() = 0;
-
-    virtual AbstractPointReassigner* createOptPointReassigner() = 0;
+    virtual AbstractPointReassigner<precision, int_size>* createOptPointReassigner() = 0;
 };
 
-class SerialStrategyFactory : public AbstractStrategyFactory
+template <typename precision = double, typename int_size = int32_t>
+class SerialStrategyFactory : public AbstractStrategyFactory<precision, int_size>
 {
 public:
-    SerialStrategyFactory(){};
+    SerialStrategyFactory() = default;
 
-    ~SerialStrategyFactory(){};
+    ~SerialStrategyFactory() = default;
 
-    AbstractClusteringDataUpdater* createClusteringDataUpdater() override { return new ClusteringDataUpdater(); }
-
-    AbstractPointReassigner* createRegPointReassigner() override
+    AbstractClusteringDataUpdater<precision, int_size>* createClusteringDataUpdater() override
     {
-        return new SerialPointReassigner(createClosestClusterUpdater(Reg));
-    };
-
-    AbstractPointReassigner* createOptPointReassigner() override
-    {
-        return new SerialOptimizedPointReassigner(createClosestClusterUpdater(Reg));
-    };
-
-    AbstractWeightedAverager* createWeightedAverager() override { return new SerialWeightedMultiVectorAverager(); }
-
-    AbstractAverager* createVectorAverager() override { return new SerialVectorAverager(); }
-
-    IDistanceSumCalculator* createDistanceSumCalculator() override { return new SerialDistanceSumCalculator(); }
-
-    ICoresetDistributionCalculator* createCoresetDistributionCalculator() override
-    {
-        return new SerialCoresetDistributionCalculator();
+        return new ClusteringDataUpdater<precision, int_size>();
     }
 
-    IKmeansDataCreator* createKmeansDataCreator() override { return new SharedMemoryKmeansDataCreator(); }
-
-    AbstractCoresetClusteringFinisher* createCoresetClusteringFinisher() override
+    AbstractPointReassigner<precision, int_size>* createRegPointReassigner() override
     {
-        return new SharedMemoryCoresetClusteringFinisher(createClosestClusterUpdater(SpecificCoreset));
+        return new SerialPointReassigner<precision, int_size>(this->createClosestClusterUpdater(Reg));
+    };
+
+    AbstractPointReassigner<precision, int_size>* createOptPointReassigner() override
+    {
+        return new SerialOptimizedPointReassigner<precision, int_size>(this->createClosestClusterUpdater(Reg));
+    };
+
+    AbstractWeightedAverager<precision, int_size>* createWeightedAverager() override
+    {
+        return new SerialWeightedMultiVectorAverager<precision, int_size>();
+    }
+
+    AbstractAverager<precision, int_size>* createVectorAverager() override
+    {
+        return new SerialVectorAverager<precision, int_size>();
+    }
+
+    IDistanceSumCalculator<precision, int_size>* createDistanceSumCalculator() override
+    {
+        return new SerialDistanceSumCalculator<precision, int_size>();
+    }
+
+    ICoresetDistributionCalculator<precision, int_size>* createCoresetDistributionCalculator() override
+    {
+        return new SerialCoresetDistributionCalculator<precision, int_size>();
+    }
+
+    IKmeansDataCreator<precision, int_size>* createKmeansDataCreator() override
+    {
+        return new SharedMemoryKmeansDataCreator<precision, int_size>();
+    }
+
+    AbstractCoresetClusteringFinisher<precision, int_size>* createCoresetClusteringFinisher() override
+    {
+        return new SharedMemoryCoresetClusteringFinisher<precision, int_size>(
+          this->createClosestClusterUpdater(SpecificCoreset));
     }
 };
 
-class OMPStrategyFactory : public AbstractStrategyFactory
+template <typename precision = double, typename int_size = int32_t>
+class OMPStrategyFactory : public AbstractStrategyFactory<precision, int_size>
 {
 public:
-    OMPStrategyFactory(){};
+    OMPStrategyFactory() = default;
 
-    ~OMPStrategyFactory(){};
+    ~OMPStrategyFactory() = default;
 
-    AbstractClusteringDataUpdater* createClusteringDataUpdater() override { return new AtomicClusteringDataUpdater(); }
-
-    AbstractPointReassigner* createRegPointReassigner() override
+    AbstractClusteringDataUpdater<precision, int_size>* createClusteringDataUpdater() override
     {
-        return new OMPPointReassigner(createClosestClusterUpdater(Reg));
-    };
-
-    AbstractPointReassigner* createOptPointReassigner() override
-    {
-        return new OMPOptimizedPointReassigner(createClosestClusterUpdater(Reg));
-    };
-
-    AbstractWeightedAverager* createWeightedAverager() override { return new OMPWeightedMultiVectorAverager(); }
-
-    AbstractAverager* createVectorAverager() override { return new OMPVectorAverager(); }
-
-    IDistanceSumCalculator* createDistanceSumCalculator() override { return new OMPDistanceSumCalculator(); }
-
-    ICoresetDistributionCalculator* createCoresetDistributionCalculator() override
-    {
-        return new OMPCoresetDistributionCalculator();
+        return new AtomicClusteringDataUpdater<precision, int_size>();
     }
 
-    IKmeansDataCreator* createKmeansDataCreator() override { return new SharedMemoryKmeansDataCreator(); }
-
-    AbstractCoresetClusteringFinisher* createCoresetClusteringFinisher() override
+    AbstractPointReassigner<precision, int_size>* createRegPointReassigner() override
     {
-        return new SharedMemoryCoresetClusteringFinisher(createClosestClusterUpdater(SpecificCoreset));
+        return new OMPPointReassigner<precision, int_size>(this->createClosestClusterUpdater(Reg));
+    };
+
+    AbstractPointReassigner<precision, int_size>* createOptPointReassigner() override
+    {
+        return new OMPOptimizedPointReassigner<precision, int_size>(this->createClosestClusterUpdater(Reg));
+    };
+
+    AbstractWeightedAverager<precision, int_size>* createWeightedAverager() override
+    {
+        return new OMPWeightedMultiVectorAverager<precision, int_size>();
+    }
+
+    AbstractAverager<precision, int_size>* createVectorAverager() override
+    {
+        return new OMPVectorAverager<precision, int_size>();
+    }
+
+    IDistanceSumCalculator<precision, int_size>* createDistanceSumCalculator() override
+    {
+        return new OMPDistanceSumCalculator<precision, int_size>();
+    }
+
+    ICoresetDistributionCalculator<precision, int_size>* createCoresetDistributionCalculator() override
+    {
+        return new OMPCoresetDistributionCalculator<precision, int_size>();
+    }
+
+    IKmeansDataCreator<precision, int_size>* createKmeansDataCreator() override
+    {
+        return new SharedMemoryKmeansDataCreator<precision, int_size>();
+    }
+
+    AbstractCoresetClusteringFinisher<precision, int_size>* createCoresetClusteringFinisher() override
+    {
+        return new SharedMemoryCoresetClusteringFinisher<precision, int_size>(
+          this->createClosestClusterUpdater(SpecificCoreset));
     }
 };
 
-class MPIStrategyFactory : public AbstractStrategyFactory
+template <typename precision = double, typename int_size = int32_t>
+class MPIStrategyFactory : public AbstractStrategyFactory<precision, int_size>
 {
 public:
-    MPIStrategyFactory(){};
+    MPIStrategyFactory() = default;
 
-    ~MPIStrategyFactory(){};
+    ~MPIStrategyFactory() = default;
 
-    AbstractClusteringDataUpdater* createClusteringDataUpdater() override
+    AbstractClusteringDataUpdater<precision, int_size>* createClusteringDataUpdater() override
     {
-        return new DistributedClusteringDataUpdater();
+        return new DistributedClusteringDataUpdater<precision, int_size>();
     }
 
-    AbstractPointReassigner* createRegPointReassigner() override
+    AbstractPointReassigner<precision, int_size>* createRegPointReassigner() override
     {
-        return new SerialPointReassigner(createClosestClusterUpdater(Reg));
+        return new SerialPointReassigner<precision, int_size>(this->createClosestClusterUpdater(Reg));
     };
 
-    AbstractPointReassigner* createOptPointReassigner() override
+    AbstractPointReassigner<precision, int_size>* createOptPointReassigner() override
     {
-        return new SerialOptimizedPointReassigner(createClosestClusterUpdater(Reg));
+        return new SerialOptimizedPointReassigner<precision, int_size>(this->createClosestClusterUpdater(Reg));
     };
 
-    AbstractWeightedAverager* createWeightedAverager() override { return new SerialWeightedMultiVectorAverager(); }
-
-    AbstractAverager* createVectorAverager() override { return new SerialVectorAverager(); }
-
-    IDistanceSumCalculator* createDistanceSumCalculator() override { return new SerialDistanceSumCalculator(); }
-
-    ICoresetDistributionCalculator* createCoresetDistributionCalculator() override { return nullptr; }
-
-    IKmeansDataCreator* createKmeansDataCreator() override { return new MPIKmeansDataCreator(); }
-
-    AbstractCoresetClusteringFinisher* createCoresetClusteringFinisher() override
+    AbstractWeightedAverager<precision, int_size>* createWeightedAverager() override
     {
-        return new MPICoresetClusteringFinisher(createClosestClusterUpdater(SpecificCoreset));
+        return new SerialWeightedMultiVectorAverager<precision, int_size>();
+    }
+
+    AbstractAverager<precision, int_size>* createVectorAverager() override
+    {
+        return new SerialVectorAverager<precision, int_size>();
+    }
+
+    IDistanceSumCalculator<precision, int_size>* createDistanceSumCalculator() override
+    {
+        return new SerialDistanceSumCalculator<precision, int_size>();
+    }
+
+    ICoresetDistributionCalculator<precision, int_size>* createCoresetDistributionCalculator() override
+    {
+        return nullptr;
+    }
+
+    IKmeansDataCreator<precision, int_size>* createKmeansDataCreator() override
+    {
+        return new MPIKmeansDataCreator<precision, int_size>();
+    }
+
+    AbstractCoresetClusteringFinisher<precision, int_size>* createCoresetClusteringFinisher() override
+    {
+        return new MPICoresetClusteringFinisher<precision, int_size>(
+          this->createClosestClusterUpdater(SpecificCoreset));
     }
 };
 
-class HybridStrategyFactory : public AbstractStrategyFactory
+template <typename precision = double, typename int_size = int32_t>
+class HybridStrategyFactory : public AbstractStrategyFactory<precision, int_size>
 {
 public:
-    HybridStrategyFactory(){};
+    HybridStrategyFactory() = default;
 
-    ~HybridStrategyFactory(){};
+    ~HybridStrategyFactory() = default;
 
-    AbstractClusteringDataUpdater* createClusteringDataUpdater() override
+    AbstractClusteringDataUpdater<precision, int_size>* createClusteringDataUpdater() override
     {
-        return new AtomicDistributedClusteringDataUpdater();
+        return new AtomicDistributedClusteringDataUpdater<precision, int_size>();
     }
 
-    AbstractPointReassigner* createRegPointReassigner() override
+    AbstractPointReassigner<precision, int_size>* createRegPointReassigner() override
     {
-        return new OMPPointReassigner(createClosestClusterUpdater(Reg));
+        return new OMPPointReassigner<precision, int_size>(this->createClosestClusterUpdater(Reg));
     };
 
-    AbstractPointReassigner* createOptPointReassigner() override
+    AbstractPointReassigner<precision, int_size>* createOptPointReassigner() override
     {
-        return new OMPOptimizedPointReassigner(createClosestClusterUpdater(Reg));
+        return new OMPOptimizedPointReassigner<precision, int_size>(this->createClosestClusterUpdater(Reg));
     };
 
-    AbstractWeightedAverager* createWeightedAverager() override { return new OMPWeightedMultiVectorAverager(); }
-
-    AbstractAverager* createVectorAverager() override { return new OMPVectorAverager(); }
-
-    IDistanceSumCalculator* createDistanceSumCalculator() override { return new OMPDistanceSumCalculator(); }
-
-    ICoresetDistributionCalculator* createCoresetDistributionCalculator() override { return nullptr; }
-
-    IKmeansDataCreator* createKmeansDataCreator() override { return new MPIKmeansDataCreator(); }
-
-    AbstractCoresetClusteringFinisher* createCoresetClusteringFinisher() override
+    AbstractWeightedAverager<precision, int_size>* createWeightedAverager() override
     {
-        return new MPICoresetClusteringFinisher(createClosestClusterUpdater(SpecificCoreset));
+        return new OMPWeightedMultiVectorAverager<precision, int_size>();
+    }
+
+    AbstractAverager<precision, int_size>* createVectorAverager() override
+    {
+        return new OMPVectorAverager<precision, int_size>();
+    }
+
+    IDistanceSumCalculator<precision, int_size>* createDistanceSumCalculator() override
+    {
+        return new OMPDistanceSumCalculator<precision, int_size>();
+    }
+
+    ICoresetDistributionCalculator<precision, int_size>* createCoresetDistributionCalculator() override
+    {
+        return nullptr;
+    }
+
+    IKmeansDataCreator<precision, int_size>* createKmeansDataCreator() override
+    {
+        return new MPIKmeansDataCreator<precision, int_size>();
+    }
+
+    AbstractCoresetClusteringFinisher<precision, int_size>* createCoresetClusteringFinisher() override
+    {
+        return new MPICoresetClusteringFinisher<precision, int_size>(
+          this->createClosestClusterUpdater(SpecificCoreset));
     }
 };
+}  // namespace HPKmeans

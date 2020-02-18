@@ -7,47 +7,73 @@
 #include "Strategies/ClosestClusterFinder.hpp"
 #include "Strategies/ClusteringUpdater.hpp"
 
+namespace HPKmeans
+{
+template <typename precision = double, typename int_size = int32_t>
 class AbstractClosestClusterUpdater
 {
 protected:
-    std::unique_ptr<IClosestClusterFinder> pFinder;
-    std::unique_ptr<AbstractClusteringDataUpdater> pUpdater;
+    std::unique_ptr<IClosestClusterFinder<precision, int_size>> pFinder;
+    std::unique_ptr<AbstractClusteringDataUpdater<precision, int_size>> pUpdater;
 
 public:
-    AbstractClosestClusterUpdater(IClosestClusterFinder* finder, AbstractClusteringDataUpdater* updater) :
+    AbstractClosestClusterUpdater(IClosestClusterFinder<precision, int_size>* finder,
+                                  AbstractClusteringDataUpdater<precision, int_size>* updater) :
         pFinder(finder), pUpdater(updater)
     {
     }
 
-    virtual ~AbstractClosestClusterUpdater() {}
+    virtual ~AbstractClosestClusterUpdater() = default;
 
-    void findAndUpdateClosestCluster(const int32_t& dataIdx, KmeansData* const kmeansData);
+    void findAndUpdateClosestCluster(const int_size& dataIdx, KmeansData<precision, int_size>* const kmeansData)
+    {
+        auto closestCluster = pFinder->findClosestCluster(dataIdx, kmeansData);
+        pUpdater->update(dataIdx, closestCluster, kmeansData);
+    }
 
-    virtual void findAndUpdateClosestClusters(KmeansData* const kmeansData) = 0;
+    virtual void findAndUpdateClosestClusters(KmeansData<precision, int_size>* const kmeansData) = 0;
 };
 
-class SerialClosestClusterUpdater : public AbstractClosestClusterUpdater
+template <typename precision = double, typename int_size = int32_t>
+class SerialClosestClusterUpdater : public AbstractClosestClusterUpdater<precision, int_size>
 {
 public:
-    SerialClosestClusterUpdater(IClosestClusterFinder* finder, AbstractClusteringDataUpdater* updater) :
-        AbstractClosestClusterUpdater(finder, updater)
+    SerialClosestClusterUpdater(IClosestClusterFinder<precision, int_size>* finder,
+                                AbstractClusteringDataUpdater<precision, int_size>* updater) :
+        AbstractClosestClusterUpdater<precision, int_size>(finder, updater)
     {
     }
 
-    ~SerialClosestClusterUpdater() {}
+    ~SerialClosestClusterUpdater() = default;
 
-    void findAndUpdateClosestClusters(KmeansData* const kmeansData) override;
+    void findAndUpdateClosestClusters(KmeansData<precision, int_size>* const kmeansData) override
+    {
+        for (int_size i = 0; i < kmeansData->data->size(); i++)
+        {
+            this->findAndUpdateClosestCluster(i, kmeansData);
+        }
+    }
 };
 
-class OMPClosestClusterUpdater : public AbstractClosestClusterUpdater
+template <typename precision = double, typename int_size = int32_t>
+class OMPClosestClusterUpdater : public AbstractClosestClusterUpdater<precision, int_size>
 {
 public:
-    OMPClosestClusterUpdater(IClosestClusterFinder* finder, AbstractClusteringDataUpdater* updater) :
-        AbstractClosestClusterUpdater(finder, updater)
+    OMPClosestClusterUpdater(IClosestClusterFinder<precision, int_size>* finder,
+                             AbstractClusteringDataUpdater<precision, int_size>* updater) :
+        AbstractClosestClusterUpdater<precision, int_size>(finder, updater)
     {
     }
 
-    ~OMPClosestClusterUpdater() {}
+    ~OMPClosestClusterUpdater() = default;
 
-    void findAndUpdateClosestClusters(KmeansData* const kmeansData) override;
+    void findAndUpdateClosestClusters(KmeansData<precision, int_size>* const kmeansData) override
+    {
+#pragma omp parallel for schedule(static)
+        for (int_size i = 0; i < kmeansData->data->size(); i++)
+        {
+            this->findAndUpdateClosestCluster(i, kmeansData);
+        }
+    }
 };
+}  // namespace HPKmeans

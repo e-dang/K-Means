@@ -5,6 +5,8 @@
 
 #include "Containers/DataClasses.hpp"
 
+namespace HPKmeans
+{
 class FileRotator
 {
 public:
@@ -26,3 +28,4 @@ private:
 
     std::string reassemblePath(std::string& newFileName, std::string& ext, std::vector<std::string>& splitFilepath);
 };
+}  // namespace HPKmeans
