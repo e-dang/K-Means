@@ -18,48 +18,19 @@ protected:
 
 public:
     AbstractKmeansAlgorithmFactory(AbstractStrategyFactory<precision, int_size>* stratFactory) :
-        pStratFactory(stratFactory){};
+        pStratFactory(stratFactory)
+    {
+    }
 
     virtual ~AbstractKmeansAlgorithmFactory() = default;
 
-    AbstractKmeansInitializer<precision, int_size>* createInitializer(Initializer initializer)
-    {
-        switch (initializer)
-        {
-            case (KPP):
-                return getKPP();
-            case (OptKPP):
-                return getOptKPP();
-            default:
-                throw std::runtime_error("Invalid initializer specified.");
-        }
-    }
+    AbstractKmeansInitializer<precision, int_size>* createInitializer(Initializer initializer);
 
-    AbstractKmeansMaximizer<precision, int_size>* createMaximizer(Maximizer maximizer)
-    {
-        switch (maximizer)
-        {
-            case (Lloyd):
-                return getLloyd();
-            case (OptLloyd):
-                return getOptLloyd();
-            default:
-                throw std::runtime_error("Invalid maximizer specified.");
-        }
-    }
+    AbstractKmeansMaximizer<precision, int_size>* createMaximizer(Maximizer maximizer);
 
     AbstractCoresetCreator<precision, int_size>* createCoresetCreator(
       CoresetCreator coresetCreator, const int_size& sampleSize,
-      std::shared_ptr<IDistanceFunctor<precision>> distanceFunc)
-    {
-        switch (coresetCreator)
-        {
-            case (LWCoreset):
-                return getLWCoreset(sampleSize, distanceFunc);
-            default:
-                return nullptr;
-        }
-    }
+      std::shared_ptr<IDistanceFunctor<precision>> distanceFunc);
 
 protected:
     virtual AbstractKmeansInitializer<precision, int_size>* getKPP() = 0;
@@ -79,42 +50,22 @@ class SharedMemoryKmeansAlgorithmFactory : public AbstractKmeansAlgorithmFactory
 {
 public:
     SharedMemoryKmeansAlgorithmFactory(AbstractStrategyFactory<precision, int_size>* stratFactory) :
-        AbstractKmeansAlgorithmFactory<precision, int_size>(stratFactory){};
+        AbstractKmeansAlgorithmFactory<precision, int_size>(stratFactory)
+    {
+    }
 
     ~SharedMemoryKmeansAlgorithmFactory() = default;
 
-    AbstractKmeansInitializer<precision, int_size>* getKPP()
-    {
-        return new SharedMemoryKPlusPlus<precision, int_size>(this->pStratFactory->createClosestClusterUpdater(Reg),
-                                                              this->pStratFactory->createWeightedRandomSelector());
-    }
+    AbstractKmeansInitializer<precision, int_size>* getKPP();
 
-    AbstractKmeansInitializer<precision, int_size>* getOptKPP()
-    {
-        return new SharedMemoryKPlusPlus<precision, int_size>(this->pStratFactory->createClosestClusterUpdater(Opt),
-                                                              this->pStratFactory->createWeightedRandomSelector());
-    }
+    AbstractKmeansInitializer<precision, int_size>* getOptKPP();
 
-    AbstractKmeansMaximizer<precision, int_size>* getLloyd()
-    {
-        return new SharedMemoryLloyd<precision, int_size>(this->pStratFactory->createPointReassigner(Reg),
-                                                          this->pStratFactory->createWeightedAverager());
-    }
+    AbstractKmeansMaximizer<precision, int_size>* getLloyd();
 
-    AbstractKmeansMaximizer<precision, int_size>* getOptLloyd()
-    {
-        return new SharedMemoryLloyd<precision, int_size>(this->pStratFactory->createPointReassigner(Opt),
-                                                          this->pStratFactory->createWeightedAverager());
-    }
+    AbstractKmeansMaximizer<precision, int_size>* getOptLloyd();
 
-    AbstractCoresetCreator<precision, int_size>* getLWCoreset(const int_size& sampleSize,
-                                                              std::shared_ptr<IDistanceFunctor<precision>> distanceFunc)
-    {
-        return new SharedMemoryCoresetCreator<precision, int_size>(
-          sampleSize, this->pStratFactory->createMultiWeightedRandomSelector(),
-          this->pStratFactory->createVectorAverager(), this->pStratFactory->createDistanceSumCalculator(),
-          this->pStratFactory->createCoresetDistributionCalculator(), distanceFunc);
-    }
+    AbstractCoresetCreator<precision, int_size>* getLWCoreset(
+      const int_size& sampleSize, std::shared_ptr<IDistanceFunctor<precision>> distanceFunc);
 };
 
 template <typename precision = double, typename int_size = int32_t>
@@ -126,38 +77,16 @@ public:
 
     ~MPIKmeansAlgorithmFactory() = default;
 
-    AbstractKmeansInitializer<precision, int_size>* getKPP()
-    {
-        return new MPIKPlusPlus<precision, int_size>(this->pStratFactory->createClosestClusterUpdater(Reg),
-                                                     this->pStratFactory->createWeightedRandomSelector());
-    }
+    AbstractKmeansInitializer<precision, int_size>* getKPP();
 
-    AbstractKmeansInitializer<precision, int_size>* getOptKPP()
-    {
-        return new MPIKPlusPlus<precision, int_size>(this->pStratFactory->createClosestClusterUpdater(Opt),
-                                                     this->pStratFactory->createWeightedRandomSelector());
-    }
+    AbstractKmeansInitializer<precision, int_size>* getOptKPP();
 
-    AbstractKmeansMaximizer<precision, int_size>* getLloyd()
-    {
-        return new MPILloyd<precision, int_size>(this->pStratFactory->createPointReassigner(Reg),
-                                                 this->pStratFactory->createWeightedAverager());
-    }
+    AbstractKmeansMaximizer<precision, int_size>* getLloyd();
 
-    AbstractKmeansMaximizer<precision, int_size>* getOptLloyd()
-    {
-        return new MPILloyd<precision, int_size>(this->pStratFactory->createPointReassigner(Opt),
-                                                 this->pStratFactory->createWeightedAverager());
-    }
+    AbstractKmeansMaximizer<precision, int_size>* getOptLloyd();
 
-    AbstractCoresetCreator<precision, int_size>* getLWCoreset(const int32_t& sampleSize,
-                                                              std::shared_ptr<IDistanceFunctor<precision>> distanceFunc)
-    {
-        return new MPICoresetCreator<precision, int_size>(
-          sampleSize, this->pStratFactory->createMultiWeightedRandomSelector(),
-          this->pStratFactory->createVectorAverager(), this->pStratFactory->createDistanceSumCalculator(),
-          distanceFunc);
-    }
+    AbstractCoresetCreator<precision, int_size>* getLWCoreset(
+      const int32_t& sampleSize, std::shared_ptr<IDistanceFunctor<precision>> distanceFunc);
 };
 
 template <typename precision = double, typename int_size = int32_t>
@@ -171,41 +100,157 @@ template <typename precision = double, typename int_size = int32_t>
 class KmeansAlgorithmFactoryProducer
 {
 public:
-    KmeansAlgorithmFactoryProducer() = default;
-
     ~KmeansAlgorithmFactoryProducer() = default;
 
-    FactoryPair<precision, int_size> getAlgFactory(Parallelism parallelism)
-    {
-        switch (parallelism)
-        {
-            case (Serial):
-                return FactoryPair<precision, int_size>{
-                    std::make_shared<SharedMemoryKmeansAlgorithmFactory<precision, int_size>>(
-                      new SerialStrategyFactory<precision, int_size>()),
-                    std::make_shared<SerialStrategyFactory<precision, int_size>>()
-                };
-            case (OMP):
-                return FactoryPair<precision, int_size>{
-                    std::make_shared<SharedMemoryKmeansAlgorithmFactory<precision, int_size>>(
-                      new OMPStrategyFactory<precision, int_size>()),
-                    std::make_shared<OMPStrategyFactory<precision, int_size>>()
-                };
-            case (MPI):
-                return FactoryPair<precision, int_size>{
-                    std::make_shared<MPIKmeansAlgorithmFactory<precision, int_size>>(
-                      new MPIStrategyFactory<precision, int_size>()),
-                    std::make_shared<MPIStrategyFactory<precision, int_size>>()
-                };
-            case (Hybrid):
-                return FactoryPair<precision, int_size>{
-                    std::make_shared<MPIKmeansAlgorithmFactory<precision, int_size>>(
-                      new HybridStrategyFactory<precision, int_size>()),
-                    std::make_shared<HybridStrategyFactory<precision, int_size>>()
-                };
-            default:
-                throw std::runtime_error("Invalid parallelism specifier provided.");
-        }
-    }
+    FactoryPair<precision, int_size> getAlgFactory(Parallelism parallelism);
 };
+
+template <typename precision, typename int_size>
+AbstractKmeansInitializer<precision, int_size>* AbstractKmeansAlgorithmFactory<precision, int_size>::createInitializer(
+  Initializer initializer)
+{
+    switch (initializer)
+    {
+        case (KPP):
+            return getKPP();
+        case (OptKPP):
+            return getOptKPP();
+        default:
+            throw std::runtime_error("Invalid initializer specified.");
+    }
+}
+
+template <typename precision, typename int_size>
+AbstractKmeansMaximizer<precision, int_size>* AbstractKmeansAlgorithmFactory<precision, int_size>::createMaximizer(
+  Maximizer maximizer)
+{
+    switch (maximizer)
+    {
+        case (Lloyd):
+            return getLloyd();
+        case (OptLloyd):
+            return getOptLloyd();
+        default:
+            throw std::runtime_error("Invalid maximizer specified.");
+    }
+}
+
+template <typename precision, typename int_size>
+AbstractCoresetCreator<precision, int_size>* AbstractKmeansAlgorithmFactory<precision, int_size>::createCoresetCreator(
+  CoresetCreator coresetCreator, const int_size& sampleSize, std::shared_ptr<IDistanceFunctor<precision>> distanceFunc)
+{
+    switch (coresetCreator)
+    {
+        case (LWCoreset):
+            return getLWCoreset(sampleSize, distanceFunc);
+        default:
+            return nullptr;
+    }
+}
+
+template <typename precision, typename int_size>
+AbstractKmeansInitializer<precision, int_size>* SharedMemoryKmeansAlgorithmFactory<precision, int_size>::getKPP()
+{
+    return new SharedMemoryKPlusPlus<precision, int_size>(this->pStratFactory->createClosestClusterUpdater(Reg),
+                                                          this->pStratFactory->createWeightedRandomSelector());
+}
+
+template <typename precision, typename int_size>
+AbstractKmeansInitializer<precision, int_size>* SharedMemoryKmeansAlgorithmFactory<precision, int_size>::getOptKPP()
+{
+    return new SharedMemoryKPlusPlus<precision, int_size>(this->pStratFactory->createClosestClusterUpdater(Opt),
+                                                          this->pStratFactory->createWeightedRandomSelector());
+}
+
+template <typename precision, typename int_size>
+AbstractKmeansMaximizer<precision, int_size>* SharedMemoryKmeansAlgorithmFactory<precision, int_size>::getLloyd()
+{
+    return new SharedMemoryLloyd<precision, int_size>(this->pStratFactory->createPointReassigner(Reg),
+                                                      this->pStratFactory->createWeightedAverager());
+}
+
+template <typename precision, typename int_size>
+AbstractKmeansMaximizer<precision, int_size>* SharedMemoryKmeansAlgorithmFactory<precision, int_size>::getOptLloyd()
+{
+    return new SharedMemoryLloyd<precision, int_size>(this->pStratFactory->createPointReassigner(Opt),
+                                                      this->pStratFactory->createWeightedAverager());
+}
+
+template <typename precision, typename int_size>
+AbstractCoresetCreator<precision, int_size>* SharedMemoryKmeansAlgorithmFactory<precision, int_size>::getLWCoreset(
+  const int_size& sampleSize, std::shared_ptr<IDistanceFunctor<precision>> distanceFunc)
+{
+    return new SharedMemoryCoresetCreator<precision, int_size>(
+      sampleSize, this->pStratFactory->createMultiWeightedRandomSelector(), this->pStratFactory->createVectorAverager(),
+      this->pStratFactory->createDistanceSumCalculator(), this->pStratFactory->createCoresetDistributionCalculator(),
+      distanceFunc);
+}
+
+template <typename precision, typename int_size>
+AbstractKmeansInitializer<precision, int_size>* MPIKmeansAlgorithmFactory<precision, int_size>::getKPP()
+{
+    return new MPIKPlusPlus<precision, int_size>(this->pStratFactory->createClosestClusterUpdater(Reg),
+                                                 this->pStratFactory->createWeightedRandomSelector());
+}
+
+template <typename precision, typename int_size>
+AbstractKmeansInitializer<precision, int_size>* MPIKmeansAlgorithmFactory<precision, int_size>::getOptKPP()
+{
+    return new MPIKPlusPlus<precision, int_size>(this->pStratFactory->createClosestClusterUpdater(Opt),
+                                                 this->pStratFactory->createWeightedRandomSelector());
+}
+
+template <typename precision, typename int_size>
+AbstractKmeansMaximizer<precision, int_size>* MPIKmeansAlgorithmFactory<precision, int_size>::getLloyd()
+{
+    return new MPILloyd<precision, int_size>(this->pStratFactory->createPointReassigner(Reg),
+                                             this->pStratFactory->createWeightedAverager());
+}
+
+template <typename precision, typename int_size>
+AbstractKmeansMaximizer<precision, int_size>* MPIKmeansAlgorithmFactory<precision, int_size>::getOptLloyd()
+{
+    return new MPILloyd<precision, int_size>(this->pStratFactory->createPointReassigner(Opt),
+                                             this->pStratFactory->createWeightedAverager());
+}
+
+template <typename precision, typename int_size>
+AbstractCoresetCreator<precision, int_size>* MPIKmeansAlgorithmFactory<precision, int_size>::getLWCoreset(
+  const int32_t& sampleSize, std::shared_ptr<IDistanceFunctor<precision>> distanceFunc)
+{
+    return new MPICoresetCreator<precision, int_size>(
+      sampleSize, this->pStratFactory->createMultiWeightedRandomSelector(), this->pStratFactory->createVectorAverager(),
+      this->pStratFactory->createDistanceSumCalculator(), distanceFunc);
+}
+
+template <typename precision, typename int_size>
+FactoryPair<precision, int_size> KmeansAlgorithmFactoryProducer<precision, int_size>::getAlgFactory(
+  Parallelism parallelism)
+{
+    switch (parallelism)
+    {
+        case (Serial):
+            return FactoryPair<precision, int_size>{
+                std::make_shared<SharedMemoryKmeansAlgorithmFactory<precision, int_size>>(
+                  new SerialStrategyFactory<precision, int_size>()),
+                std::make_shared<SerialStrategyFactory<precision, int_size>>()
+            };
+        case (OMP):
+            return FactoryPair<precision, int_size>{
+                std::make_shared<SharedMemoryKmeansAlgorithmFactory<precision, int_size>>(
+                  new OMPStrategyFactory<precision, int_size>()),
+                std::make_shared<OMPStrategyFactory<precision, int_size>>()
+            };
+        case (MPI):
+            return FactoryPair<precision, int_size>{ std::make_shared<MPIKmeansAlgorithmFactory<precision, int_size>>(
+                                                       new MPIStrategyFactory<precision, int_size>()),
+                                                     std::make_shared<MPIStrategyFactory<precision, int_size>>() };
+        case (Hybrid):
+            return FactoryPair<precision, int_size>{ std::make_shared<MPIKmeansAlgorithmFactory<precision, int_size>>(
+                                                       new HybridStrategyFactory<precision, int_size>()),
+                                                     std::make_shared<HybridStrategyFactory<precision, int_size>>() };
+        default:
+            throw std::runtime_error("Invalid parallelism specifier provided.");
+    }
+}
 }  // namespace HPKmeans
