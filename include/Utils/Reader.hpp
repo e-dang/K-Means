@@ -77,7 +77,7 @@ public:
         int_size count;
         MPI_Get_count(&status, MPI_INT, &count);
         MPI_Allreduce(MPI_IN_PLACE, &count, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-        if (numData * numFeatures != count / (sizeof(precision) / sizeof(float)) || count < 0)
+        if (numData * numFeatures != count / static_cast<int_size>(sizeof(precision) / sizeof(float)) || count < 0)
         {
             if (mpiData.rank == 0)
                 std::cerr << count / mpiData.numProcs << " data points were read in from the given file, but "
