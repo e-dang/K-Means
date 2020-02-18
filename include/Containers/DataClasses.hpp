@@ -182,7 +182,7 @@ struct Coreset
         if (this != &rhs)
         {
             data    = std::move(rhs.data);
-            weights = std::move(rhs.data);
+            weights = std::move(rhs.weights);
         }
 
         return *this;
