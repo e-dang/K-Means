@@ -174,8 +174,8 @@ std::shared_ptr<ClusterResults<precision, int_size>> AbstractKmeans<precision, i
 
     for (int i = 0; i < numRestarts; ++i)
     {
-        std::vector<precision> distances(kmeansData->totalNumData, 1);
-        ClusterData<precision, int_size> clusterData(kmeansData->totalNumData, data->cols(), numClusters);
+        std::vector<precision> distances(kmeansData->totalNumData(), 1);
+        ClusterData<precision, int_size> clusterData(kmeansData->totalNumData(), data->cols(), numClusters);
 
         kmeansData->setClusterData(&clusterData);
         kmeansData->setSqDistances(&distances);
@@ -230,8 +230,8 @@ std::shared_ptr<ClusterResults<precision, int_size>> CoresetKmeans<precision, in
     auto coreset = pCreator->createCoreset(data);
 
     auto clusterResults = pKmeans->fit(&coreset.data, numClusters, numRestarts, &coreset.weights);
-    clusterResults->clusterData.clustering.resize(kmeansData.totalNumData);
-    clusterResults->sqDistances.resize(kmeansData.totalNumData);
+    clusterResults->clusterData.clustering.resize(kmeansData.totalNumData());
+    clusterResults->sqDistances.resize(kmeansData.totalNumData());
     std::fill(clusterResults->clusterData.clustering.begin(), clusterResults->clusterData.clustering.end(), -1);
     std::fill(clusterResults->sqDistances.begin(), clusterResults->sqDistances.end(), -1);
 

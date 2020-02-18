@@ -38,15 +38,15 @@ template <typename precision, typename int_size>
 ClosestCluster<precision, int_size> ClosestClusterFinder<precision, int_size>::findClosestCluster(
   const int_size& dataIdx, KmeansData<precision, int_size>* const kmeansData)
 {
-    auto numFeatures         = kmeansData->data->cols();
-    auto numExistingClusters = kmeansData->clusters->size();
-    const auto datapoint     = kmeansData->data->at(dataIdx);
+    auto numFeatures         = kmeansData->clustersCols();
+    auto numExistingClusters = kmeansData->clustersSize();
+    const auto datapoint     = kmeansData->dataAt(dataIdx);
     precision minDistance    = -1.0;
     int_size clusterIdx      = -1;
 
     for (int32_t i = 0; i < numExistingClusters; ++i)
     {
-        precision tempDistance = (*kmeansData->distanceFunc)(datapoint, kmeansData->clusters->at(i), numFeatures);
+        precision tempDistance = (*kmeansData)(datapoint, kmeansData->clustersAt(i), numFeatures);
 
         if (minDistance > tempDistance || minDistance < 0)
         {
@@ -64,9 +64,9 @@ ClosestCluster<precision, int_size> ClosestNewClusterFinder<precision, int_size>
 {
     thread_local static int_size prevNumClusters;
     thread_local static int_size intermediate;
-    auto numFeatures         = kmeansData->data->cols();
-    auto numExistingClusters = kmeansData->clusters->size();
-    const auto datapoint     = kmeansData->data->at(dataIdx);
+    auto numFeatures         = kmeansData->clustersCols();
+    auto numExistingClusters = kmeansData->clustersSize();
+    const auto datapoint     = kmeansData->dataAt(dataIdx);
     precision minDistance    = -1.0;
     int_size clusterIdx      = -1;
 
@@ -78,7 +78,7 @@ ClosestCluster<precision, int_size> ClosestNewClusterFinder<precision, int_size>
 
     for (auto i = prevNumClusters; i < numExistingClusters; ++i)
     {
-        precision tempDistance = (*kmeansData->distanceFunc)(datapoint, kmeansData->clusters->at(i), numFeatures);
+        precision tempDistance = (*kmeansData)(datapoint, kmeansData->clustersAt(i), numFeatures);
 
         if (minDistance > tempDistance || minDistance < 0)
         {

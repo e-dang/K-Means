@@ -58,7 +58,7 @@ precision SharedMemoryCoresetClusteringFinisher<precision, int_size>::finishClus
 {
     this->pUpdater->findAndUpdateClosestClusters(kmeansData);
 
-    return std::accumulate(kmeansData->sqDistances->begin(), kmeansData->sqDistances->end(), 0.0);
+    return std::accumulate(kmeansData->sqDistancesBegin(), kmeansData->sqDistancesEnd(), 0.0);
 }
 
 template <typename precision, typename int_size>
@@ -67,12 +67,12 @@ precision MPICoresetClusteringFinisher<precision, int_size>::finishClustering(
 {
     this->pUpdater->findAndUpdateClosestClusters(kmeansData);
 
-    MPI_Allgatherv(MPI_IN_PLACE, kmeansData->lengths.at(kmeansData->rank), MPI_INT, kmeansData->clustering->data(),
-                   kmeansData->lengths.data(), kmeansData->displacements.data(), MPI_INT, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, kmeansData->myLength(), MPI_INT, kmeansData->clusteringData(),
+                   kmeansData->lengthsData(), kmeansData->displacementsData(), MPI_INT, MPI_COMM_WORLD);
 
-    MPI_Allgatherv(MPI_IN_PLACE, kmeansData->lengths.at(kmeansData->rank), mpi_type_t, kmeansData->sqDistances->data(),
-                   kmeansData->lengths.data(), kmeansData->displacements.data(), mpi_type_t, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, kmeansData->myLength(), mpi_type_t, kmeansData->sqDistancesData(),
+                   kmeansData->lengthsData(), kmeansData->displacementsData(), mpi_type_t, MPI_COMM_WORLD);
 
-    return std::accumulate(kmeansData->sqDistances->begin(), kmeansData->sqDistances->end(), 0.0);
+    return std::accumulate(kmeansData->sqDistancesBegin(), kmeansData->sqDistancesEnd(), 0.0);
 }
 }  // namespace HPKmeans

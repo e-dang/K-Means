@@ -14,6 +14,8 @@ template <typename precision, typename int_size>
 class TemplateLloyd : public AbstractKmeansMaximizer<precision, int_size>
 {
 protected:
+    using AbstractKmeansAlgorithm<precision, int_size>::pKmeansData;
+
     std::unique_ptr<AbstractWeightedAverager<precision, int_size>> pAverager;
 
 public:
@@ -51,6 +53,9 @@ protected:
 template <typename precision, typename int_size>
 class SharedMemoryLloyd : public TemplateLloyd<precision, int_size>
 {
+private:
+    using AbstractKmeansAlgorithm<precision, int_size>::pKmeansData;
+
 public:
     SharedMemoryLloyd(AbstractPointReassigner<precision, int_size>* pointReassigner,
                       AbstractWeightedAverager<precision, int_size>* averager) :
@@ -71,6 +76,9 @@ protected:
 template <typename precision, typename int_size>
 class MPILloyd : public TemplateLloyd<precision, int_size>
 {
+private:
+    using AbstractKmeansAlgorithm<precision, int_size>::pKmeansData;
+
 public:
     MPILloyd(AbstractPointReassigner<precision, int_size>* pointReassigner,
              AbstractWeightedAverager<precision, int_size>* averager) :
@@ -91,11 +99,11 @@ protected:
 template <typename precision, typename int_size>
 void TemplateLloyd<precision, int_size>::maximize()
 {
-    int_size changed, minNumChanged = (*(this->pTotalNumData) * this->MIN_PERCENT_CHANGED);
+    int_size changed, minNumChanged = pKmeansData->totalNumData() * this->MIN_PERCENT_CHANGED;
 
     do
     {
-        (*(this->ppClusters))->fill(0);
+        pKmeansData->clustersFill(0.0);
 
         calcClusterSums();
 
@@ -109,56 +117,57 @@ void TemplateLloyd<precision, int_size>::maximize()
 template <typename precision, typename int_size>
 void SharedMemoryLloyd<precision, int_size>::calcClusterSums()
 {
-    this->pAverager->calculateSum(this->pData, *(this->ppClusters), *(this->ppClustering), this->pWeights);
+    this->pAverager->calculateSum(pKmeansData->data(), pKmeansData->clusters(), pKmeansData->clustering(),
+                                  pKmeansData->weights());
 }
 
 template <typename precision, typename int_size>
 void SharedMemoryLloyd<precision, int_size>::averageClusterSums()
 {
-    this->pAverager->normalizeSum(*(this->ppClusters), *(this->ppClusterWeights));
+    this->pAverager->normalizeSum(pKmeansData->clusters(), pKmeansData->clusterWeights());
 }
 
 template <typename precision, typename int_size>
 int_size SharedMemoryLloyd<precision, int_size>::reassignPoints()
 {
-    return this->pPointReassigner->reassignPoints(this->pKmeansData);
+    return this->pPointReassigner->reassignPoints(pKmeansData);
 }
 
 template <typename precision, typename int_size>
 void MPILloyd<precision, int_size>::calcClusterSums()
 {
-    this->pAverager->calculateSum(this->pData, *(this->ppClusters), *(this->ppClustering), this->pWeights,
-                                  this->pDisplacements->at(*(this->pRank)));
+    this->pAverager->calculateSum(pKmeansData->data(), pKmeansData->clusters(), pKmeansData->clustering(),
+                                  pKmeansData->weights(), pKmeansData->myDisplacement());
 
-    MPI_Allreduce(MPI_IN_PLACE, (*(this->ppClusters))->data(), (*(this->ppClusters))->elements(), mpi_type_t, MPI_SUM,
+    MPI_Allreduce(MPI_IN_PLACE, pKmeansData->clustersData(), pKmeansData->clustersElements(), mpi_type_t, MPI_SUM,
                   MPI_COMM_WORLD);
 }
 
 template <typename precision, typename int_size>
 void MPILloyd<precision, int_size>::averageClusterSums()
 {
-    std::vector<precision> copyWeights((*(this->ppClusterWeights))->size());
-    MPI_Reduce((*(this->ppClusterWeights))->data(), copyWeights.data(), copyWeights.size(), mpi_type_t, MPI_SUM, 0,
+    std::vector<precision> copyWeights(pKmeansData->dataSize());
+    MPI_Reduce(pKmeansData->clusterWeightsData(), copyWeights.data(), copyWeights.size(), mpi_type_t, MPI_SUM, 0,
                MPI_COMM_WORLD);
 
-    if (*(this->pRank) == 0)
+    if (pKmeansData->rank() == 0)
     {
-        this->pAverager->normalizeSum(*(this->ppClusters), &copyWeights);
+        this->pAverager->normalizeSum(pKmeansData->clusters(), &copyWeights);
     }
 
-    MPI_Bcast((*(this->ppClusters))->data(), (*(this->ppClusters))->elements(), mpi_type_t, 0, MPI_COMM_WORLD);
+    MPI_Bcast(pKmeansData->clustersData(), pKmeansData->clustersElements(), mpi_type_t, 0, MPI_COMM_WORLD);
 }
 
 template <typename precision, typename int_size>
 int_size MPILloyd<precision, int_size>::reassignPoints()
 {
-    int_size changed = this->pPointReassigner->reassignPoints(this->pKmeansData);
+    int_size changed = this->pPointReassigner->reassignPoints(pKmeansData);
 
-    MPI_Allgatherv(MPI_IN_PLACE, this->pLengths->at(*(this->pRank)), MPI_INT, (*(this->ppClustering))->data(),
-                   this->pLengths->data(), this->pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
     MPI_Allreduce(MPI_IN_PLACE, &changed, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-    MPI_Allgatherv(MPI_IN_PLACE, this->pLengths->at(*(this->pRank)), mpi_type_t, (*this->ppSqDistances)->data(),
-                   this->pLengths->data(), this->pDisplacements->data(), mpi_type_t, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, pKmeansData->myLength(), MPI_INT, pKmeansData->clusteringData(),
+                   pKmeansData->lengthsData(), pKmeansData->displacementsData(), MPI_INT, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, pKmeansData->myLength(), mpi_type_t, pKmeansData->sqDistancesData(),
+                   pKmeansData->lengthsData(), pKmeansData->displacementsData(), mpi_type_t, MPI_COMM_WORLD);
 
     return changed;
 }

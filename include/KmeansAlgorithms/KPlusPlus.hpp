@@ -17,6 +17,9 @@ template <typename precision, typename int_size>
 class TemplateKPlusPlus : public AbstractKmeansInitializer<precision, int_size>
 {
 protected:
+    using AbstractKmeansAlgorithm<precision, int_size>::pKmeansData;
+
+protected:
     std::unique_ptr<IWeightedRandomSelector<precision, int_size>> pSelector;
 
 public:
@@ -59,6 +62,9 @@ protected:
 template <typename precision, typename int_size>
 class SharedMemoryKPlusPlus : public TemplateKPlusPlus<precision, int_size>
 {
+private:
+    using AbstractKmeansAlgorithm<precision, int_size>::pKmeansData;
+
 public:
     SharedMemoryKPlusPlus(AbstractClosestClusterUpdater<precision, int_size>* updater,
                           IWeightedRandomSelector<precision, int_size>* selector) :
@@ -77,6 +83,9 @@ protected:
 template <typename precision, typename int_size>
 class MPIKPlusPlus : public TemplateKPlusPlus<precision, int_size>
 {
+private:
+    using AbstractKmeansAlgorithm<precision, int_size>::pKmeansData;
+
 public:
     MPIKPlusPlus(AbstractClosestClusterUpdater<precision, int_size>* updater,
                  IWeightedRandomSelector<precision, int_size>* selector) :
@@ -99,10 +108,10 @@ void TemplateKPlusPlus<precision, int_size>::initialize()
     weightedClusterSelection();
 
     // change fill distances vector with -1 so values aren't confused with actual distances
-    std::fill((*(this->ppSqDistances))->begin(), (*(this->ppSqDistances))->end(), -1);
+    std::fill(pKmeansData->sqDistancesBegin(), pKmeansData->sqDistancesEnd(), -1.0);
 
     // initialize remaining clusters; start from index 1 since we know we have only 1 cluster so far
-    for (int_size i = 1; i < (*(this->ppClusters))->rows(); ++i)
+    for (int_size i = 1; i < pKmeansData->clustersRows(); ++i)
     {
         // find distance between each datapoint and nearest cluster, then update clustering assignment
         findAndUpdateClosestClusters();
@@ -119,33 +128,33 @@ template <typename precision, typename int_size>
 void SharedMemoryKPlusPlus<precision, int_size>::weightedClusterSelection()
 {
     precision randSumFrac =
-      getRandDouble01() * std::accumulate((*(this->ppSqDistances))->begin(), (*(this->ppSqDistances))->end(), 0.0);
-    int_size dataIdx = this->pSelector->select((*(this->ppSqDistances)), randSumFrac);
-    (*(this->ppClusters))->push_back(this->pData->at(dataIdx));
+      getRandDouble01() * std::accumulate(pKmeansData->sqDistancesBegin(), pKmeansData->sqDistancesEnd(), 0.0);
+    int_size dataIdx = this->pSelector->select(pKmeansData->sqDistances(), randSumFrac);
+    pKmeansData->clustersPushBack(pKmeansData->dataAt(dataIdx));
 }
 
 template <typename precision, typename int_size>
 void SharedMemoryKPlusPlus<precision, int_size>::findAndUpdateClosestClusters()
 {
-    this->pUpdater->findAndUpdateClosestClusters(this->pKmeansData);
+    this->pUpdater->findAndUpdateClosestClusters(pKmeansData);
 }
 
 template <typename precision, typename int_size>
 void MPIKPlusPlus<precision, int_size>::weightedClusterSelection()
 {
     int_size dataIdx;
-    if (*(this->pRank) == 0)
+    if (pKmeansData->rank() == 0)
     {
-        precision randSumFrac = getRandDouble01MPI() * std::accumulate((*(this->ppSqDistances))->begin(),
-                                                                       (*(this->ppSqDistances))->end(), 0.0);
-        dataIdx               = this->pSelector->select(*(this->ppSqDistances), randSumFrac);
+        precision randSumFrac =
+          getRandDouble01MPI() * std::accumulate(pKmeansData->sqDistancesBegin(), pKmeansData->sqDistancesEnd(), 0.0);
+        dataIdx = this->pSelector->select(pKmeansData->sqDistances(), randSumFrac);
     }
 
     MPI_Bcast(&dataIdx, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     // find which rank holds the selected datapoint
     int_size rank = 0, lengthSum = 0;
-    for (const auto& val : *(this->pLengths))
+    for (const auto& val : pKmeansData->lengths())
     {
         lengthSum += val;
         if (lengthSum > dataIdx)
@@ -154,27 +163,27 @@ void MPIKPlusPlus<precision, int_size>::weightedClusterSelection()
         ++rank;
     }
 
-    if (*(this->pRank) == rank)
+    if (pKmeansData->rank() == rank)
     {
-        (*(this->ppClusters))->push_back(this->pData->at(dataIdx - this->pDisplacements->at(*(this->pRank))));
+        pKmeansData->clustersPushBack(pKmeansData->dataAt(dataIdx - pKmeansData->myDisplacement()));
     }
     else
     {
-        (*(this->ppClusters))->reserve(1);
+        pKmeansData->clustersReserve(1);
     }
 
-    MPI_Bcast((*(this->ppClustering))->data(), (*(this->ppClustering))->size(), MPI_INT, rank, MPI_COMM_WORLD);
-    MPI_Bcast((*(this->ppClusters))->data(), (*(this->ppClusters))->elements(), mpi_type_t, rank, MPI_COMM_WORLD);
+    MPI_Bcast(pKmeansData->clusteringData(), pKmeansData->clusteringSize(), MPI_INT, rank, MPI_COMM_WORLD);
+    MPI_Bcast(pKmeansData->clustersData(), pKmeansData->clustersElements(), mpi_type_t, rank, MPI_COMM_WORLD);
 }
 
 template <typename precision, typename int_size>
 void MPIKPlusPlus<precision, int_size>::findAndUpdateClosestClusters()
 {
-    this->pUpdater->findAndUpdateClosestClusters(this->pKmeansData);
+    this->pUpdater->findAndUpdateClosestClusters(pKmeansData);
 
-    MPI_Allgatherv(MPI_IN_PLACE, this->pLengths->at(*(this->pRank)), MPI_INT, (*(this->ppClustering))->data(),
-                   this->pLengths->data(), this->pDisplacements->data(), MPI_INT, MPI_COMM_WORLD);
-    MPI_Allgatherv(MPI_IN_PLACE, this->pLengths->at(*(this->pRank)), mpi_type_t, (*(this->ppSqDistances))->data(),
-                   this->pLengths->data(), this->pDisplacements->data(), mpi_type_t, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, pKmeansData->myLength(), MPI_INT, pKmeansData->clusteringData(),
+                   pKmeansData->lengthsData(), pKmeansData->displacementsData(), MPI_INT, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, pKmeansData->myLength(), mpi_type_t, pKmeansData->sqDistancesData(),
+                   pKmeansData->lengthsData(), pKmeansData->displacementsData(), mpi_type_t, MPI_COMM_WORLD);
 }
 }  // namespace HPKmeans

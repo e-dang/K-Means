@@ -92,7 +92,7 @@ void ClusteringDataUpdater<precision, int_size>::updateClusterWeights(const int_
                                                                       const int_size& newAssignment,
                                                                       KmeansData<precision, int_size>* const kmeansData)
 {
-    precision weight = kmeansData->weights->at(dataIdx);
+    precision weight = kmeansData->weightsAt(dataIdx);
     if (prevAssignment >= 0 && kmeansData->clusterWeightsAt(prevAssignment) > 0)
         kmeansData->clusterWeightsAt(prevAssignment) -= weight;
     kmeansData->clusterWeightsAt(newAssignment) += weight;
@@ -103,7 +103,7 @@ void AtomicClusteringDataUpdater<precision, int_size>::updateClusterWeights(
   const int_size& dataIdx, const int_size& prevAssignment, const int_size& newAssignment,
   KmeansData<precision, int_size>* const kmeansData)
 {
-    precision weight = kmeansData->weights->at(dataIdx);
+    precision weight = kmeansData->weightsAt(dataIdx);
     if (prevAssignment >= 0 && kmeansData->clusterWeightsAt(prevAssignment) > 0)
 #pragma omp atomic
         kmeansData->clusterWeightsAt(prevAssignment) -= weight;
@@ -116,7 +116,7 @@ void DistributedClusteringDataUpdater<precision, int_size>::updateClusterWeights
   const int_size& dataIdx, const int_size& prevAssignment, const int_size& newAssignment,
   KmeansData<precision, int_size>* const kmeansData)
 {
-    precision weight = kmeansData->weights->at(dataIdx);
+    precision weight = kmeansData->weightsAt(dataIdx);
     if (prevAssignment >= 0)
         kmeansData->clusterWeightsAt(prevAssignment) -= weight;
     kmeansData->clusterWeightsAt(newAssignment) += weight;
@@ -127,7 +127,7 @@ void AtomicDistributedClusteringDataUpdater<precision, int_size>::updateClusterW
   const int_size& dataIdx, const int_size& prevAssignment, const int_size& newAssignment,
   KmeansData<precision, int_size>* const kmeansData)
 {
-    precision weight = kmeansData->weights->at(dataIdx);
+    precision weight = kmeansData->weightsAt(dataIdx);
     if (prevAssignment >= 0)
 #pragma omp atomic
         kmeansData->clusterWeightsAt(prevAssignment) -= weight;
