@@ -128,9 +128,9 @@ void SerialWeightedMultiVectorAverager<precision, int_size>::calculateSum(
   const std::vector<int_size>* const dataAssignments, const std::vector<precision>* const weights,
   const int_size displacement)
 {
-    for (int32_t i = 0; i < data->size(); i++)
+    for (int32_t i = 0; i < data->size(); ++i)
     {
-        for (int32_t j = 0; j < data->cols(); j++)
+        for (int32_t j = 0; j < data->cols(); ++j)
         {
             avgContainer->at(dataAssignments->at(displacement + i), j) += weights->at(i) * data->at(i, j);
         }
@@ -141,9 +141,9 @@ template <typename precision, typename int_size>
 void SerialWeightedMultiVectorAverager<precision, int_size>::normalizeSum(
   Matrix<precision, int_size>* const avgContainer, const std::vector<precision>* const weightSums)
 {
-    for (int32_t i = 0; i < avgContainer->size(); i++)
+    for (int32_t i = 0; i < avgContainer->size(); ++i)
     {
-        for (int32_t j = 0; j < avgContainer->cols(); j++)
+        for (int32_t j = 0; j < avgContainer->cols(); ++j)
         {
             avgContainer->at(i, j) /= weightSums->at(i);
         }
@@ -156,9 +156,9 @@ void OMPWeightedMultiVectorAverager<precision, int_size>::calculateSum(
   const std::vector<int_size>* const dataAssignments, const std::vector<precision>* const weights,
   const int_size displacement)
 {
-    for (int32_t i = 0; i < data->size(); i++)
+    for (int32_t i = 0; i < data->size(); ++i)
     {
-        for (int32_t j = 0; j < data->cols(); j++)
+        for (int32_t j = 0; j < data->cols(); ++j)
         {
             avgContainer->at(dataAssignments->at(displacement + i), j) += weights->at(i) * data->at(i, j);
         }
@@ -168,9 +168,9 @@ void OMPWeightedMultiVectorAverager<precision, int_size>::calculateSum(
 
     // #pragma omp parallel for shared(data, dataAssignments, weights, displacement), schedule(static), collapse(2),
     // reduction(+ : refContainer)
-    //         for (int32_t i = 0; i < data->size(); i++)
+    //         for (int32_t i = 0; i < data->size(); ++i)
     //         {
-    //             for (int32_t j = 0; j < data->cols(); j++)
+    //             for (int32_t j = 0; j < data->cols(); ++j)
     //             {
     //                 refContainer.at(dataAssignments->at(displacement + i), j) += weights->at(i) * data->at(i, j);
     //             }
@@ -182,9 +182,9 @@ void OMPWeightedMultiVectorAverager<precision, int_size>::normalizeSum(Matrix<pr
                                                                        const std::vector<precision>* const weightSums)
 {
 #pragma omp parallel for schedule(static), collapse(2)
-    for (int32_t i = 0; i < avgContainer->size(); i++)
+    for (int32_t i = 0; i < avgContainer->size(); ++i)
     {
-        for (int32_t j = 0; j < avgContainer->cols(); j++)
+        for (int32_t j = 0; j < avgContainer->cols(); ++j)
         {
             avgContainer->at(i, j) /= weightSums->at(i);
         }
@@ -203,9 +203,9 @@ template <typename precision, typename int_size>
 void SerialVectorAverager<precision, int_size>::calculateSum(const Matrix<precision, int_size>* const data,
                                                              std::vector<precision>* const avgContainer)
 {
-    for (int32_t i = 0; i < data->size(); i++)
+    for (int32_t i = 0; i < data->size(); ++i)
     {
-        for (int32_t j = 0; j < data->cols(); j++)
+        for (int32_t j = 0; j < data->cols(); ++j)
         {
             avgContainer->at(j) += data->at(i, j);
         }
@@ -216,7 +216,7 @@ template <typename precision, typename int_size>
 void SerialVectorAverager<precision, int_size>::normalizeSum(std::vector<precision>* const avgContainer,
                                                              const int_size& numData)
 {
-    for (size_t i = 0; i < avgContainer->size(); i++)
+    for (size_t i = 0; i < avgContainer->size(); ++i)
     {
         avgContainer->at(i) /= numData;
     }
@@ -229,9 +229,9 @@ void OMPVectorAverager<precision, int_size>::calculateSum(const Matrix<precision
     std::vector<precision>& refContainer = *avgContainer;
 
 #pragma omp parallel for schedule(static), collapse(2), reduction(+ : refContainer)
-    for (int32_t i = 0; i < data->size(); i++)
+    for (int32_t i = 0; i < data->size(); ++i)
     {
-        for (int32_t j = 0; j < data->cols(); j++)
+        for (int32_t j = 0; j < data->cols(); ++j)
         {
             refContainer[j] += data->at(i, j);
         }
@@ -243,7 +243,7 @@ void OMPVectorAverager<precision, int_size>::normalizeSum(std::vector<precision>
                                                           const int_size& numData)
 {
 #pragma omp parallel for schedule(static)
-    for (size_t i = 0; i < avgContainer->size(); i++)
+    for (size_t i = 0; i < avgContainer->size(); ++i)
     {
         avgContainer->at(i) /= numData;
     }

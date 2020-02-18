@@ -72,7 +72,7 @@ template <typename precision, typename int_size>
 void SerialClosestClusterUpdater<precision, int_size>::findAndUpdateClosestClusters(
   KmeansData<precision, int_size>* const kmeansData)
 {
-    for (int_size i = 0; i < kmeansData->data->size(); i++)
+    for (int_size i = 0; i < kmeansData->data->size(); ++i)
     {
         this->findAndUpdateClosestCluster(i, kmeansData);
     }
@@ -83,7 +83,7 @@ void OMPClosestClusterUpdater<precision, int_size>::findAndUpdateClosestClusters
   KmeansData<precision, int_size>* const kmeansData)
 {
 #pragma omp parallel for schedule(static)
-    for (int_size i = 0; i < kmeansData->data->size(); i++)
+    for (int_size i = 0; i < kmeansData->data->size(); ++i)
     {
         this->findAndUpdateClosestCluster(i, kmeansData);
     }

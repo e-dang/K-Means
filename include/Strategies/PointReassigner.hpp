@@ -97,7 +97,7 @@ template <typename precision, typename int_size>
 int_size SerialPointReassigner<precision, int_size>::reassignPoints(KmeansData<precision, int_size>* const kmeansData)
 {
     int_size changed = 0;
-    for (int_size i = 0; i < kmeansData->data->size(); i++)
+    for (int_size i = 0; i < kmeansData->data->size(); ++i)
     {
         changed += this->reassignPoint(i, kmeansData);
     }
@@ -112,7 +112,7 @@ int_size SerialOptimizedPointReassigner<precision, int_size>::reassignPoints(
     int_size changed = 0;
     auto numFeatures = kmeansData->data->cols();
 
-    for (int_size i = 0; i < kmeansData->data->size(); i++)
+    for (int_size i = 0; i < kmeansData->data->size(); ++i)
     {
         auto clusterIdx = kmeansData->clusteringAt(i);
         auto dist       = std::pow(
@@ -136,7 +136,7 @@ int_size OMPPointReassigner<precision, int_size>::reassignPoints(KmeansData<prec
     int_size changed = 0;
 
 #pragma omp parallel for schedule(static), reduction(+ : changed)
-    for (int_size i = 0; i < kmeansData->data->size(); i++)
+    for (int_size i = 0; i < kmeansData->data->size(); ++i)
     {
         changed += this->reassignPoint(i, kmeansData);
     }
@@ -152,7 +152,7 @@ int_size OMPOptimizedPointReassigner<precision, int_size>::reassignPoints(
     auto numFeatures = kmeansData->data->cols();
 
 #pragma omp parallel for shared(numFeatures), schedule(static), reduction(+ : changed)
-    for (int_size i = 0; i < kmeansData->data->size(); i++)
+    for (int_size i = 0; i < kmeansData->data->size(); ++i)
     {
         auto clusterIdx = kmeansData->clusteringAt(i);
         auto dist       = std::pow(

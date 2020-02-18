@@ -46,7 +46,7 @@ public:
     precision operator()(const precision* point1, const precision* point2, const int32_t& numFeatures)
     {
         precision sum = 0.0;
-        for (int32_t i = 0; i < numFeatures; i++)
+        for (int32_t i = 0; i < numFeatures; ++i)
         {
             sum += std::pow(point1[i] - point2[i], 2);
         }

@@ -52,7 +52,7 @@ inline MPIData<int_size> getMPIData(const int_size& totalNumData)
 
     std::vector<int_size> lengths(numProcs);        // size of each sub-array to gather
     std::vector<int_size> displacements(numProcs);  // index of each sub-array to gather
-    for (int i = 0; i < numProcs; i++)
+    for (int i = 0; i < numProcs; ++i)
     {
         lengths.at(i)       = chunk;
         displacements.at(i) = i * chunk;

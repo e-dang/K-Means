@@ -295,7 +295,7 @@ void MPICoresetCreator<precision, int_size>::calculateSamplingStrategy(
   std::vector<int_size>* const uniformSampleCounts, std::vector<int_size>* const nonUniformSampleCounts,
   const precision& totalDistanceSums)
 {
-    for (int_size i = 0; i < this->mSampleSize; i++)
+    for (int_size i = 0; i < this->mSampleSize; ++i)
     {
         precision randNum = getRandDouble01MPI();
         if (randNum >= 0.5)
@@ -313,12 +313,12 @@ void MPICoresetCreator<precision, int_size>::updateUniformSampleCounts(std::vect
 {
     precision randNum      = getRandDouble01MPI() * mTotalNumData;
     int_size cumulativeSum = 0;
-    for (int j = 0; j < mNumProcs; j++)
+    for (int j = 0; j < mNumProcs; ++j)
     {
         cumulativeSum += mLengths[j];
         if (cumulativeSum >= randNum)
         {
-            uniformSampleCounts->at(j)++;
+            ++uniformSampleCounts->at(j);
             break;
         }
     }
@@ -329,12 +329,12 @@ void MPICoresetCreator<precision, int_size>::updateNonUniformSampleCounts(
 {
     precision randNum       = getRandDouble01MPI() * totalDistanceSums;
     precision cumulativeSum = 0;
-    for (int j = 0; j < mNumProcs; j++)
+    for (int j = 0; j < mNumProcs; ++j)
     {
         cumulativeSum += mDistanceSums.at(j);
         if (cumulativeSum >= randNum)
         {
-            nonUniformSampleCounts->at(j)++;
+            ++nonUniformSampleCounts->at(j);
             break;
         }
     }
@@ -351,7 +351,7 @@ void MPICoresetCreator<precision, int_size>::distributeCoreset(Coreset<precision
     std::vector<int_size> matrixLengths(mNumProcs);
     std::vector<int_size> matrixDisplacements(mNumProcs, 0);
     std::vector<int_size> vectorDisplacements(mNumProcs, 0);
-    for (int i = 0; i < mNumProcs; i++)
+    for (int i = 0; i < mNumProcs; ++i)
     {
         matrixLengths.at(i) = numCoresetDataPerProc.at(i) * coreset->data.cols();
         if (i != 0)
@@ -373,7 +373,7 @@ void MPICoresetCreator<precision, int_size>::distributeCoreset(Coreset<precision
     auto mpiData        = getMPIData(this->mSampleSize);
     auto& vectorLengths = mpiData.lengths;
     vectorDisplacements = mpiData.displacements;
-    for (int32_t i = 0; i < mNumProcs; i++)
+    for (int32_t i = 0; i < mNumProcs; ++i)
     {
         matrixLengths.at(i) = vectorLengths.at(i) * coreset->data.cols();
         if (i != 0)

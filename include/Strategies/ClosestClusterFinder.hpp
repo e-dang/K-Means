@@ -44,7 +44,7 @@ ClosestCluster<precision, int_size> ClosestClusterFinder<precision, int_size>::f
     precision minDistance    = -1.0;
     int_size clusterIdx      = -1;
 
-    for (int32_t i = 0; i < numExistingClusters; i++)
+    for (int32_t i = 0; i < numExistingClusters; ++i)
     {
         precision tempDistance = (*kmeansData->distanceFunc)(datapoint, kmeansData->clusters->at(i), numFeatures);
 
@@ -76,7 +76,7 @@ ClosestCluster<precision, int_size> ClosestNewClusterFinder<precision, int_size>
         intermediate    = 1;
     }
 
-    for (auto i = prevNumClusters; i < numExistingClusters; i++)
+    for (auto i = prevNumClusters; i < numExistingClusters; ++i)
     {
         precision tempDistance = (*kmeansData->distanceFunc)(datapoint, kmeansData->clusters->at(i), numFeatures);
 

@@ -45,7 +45,7 @@ precision SerialDistanceSumCalculator<precision, int_size>::calcDistances(
   std::vector<precision>* const sqDistances, std::shared_ptr<IDistanceFunctor<precision>> distanceFunc)
 {
     precision distanceSum = 0.0;
-    for (int_size i = 0; i < data->size(); i++)
+    for (int_size i = 0; i < data->size(); ++i)
     {
         sqDistances->at(i) = std::pow((*distanceFunc)(data->at(i), point->data(), point->size()), 2);
         distanceSum += sqDistances->at(i);
@@ -61,7 +61,7 @@ precision OMPDistanceSumCalculator<precision, int_size>::calcDistances(
 {
     precision distanceSum = 0.0;
 #pragma omp parallel for shared(distanceFunc), schedule(static), reduction(+ : distanceSum)
-    for (int_size i = 0; i < data->size(); i++)
+    for (int_size i = 0; i < data->size(); ++i)
     {
         sqDistances->at(i) = std::pow((*distanceFunc)(data->at(i), point->data(), point->size()), 2);
         distanceSum += sqDistances->at(i);

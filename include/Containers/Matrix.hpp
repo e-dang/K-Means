@@ -273,7 +273,7 @@ public:
         }
 
         std::copy(datapoint, datapoint + m_Cols, p_Data + elements());
-        m_Size++;
+        ++m_Size;
     }
 
     inline void fill(const int_size& val) { std::fill(begin(), end(), val); }

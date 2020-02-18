@@ -53,7 +53,7 @@ void OMPCoresetDistributionCalculator<precision, int_size>::calcDistribution(
 {
     precision partialQ = 0.5 * (1.0 / sqDistances->size());
 #pragma omp parallel for shared(partialQ), schedule(static)
-    for (size_t i = 0; i < sqDistances->size(); i++)
+    for (size_t i = 0; i < sqDistances->size(); ++i)
     {
         distribution->at(i) = partialQ + 0.5 * sqDistances->at(i) / distanceSum;
     }

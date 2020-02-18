@@ -61,7 +61,7 @@ template <typename precision, typename int_size>
 int_size SingleWeightedRandomSelector<precision, int_size>::select(const std::vector<precision>* const weights,
                                                                    precision randomSumFrac)
 {
-    for (size_t i = 0; i < weights->size(); i++)
+    for (size_t i = 0; i < weights->size(); ++i)
     {
         if ((randomSumFrac -= weights->at(i)) <= 0)
         {
@@ -83,7 +83,7 @@ std::vector<int_size> MultiWeightedRandomSelector<precision, int_size>::select(
     }
 
     std::vector<std::pair<int_size, precision>> valsWithIndices;
-    for (size_t i = 0; i < vals.size(); i++)
+    for (size_t i = 0; i < vals.size(); ++i)
     {
         valsWithIndices.emplace_back(i, vals[i]);
     }
@@ -91,7 +91,7 @@ std::vector<int_size> MultiWeightedRandomSelector<precision, int_size>::select(
               [](std::pair<int_size, precision> x, std::pair<int_size, precision> y) { return x.second > y.second; });
 
     std::vector<int_size> samples;
-    for (int_size i = 0; i < sampleSize; i++)
+    for (int_size i = 0; i < sampleSize; ++i)
     {
         samples.emplace_back(valsWithIndices[i].first);
     }

@@ -172,7 +172,7 @@ std::shared_ptr<ClusterResults<precision, int_size>> AbstractKmeans<precision, i
     pInitializer->setKmeansData(kmeansData);
     pMaximizer->setKmeansData(kmeansData);
 
-    for (int i = 0; i < numRestarts; i++)
+    for (int i = 0; i < numRestarts; ++i)
     {
         std::vector<precision> distances(kmeansData->totalNumData, 1);
         ClusterData<precision, int_size> clusterData(kmeansData->totalNumData, data->cols(), numClusters);

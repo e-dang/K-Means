@@ -102,7 +102,7 @@ void TemplateKPlusPlus<precision, int_size>::initialize()
     std::fill((*(this->ppSqDistances))->begin(), (*(this->ppSqDistances))->end(), -1);
 
     // initialize remaining clusters; start from index 1 since we know we have only 1 cluster so far
-    for (int_size i = 1; i < (*(this->ppClusters))->rows(); i++)
+    for (int_size i = 1; i < (*(this->ppClusters))->rows(); ++i)
     {
         // find distance between each datapoint and nearest cluster, then update clustering assignment
         findAndUpdateClosestClusters();
@@ -151,7 +151,7 @@ void MPIKPlusPlus<precision, int_size>::weightedClusterSelection()
         if (lengthSum > dataIdx)
             break;
 
-        rank++;
+        ++rank;
     }
 
     if (*(this->pRank) == rank)
