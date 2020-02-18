@@ -38,14 +38,14 @@ public:
     Coreset<precision, int_size> createCoreset(const Matrix<precision, int_size>* const data);
 
 protected:
-    virtual void calcMean(const Matrix<precision, int_size>* const data, std::vector<precision>* const mean) = 0;
+    virtual std::vector<precision> calcMean(const Matrix<precision, int_size>* const data) = 0;
 
     virtual precision calcDistsFromMean(const Matrix<precision, int_size>* const data,
                                         const std::vector<precision>* const mean,
                                         std::vector<precision>* const sqDistances) = 0;
 
-    virtual void calcDistribution(const std::vector<precision>* const sqDistances, const precision& distanceSum,
-                                  std::vector<precision>* const distribution) = 0;
+    virtual std::vector<precision> calcDistribution(const std::vector<precision>* const sqDistances,
+                                                    const precision& distanceSum) = 0;
 
     virtual Coreset<precision, int_size> sampleDistribution(const Matrix<precision, int_size>* const data,
                                                             const std::vector<precision>* const distribution) = 0;
@@ -71,13 +71,13 @@ public:
     ~SharedMemoryCoresetCreator() = default;
 
 protected:
-    void calcMean(const Matrix<precision, int_size>* const data, std::vector<precision>* const mean) override;
+    std::vector<precision> calcMean(const Matrix<precision, int_size>* const data) override;
 
     precision calcDistsFromMean(const Matrix<precision, int_size>* const data, const std::vector<precision>* const mean,
                                 std::vector<precision>* const sqDistances) override;
 
-    void calcDistribution(const std::vector<precision>* const sqDistances, const precision& distanceSum,
-                          std::vector<precision>* const distribution) override;
+    std::vector<precision> calcDistribution(const std::vector<precision>* const sqDistances,
+                                            const precision& distanceSum) override;
 
     Coreset<precision, int_size> sampleDistribution(const Matrix<precision, int_size>* const data,
                                                     const std::vector<precision>* const distribution) override;
@@ -118,13 +118,13 @@ protected:
         mTotalNumData  = totalNumData;
     }
 
-    void calcMean(const Matrix<precision, int_size>* const data, std::vector<precision>* const mean) override;
+    std::vector<precision> calcMean(const Matrix<precision, int_size>* const data) override;
 
     precision calcDistsFromMean(const Matrix<precision, int_size>* const data, const std::vector<precision>* const mean,
                                 std::vector<precision>* const sqDistances) override;
 
-    void calcDistribution(const std::vector<precision>* const sqDistances, const precision& distanceSum,
-                          std::vector<precision>* const distribution) override;
+    std::vector<precision> calcDistribution(const std::vector<precision>* const sqDistances,
+                                            const precision& distanceSum) override;
 
     Coreset<precision, int_size> sampleDistribution(const Matrix<precision, int_size>* const data,
                                                     const std::vector<precision>* const distribution) override;
@@ -149,24 +149,23 @@ template <typename precision, typename int_size>
 Coreset<precision, int_size> AbstractCoresetCreator<precision, int_size>::createCoreset(
   const Matrix<precision, int_size>* const data)
 {
-    std::vector<precision> mean(data->cols());
+    auto mean = calcMean(data);
+
     std::vector<precision> sqDistances(data->size());
-    std::vector<precision> distribution(data->size(), 0.0);
-
-    calcMean(data, &mean);
-
     precision distanceSum = calcDistsFromMean(data, &mean, &sqDistances);
 
-    calcDistribution(&sqDistances, distanceSum, &distribution);
+    auto distribution = calcDistribution(&sqDistances, distanceSum);
 
     return sampleDistribution(data, &distribution);
 }
 
 template <typename precision, typename int_size>
-void SharedMemoryCoresetCreator<precision, int_size>::calcMean(const Matrix<precision, int_size>* const data,
-                                                               std::vector<precision>* const mean)
+std::vector<precision> SharedMemoryCoresetCreator<precision, int_size>::calcMean(
+  const Matrix<precision, int_size>* const data)
 {
-    this->pAverager->calculateAverage(data, mean);
+    std::vector<precision> mean(data->cols());
+    this->pAverager->calculateAverage(data, &mean);
+    return mean;
 }
 
 template <typename precision, typename int_size>
@@ -178,11 +177,12 @@ precision SharedMemoryCoresetCreator<precision, int_size>::calcDistsFromMean(
 }
 
 template <typename precision, typename int_size>
-void SharedMemoryCoresetCreator<precision, int_size>::calcDistribution(const std::vector<precision>* const sqDistances,
-                                                                       const precision& distanceSum,
-                                                                       std::vector<precision>* const distribution)
+std::vector<precision> SharedMemoryCoresetCreator<precision, int_size>::calcDistribution(
+  const std::vector<precision>* const sqDistances, const precision& distanceSum)
 {
-    pDistrCalc->calcDistribution(sqDistances, distanceSum, distribution);
+    std::vector<precision> distribution(sqDistances->size(), 0.0);
+    pDistrCalc->calcDistribution(sqDistances, distanceSum, &distribution);
+    return distribution;
 }
 
 template <typename precision, typename int_size>
@@ -202,25 +202,27 @@ Coreset<precision, int_size> SharedMemoryCoresetCreator<precision, int_size>::sa
 }
 
 template <typename precision, typename int_size>
-void MPICoresetCreator<precision, int_size>::calcMean(const Matrix<precision, int_size>* const data,
-                                                      std::vector<precision>* const mean)
+std::vector<precision> MPICoresetCreator<precision, int_size>::calcMean(const Matrix<precision, int_size>* const data)
 {
     initMPIData(getTotalNumDataMPI(data));
+    std::vector<precision> mean(data->cols());
     chunkMeans    = Matrix<precision, int_size>(mNumProcs, data->cols());
     mDistanceSums = std::vector<precision>(data->size());
 
-    this->pAverager->calculateSum(data, mean);
-    MPI_Gather(mean->data(), mean->size(), mpi_type_t, chunkMeans.data(), mean->size(), mpi_type_t, 0, MPI_COMM_WORLD);
+    this->pAverager->calculateSum(data, &mean);
+    MPI_Gather(mean.data(), mean.size(), mpi_type_t, chunkMeans.data(), mean.size(), mpi_type_t, 0, MPI_COMM_WORLD);
 
     if (mRank == 0)
     {
-        std::fill(mean->begin(), mean->end(), 0.0);
+        std::fill(mean.begin(), mean.end(), 0.0);
         auto numData = std::accumulate(mLengths.begin(), mLengths.end(), 0);
-        this->pAverager->calculateSum(&chunkMeans, mean);
-        this->pAverager->normalizeSum(mean, numData);
+        this->pAverager->calculateSum(&chunkMeans, &mean);
+        this->pAverager->normalizeSum(&mean, numData);
     }
 
-    MPI_Bcast(mean->data(), mean->size(), mpi_type_t, 0, MPI_COMM_WORLD);
+    MPI_Bcast(mean.data(), mean.size(), mpi_type_t, 0, MPI_COMM_WORLD);
+
+    return mean;
 }
 template <typename precision, typename int_size>
 precision MPICoresetCreator<precision, int_size>::calcDistsFromMean(const Matrix<precision, int_size>* const data,
@@ -236,11 +238,11 @@ precision MPICoresetCreator<precision, int_size>::calcDistsFromMean(const Matrix
     return localDistanceSum;
 }
 template <typename precision, typename int_size>
-void MPICoresetCreator<precision, int_size>::calcDistribution(const std::vector<precision>* const sqDistances,
-                                                              const precision& distanceSum,
-                                                              std::vector<precision>* const distribution)
+std::vector<precision> MPICoresetCreator<precision, int_size>::calcDistribution(
+  const std::vector<precision>* const sqDistances, const precision& distanceSum)
 {
     precision totalDistanceSums;
+    std::vector<precision> distribution(sqDistances->size(), 0.0);
     std::vector<int32_t> uniformSampleCounts(mNumProcs, 0);
     std::vector<int32_t> nonUniformSampleCounts(mNumProcs, 0);
 
@@ -254,8 +256,10 @@ void MPICoresetCreator<precision, int_size>::calcDistribution(const std::vector<
     MPI_Scatter(uniformSampleCounts.data(), 1, MPI_INT, &mNumUniformSamples, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Scatter(nonUniformSampleCounts.data(), 1, MPI_INT, &mNumNonUniformSamples, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    std::transform(sqDistances->begin(), sqDistances->end(), distribution->begin(),
+    std::transform(sqDistances->begin(), sqDistances->end(), distribution.begin(),
                    [&totalDistanceSums](const precision& dist) { return dist / totalDistanceSums; });
+
+    return distribution;
 }
 template <typename precision, typename int_size>
 Coreset<precision, int_size> MPICoresetCreator<precision, int_size>::sampleDistribution(
