@@ -66,13 +66,12 @@ public:
 
     void writeError(const precision& error, std::ofstream& file)
     {
+        auto ss = file.precision();
         file << std::fixed << std::setprecision(m_Digits) << "Error: " << error << std::endl;
+        file << std::defaultfloat << std::setprecision(ss);
     }
 
-    void writeTime(const precision& time, std::ofstream& file)
-    {
-        file << std::fixed << std::setprecision(m_Digits) << "Time: " << time << std::endl;
-    }
+    void writeTime(const precision& time, std::ofstream& file) { file << "Time: " << time << std::endl; }
 
     void writeRunParams(std::ofstream& file)
     {
