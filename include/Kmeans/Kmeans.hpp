@@ -195,9 +195,8 @@ public:
                                                              const int& numRestarts) override
     {
         auto kmeansData = this->pDataCreator->create(data, nullptr, this->pDistanceFunc);
-        Coreset<precision, int_size> coreset(mSampleSize, data->cols(), false);
 
-        pCreator->createCoreset(data, &coreset);
+        auto coreset = pCreator->createCoreset(data);
 
         auto clusterResults = pKmeans->fit(&coreset.data, numClusters, numRestarts, &coreset.weights);
         clusterResults->clusterData.clustering.resize(kmeansData.totalNumData);

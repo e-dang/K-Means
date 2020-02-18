@@ -35,7 +35,7 @@ public:
 
     virtual ~AbstractCoresetCreator() = default;
 
-    void createCoreset(const Matrix<precision, int_size>* const data, Coreset<precision, int_size>* const coreset)
+    Coreset<precision, int_size> createCoreset(const Matrix<precision, int_size>* const data)
     {
         std::vector<precision> mean(data->cols());
         std::vector<precision> sqDistances(data->size());
@@ -47,7 +47,7 @@ public:
 
         calcDistribution(&sqDistances, distanceSum, &distribution);
 
-        sampleDistribution(data, &distribution, coreset);
+        return sampleDistribution(data, &distribution);
     }
 
 protected:
@@ -60,9 +60,8 @@ protected:
     virtual void calcDistribution(const std::vector<precision>* const sqDistances, const precision& distanceSum,
                                   std::vector<precision>* const distribution) = 0;
 
-    virtual void sampleDistribution(const Matrix<precision, int_size>* const data,
-                                    const std::vector<precision>* const distribution,
-                                    Coreset<precision, int_size>* const coreset) = 0;
+    virtual Coreset<precision, int_size> sampleDistribution(const Matrix<precision, int_size>* const data,
+                                                            const std::vector<precision>* const distribution) = 0;
 };
 
 template <typename precision = double, typename int_size = int32_t>
@@ -100,16 +99,19 @@ protected:
         pDistrCalc->calcDistribution(sqDistances, distanceSum, distribution);
     }
 
-    void sampleDistribution(const Matrix<precision, int_size>* const data,
-                            const std::vector<precision>* const distribution,
-                            Coreset<precision, int_size>* const coreset) override
+    Coreset<precision, int_size> sampleDistribution(const Matrix<precision, int_size>* const data,
+                                                    const std::vector<precision>* const distribution) override
     {
+        Coreset<precision, int_size> coreset(this->mSampleSize, data->cols(), false);
+
         auto selectedIdxs = this->pSelector->select(distribution, this->mSampleSize);
         for (const auto& idx : selectedIdxs)
         {
-            coreset->data.push_back(data->at(idx));
-            coreset->weights.emplace_back(1.0 / (this->mSampleSize * distribution->at(idx)));
+            coreset.data.push_back(data->at(idx));
+            coreset.weights.emplace_back(1.0 / (this->mSampleSize * distribution->at(idx)));
         }
+
+        return coreset;
     }
 };
 
@@ -161,7 +163,7 @@ protected:
         if (mRank == 0)
         {
             std::fill(mean->begin(), mean->end(), 0.0);
-            auto numData = std::accumulate(mLengths.begin(), mLengths.end(), (int_size)0);
+            auto numData = std::accumulate(mLengths.begin(), mLengths.end(), 0);
             this->pAverager->calculateSum(&chunkMeans, mean);
             this->pAverager->normalizeSum(mean, numData);
         }
@@ -202,16 +204,18 @@ protected:
                        [&totalDistanceSums](const precision& dist) { return dist / totalDistanceSums; });
     }
 
-    void sampleDistribution(const Matrix<precision, int_size>* const data,
-                            const std::vector<precision>* const distribution,
-                            Coreset<precision, int_size>* const coreset) override
+    Coreset<precision, int_size> sampleDistribution(const Matrix<precision, int_size>* const data,
+                                                    const std::vector<precision>* const distribution) override
     {
+        Coreset<precision, int_size> coreset(this->mSampleSize, data->cols(), false);
         std::vector<precision> uniformWeights(distribution->size(), 1.0 / mTotalNumData);
 
-        appendDataToCoreset(data, coreset, &uniformWeights, distribution, mNumUniformSamples);
-        appendDataToCoreset(data, coreset, distribution, distribution, mNumNonUniformSamples);
+        appendDataToCoreset(data, &coreset, &uniformWeights, distribution, mNumUniformSamples);
+        appendDataToCoreset(data, &coreset, distribution, distribution, mNumNonUniformSamples);
 
-        distributeCoreset(coreset);
+        distributeCoreset(&coreset);
+
+        return coreset;
     }
 
     void appendDataToCoreset(const Matrix<precision, int_size>* const data, Coreset<precision, int_size>* const coreset,
@@ -277,7 +281,8 @@ protected:
     }
 
     void distributeCoreset(Coreset<precision, int_size>* const coreset)
-    {  // get the number of datapoints in each process' coreset
+    {
+        // get the number of datapoints in each process' coreset
         auto numCoresetData = coreset->weights.size();
         std::vector<int_size> numCoresetDataPerProc(mNumProcs);
         MPI_Allgather(&numCoresetData, 1, MPI_INT, numCoresetDataPerProc.data(), 1, MPI_INT, MPI_COMM_WORLD);
@@ -299,7 +304,7 @@ protected:
         // create and fill temporary coreset with data at root
         Coreset<precision, int_size> fullCoreset(this->mSampleSize, coreset->data.cols());
 
-        MPI_Gatherv(coreset->data.data(), coreset->data.size(), mpi_type_t, fullCoreset.data.data(),
+        MPI_Gatherv(coreset->data.data(), coreset->data.elements(), mpi_type_t, fullCoreset.data.data(),
                     matrixLengths.data(), matrixDisplacements.data(), mpi_type_t, 0, MPI_COMM_WORLD);
         MPI_Gatherv(coreset->weights.data(), coreset->weights.size(), mpi_type_t, fullCoreset.weights.data(),
                     numCoresetDataPerProc.data(), vectorDisplacements.data(), mpi_type_t, 0, MPI_COMM_WORLD);
@@ -319,14 +324,12 @@ protected:
 
         // resize and distribute coreset data
         auto numFeatures = coreset->data.cols();
-        delete coreset;
-        Coreset<precision, int_size> newCoreset(vectorLengths.at(mRank), numFeatures);
-        // coreset->data.resize(vectorLengths.at(mRank));
-        // coreset->weights.resize(vectorLengths.at(mRank));
+        *coreset         = Coreset<precision, int_size>(vectorLengths.at(mRank), numFeatures);
+
         MPI_Scatterv(fullCoreset.weights.data(), vectorLengths.data(), vectorDisplacements.data(), mpi_type_t,
-                     newCoreset.weights.data(), newCoreset.weights.size(), mpi_type_t, 0, MPI_COMM_WORLD);
+                     coreset->weights.data(), coreset->weights.size(), mpi_type_t, 0, MPI_COMM_WORLD);
         MPI_Scatterv(fullCoreset.data.data(), matrixLengths.data(), matrixDisplacements.data(), mpi_type_t,
-                     newCoreset.data.data(), matrixLengths.at(mRank), mpi_type_t, 0, MPI_COMM_WORLD);
+                     coreset->data.data(), matrixLengths.at(mRank), mpi_type_t, 0, MPI_COMM_WORLD);
     }
 };
 }  // namespace HPKmeans
