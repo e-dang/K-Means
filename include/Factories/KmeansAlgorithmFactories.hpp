@@ -10,7 +10,7 @@
 
 namespace HPKmeans
 {
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class AbstractKmeansAlgorithmFactory
 {
 protected:
@@ -45,7 +45,7 @@ protected:
       const int_size& sampleSize, std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) = 0;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class SharedMemoryKmeansAlgorithmFactory : public AbstractKmeansAlgorithmFactory<precision, int_size>
 {
 public:
@@ -68,7 +68,7 @@ public:
       const int_size& sampleSize, std::shared_ptr<IDistanceFunctor<precision>> distanceFunc);
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class MPIKmeansAlgorithmFactory : public AbstractKmeansAlgorithmFactory<precision, int_size>
 {
 public:
@@ -89,14 +89,14 @@ public:
       const int32_t& sampleSize, std::shared_ptr<IDistanceFunctor<precision>> distanceFunc);
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 struct FactoryPair
 {
     std::shared_ptr<AbstractKmeansAlgorithmFactory<precision, int_size>> algFactory;
     std::shared_ptr<AbstractStrategyFactory<precision, int_size>> stratFactory;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class KmeansAlgorithmFactoryProducer
 {
 public:

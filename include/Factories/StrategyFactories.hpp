@@ -13,7 +13,7 @@
 
 namespace HPKmeans
 {
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class AbstractStrategyFactory
 {
 public:
@@ -50,7 +50,7 @@ public:
     virtual AbstractPointReassigner<precision, int_size>* createOptPointReassigner() = 0;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class SerialStrategyFactory : public AbstractStrategyFactory<precision, int_size>
 {
 public:
@@ -75,7 +75,7 @@ public:
     AbstractCoresetClusteringFinisher<precision, int_size>* createCoresetClusteringFinisher() override;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class OMPStrategyFactory : public AbstractStrategyFactory<precision, int_size>
 {
 public:
@@ -100,7 +100,7 @@ public:
     AbstractCoresetClusteringFinisher<precision, int_size>* createCoresetClusteringFinisher() override;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class MPIStrategyFactory : public AbstractStrategyFactory<precision, int_size>
 {
 public:
@@ -125,7 +125,7 @@ public:
     AbstractCoresetClusteringFinisher<precision, int_size>* createCoresetClusteringFinisher() override;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class HybridStrategyFactory : public AbstractStrategyFactory<precision, int_size>
 {
 public:

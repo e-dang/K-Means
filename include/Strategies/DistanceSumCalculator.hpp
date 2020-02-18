@@ -5,7 +5,7 @@
 
 namespace HPKmeans
 {
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class IDistanceSumCalculator
 {
 public:
@@ -17,7 +17,7 @@ public:
                                     std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) = 0;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class SerialDistanceSumCalculator : public IDistanceSumCalculator<precision, int_size>
 {
 public:
@@ -28,7 +28,7 @@ public:
                             std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) override;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class OMPDistanceSumCalculator : public IDistanceSumCalculator<precision, int_size>
 {
 public:

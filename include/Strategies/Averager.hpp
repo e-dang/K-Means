@@ -23,7 +23,7 @@ namespace HPKmeans
                               std::transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), std::plus<double>())) \
                                 initializer(omp_priv = decltype(omp_orig)(omp_orig.rows(), omp_orig.cols()))
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class AbstractWeightedAverager
 {
 public:
@@ -44,7 +44,7 @@ public:
                               const std::vector<precision>* const weightSums) = 0;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class SerialWeightedMultiVectorAverager : public AbstractWeightedAverager<precision, int_size>
 {
 public:
@@ -58,7 +58,7 @@ public:
                       const std::vector<precision>* const weightSums) override;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class OMPWeightedMultiVectorAverager : public AbstractWeightedAverager<precision, int_size>
 {
 public:
@@ -72,7 +72,7 @@ public:
                       const std::vector<precision>* const weightSums) override;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class AbstractAverager
 {
 public:
@@ -86,7 +86,7 @@ public:
     virtual void normalizeSum(std::vector<precision>* const avgContainer, const int_size& numData) = 0;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class SerialVectorAverager : public AbstractAverager<precision, int_size>
 {
 public:
@@ -98,7 +98,7 @@ public:
     void normalizeSum(std::vector<precision>* const avgContainer, const int_size& numData) override;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class OMPVectorAverager : public AbstractAverager<precision, int_size>
 {
 public:

@@ -6,7 +6,7 @@
 #include "Containers/Definitions.hpp"
 namespace HPKmeans
 {
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class ICoresetDistributionCalculator
 {
 public:
@@ -16,7 +16,7 @@ public:
                                   std::vector<precision>* const distribution) = 0;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class SerialCoresetDistributionCalculator : public ICoresetDistributionCalculator<precision, int_size>
 {
 public:
@@ -26,7 +26,7 @@ public:
                           std::vector<precision>* const distribution) override;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class OMPCoresetDistributionCalculator : public ICoresetDistributionCalculator<precision, int_size>
 {
 public:

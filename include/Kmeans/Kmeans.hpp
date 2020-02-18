@@ -19,7 +19,7 @@ namespace HPKmeans
  *        this class also defines the member variables, setters, getters, and helper functions that each Kmeans
  *        concretion will need to function.
  */
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class AbstractKmeans
 {
 protected:
@@ -104,7 +104,7 @@ protected:
                         std::shared_ptr<ClusterResults<precision, int_size>> clusterResults);
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class WeightedKmeans : public AbstractKmeans<precision, int_size>
 {
 public:
@@ -127,7 +127,7 @@ public:
                                                              const std::vector<precision>* const weights) override;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class CoresetKmeans : public AbstractKmeans<precision, int_size>
 {
 private:

@@ -4,7 +4,7 @@
 #include "Containers/Definitions.hpp"
 namespace HPKmeans
 {
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class IClosestClusterFinder
 {
 public:
@@ -14,7 +14,7 @@ public:
       const int_size& dataIdx, KmeansData<precision, int_size>* const kmeansData) = 0;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class ClosestClusterFinder : public IClosestClusterFinder<precision, int_size>
 {
 public:
@@ -24,7 +24,7 @@ public:
                                                            KmeansData<precision, int_size>* const kmeansData) override;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class ClosestNewClusterFinder : public IClosestClusterFinder<precision, int_size>
 {
 public:

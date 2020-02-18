@@ -8,15 +8,16 @@
 
 namespace HPKmeans
 {
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class IWeightedRandomSelector
 {
 public:
-    virtual ~IWeightedRandomSelector()                                                            = default;
+    virtual ~IWeightedRandomSelector() = default;
+
     virtual int_size select(const std::vector<precision>* const weights, precision randomSumFrac) = 0;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class SingleWeightedRandomSelector : public IWeightedRandomSelector<precision, int_size>
 {
 public:
@@ -36,7 +37,7 @@ public:
     int_size select(const std::vector<precision>* const weights, precision randomSumFrac) override;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class IMultiWeightedRandomSelector
 {
 public:
@@ -50,7 +51,7 @@ public:
  *        https://stackoverflow.com/questions/53632441/c-sampling-from-discrete-distribution-without-replacement
  *
  */
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class MultiWeightedRandomSelector : public IMultiWeightedRandomSelector<precision, int_size>
 {
 public:

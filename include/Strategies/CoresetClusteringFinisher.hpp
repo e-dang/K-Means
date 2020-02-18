@@ -8,7 +8,7 @@
 #include "mpi.h"
 namespace HPKmeans
 {
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class AbstractCoresetClusteringFinisher
 {
 protected:
@@ -24,7 +24,7 @@ public:
     virtual precision finishClustering(KmeansData<precision, int_size>* const kmeansData) = 0;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class SharedMemoryCoresetClusteringFinisher : public AbstractCoresetClusteringFinisher<precision, int_size>
 {
 public:
@@ -38,7 +38,7 @@ public:
     precision finishClustering(KmeansData<precision, int_size>* const kmeansData) override;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class MPICoresetClusteringFinisher : public AbstractCoresetClusteringFinisher<precision, int_size>
 {
 public:

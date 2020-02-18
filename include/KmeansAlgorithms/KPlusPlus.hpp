@@ -13,7 +13,7 @@ namespace HPKmeans
  *        weighted by the square distance between the point and its nearest cluster. Thus farther points have a higher
  *        probability of being selected.
  */
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class TemplateKPlusPlus : public AbstractKmeansInitializer<precision, int_size>
 {
 protected:
@@ -56,7 +56,7 @@ protected:
     virtual void findAndUpdateClosestClusters() = 0;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class SharedMemoryKPlusPlus : public TemplateKPlusPlus<precision, int_size>
 {
 public:
@@ -74,7 +74,7 @@ protected:
     void findAndUpdateClosestClusters() override;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class MPIKPlusPlus : public TemplateKPlusPlus<precision, int_size>
 {
 public:

@@ -6,7 +6,7 @@
 
 namespace HPKmeans
 {
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class AbstractPointReassigner
 {
 protected:
@@ -22,7 +22,7 @@ public:
     virtual int_size reassignPoints(KmeansData<precision, int_size>* const kmeansData) = 0;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class SerialPointReassigner : public AbstractPointReassigner<precision, int_size>
 {
 public:
@@ -36,7 +36,7 @@ public:
     int_size reassignPoints(KmeansData<precision, int_size>* const kmeansData) override;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class SerialOptimizedPointReassigner : public AbstractPointReassigner<precision, int_size>
 {
 public:
@@ -50,7 +50,7 @@ public:
     int_size reassignPoints(KmeansData<precision, int_size>* const kmeansData) override;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class OMPPointReassigner : public AbstractPointReassigner<precision, int_size>
 {
 public:
@@ -64,7 +64,7 @@ public:
     int_size reassignPoints(KmeansData<precision, int_size>* const kmeansData) override;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class OMPOptimizedPointReassigner : public AbstractPointReassigner<precision, int_size>
 {
 public:

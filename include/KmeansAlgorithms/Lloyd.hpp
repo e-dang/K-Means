@@ -10,7 +10,7 @@ namespace HPKmeans
  * @brief Implementation of a Kmeans maximization algorithm. Given a set of initialized clusters, this class will
  *        optimize the clusters using Lloyd's algorithm.
  */
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class TemplateLloyd : public AbstractKmeansMaximizer<precision, int_size>
 {
 protected:
@@ -48,7 +48,7 @@ protected:
     virtual int_size reassignPoints() = 0;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class SharedMemoryLloyd : public TemplateLloyd<precision, int_size>
 {
 public:
@@ -68,7 +68,7 @@ protected:
     int_size reassignPoints() override;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class MPILloyd : public TemplateLloyd<precision, int_size>
 {
 public:

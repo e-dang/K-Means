@@ -5,7 +5,7 @@
 
 namespace HPKmeans
 {
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class KmeansFactory
 {
 protected:

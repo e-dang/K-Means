@@ -14,7 +14,7 @@ namespace HPKmeans
  * @brief Abstract class that all Kmeans algorithms, such as initializers and maximizers will derive from. This class
  *        contains code that is used to set up each of these algorithms.
  */
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class AbstractKmeansAlgorithm
 {
 protected:
@@ -49,7 +49,7 @@ public:
  * @brief Abstract class that defines the interface for Kmeans initialization algorithms, such as K++ or random
  *        initialization.
  */
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class AbstractKmeansInitializer : public AbstractKmeansAlgorithm<precision, int_size>
 {
 protected:
@@ -69,7 +69,7 @@ public:
 /**
  * @brief Abstract class that defines the interface for Kmeans maximization algorithms, such as Lloyd's algorithm.
  */
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class AbstractKmeansMaximizer : public AbstractKmeansAlgorithm<precision, int_size>
 {
 protected:

@@ -10,7 +10,7 @@
 #include "omp.h"
 namespace HPKmeans
 {
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class AbstractCoresetCreator
 {
 protected:
@@ -51,7 +51,7 @@ protected:
                                                             const std::vector<precision>* const distribution) = 0;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class SharedMemoryCoresetCreator : public AbstractCoresetCreator<precision, int_size>
 {
 protected:
@@ -83,7 +83,7 @@ protected:
                                                     const std::vector<precision>* const distribution) override;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class MPICoresetCreator : public AbstractCoresetCreator<precision, int_size>
 {
 protected:

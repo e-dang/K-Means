@@ -5,7 +5,7 @@
 
 namespace HPKmeans
 {
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class AbstractClusteringDataUpdater
 {
 public:
@@ -19,7 +19,7 @@ public:
                                       KmeansData<precision, int_size>* const kmeansData) = 0;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class ClusteringDataUpdater : public AbstractClusteringDataUpdater<precision, int_size>
 {
 public:
@@ -29,7 +29,7 @@ public:
                               KmeansData<precision, int_size>* const kmeansData) override;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class AtomicClusteringDataUpdater : public AbstractClusteringDataUpdater<precision, int_size>
 {
 public:
@@ -39,7 +39,7 @@ public:
                               KmeansData<precision, int_size>* const kmeansData) override;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class DistributedClusteringDataUpdater : public AbstractClusteringDataUpdater<precision, int_size>
 {
 public:
@@ -49,7 +49,7 @@ public:
                               KmeansData<precision, int_size>* const kmeansData) override;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class AtomicDistributedClusteringDataUpdater : public AbstractClusteringDataUpdater<precision, int_size>
 {
 public:
@@ -59,7 +59,7 @@ public:
                               KmeansData<precision, int_size>* const kmeansData);
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class CoresetClusteringDataUpdater : public AbstractClusteringDataUpdater<precision, int_size>
 {
 public:

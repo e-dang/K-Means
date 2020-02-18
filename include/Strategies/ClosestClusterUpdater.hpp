@@ -9,7 +9,7 @@
 
 namespace HPKmeans
 {
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class AbstractClosestClusterUpdater
 {
 protected:
@@ -30,7 +30,7 @@ public:
     virtual void findAndUpdateClosestClusters(KmeansData<precision, int_size>* const kmeansData) = 0;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class SerialClosestClusterUpdater : public AbstractClosestClusterUpdater<precision, int_size>
 {
 public:
@@ -45,7 +45,7 @@ public:
     void findAndUpdateClosestClusters(KmeansData<precision, int_size>* const kmeansData) override;
 };
 
-template <typename precision = double, typename int_size = int32_t>
+template <typename precision, typename int_size>
 class OMPClosestClusterUpdater : public AbstractClosestClusterUpdater<precision, int_size>
 {
 public:
