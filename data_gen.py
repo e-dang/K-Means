@@ -13,7 +13,7 @@ def generate_data(num_data, num_features, num_clusters, cluster_std, box, data_f
     #  write data
     with open(data_fp, 'wb') as file:
         for point in data:
-            point_array = array('f', point)
+            point_array = array('d', point)
             point_array.tofile(file)
 
     # write labels
@@ -53,7 +53,7 @@ def read_clustering(filepath):
 
 
 def plot_data(data, clusters, clustering):
-    # print(data)
+    # print(len(data))
     # print(len(clusters))
     # print(clustering)
     colors = cm.jet(np.linspace(0, 1, len(clusters)))
@@ -65,11 +65,17 @@ def plot_data(data, clusters, clustering):
     plt.show()
 
 
-NUM_DATA = 1000000
-NUM_FEATURES = 3
-NUM_CLUSTERS = 100
-CLUSTER_STD = 1
-BOX = (-100, 100)
+# NUM_DATA = 10000000
+# NUM_FEATURES = 50
+# NUM_CLUSTERS = 500
+# CLUSTER_STD = 1
+# BOX = (-100, 100)
+
+# NUM_DATA = 200000
+# NUM_FEATURES = 2
+# NUM_CLUSTERS = 30
+# CLUSTER_STD = 1
+# BOX = (-100, 100)
 # data = generate_data(NUM_DATA, NUM_FEATURES, NUM_CLUSTERS, CLUSTER_STD, BOX,
 #                      f'test_{NUM_DATA}_{NUM_FEATURES}.txt', f'data_labels_{NUM_DATA}_{NUM_FEATURES}.txt')
 # exit()
