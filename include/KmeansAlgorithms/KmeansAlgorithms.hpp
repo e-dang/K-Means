@@ -20,23 +20,6 @@ class AbstractKmeansAlgorithm
 protected:
     KmeansData<precision, int_size>* pKmeansData;
 
-    // user data
-    // const Matrix<precision, int_size>* pData;
-    // const std::vector<precision>* pWeights;
-    // std::shared_ptr<IDistanceFunctor<precision>> pDistanceFunc;
-
-    // // cluster data
-    // Matrix<precision, int_size>** ppClusters;
-    // std::vector<int_size>** ppClustering;
-    // std::vector<precision>** ppClusterWeights;
-    // std::vector<precision>** ppSqDistances;
-
-    // // chunk data
-    // const int* pRank;
-    // const int_size* pTotalNumData;
-    // const std::vector<int_size>* pLengths;
-    // const std::vector<int_size>* pDisplacements;
-
 public:
     AbstractKmeansAlgorithm() = default;
 
@@ -95,16 +78,5 @@ template <typename precision, typename int_size>
 void AbstractKmeansAlgorithm<precision, int_size>::setKmeansData(KmeansData<precision, int_size>* kmeansData)
 {
     pKmeansData = kmeansData;
-    // pData            = kmeansData->p_Data;
-    // pWeights         = kmeansData->p_Weights;
-    // ppClusters       = &kmeansData->p_Clusters;
-    // ppClustering     = &kmeansData->p_Clustering;
-    // ppClusterWeights = &kmeansData->p_ClusterWeights;
-    // ppSqDistances    = &kmeansData->p_SqDistances;
-    // pLengths         = &kmeansData->m_Lengths;
-    // pRank            = &kmeansData->m_Rank;
-    // pTotalNumData    = &kmeansData->m_TotalNumData;
-    // pDisplacements   = &kmeansData->displacements;
-    // pDistanceFunc    = kmeansData->distanceFunc;
 }
 }  // namespace HPKmeans
