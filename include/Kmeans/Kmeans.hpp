@@ -23,15 +23,15 @@ template <typename precision, typename int_size>
 class AbstractKmeans
 {
 protected:
-    std::unique_ptr<AbstractKmeansInitializer<precision, int_size>> pInitializer;
-    std::unique_ptr<AbstractKmeansMaximizer<precision, int_size>> pMaximizer;
-    std::unique_ptr<IKmeansStateInitializer<precision, int_size>> pDataCreator;
-    std::shared_ptr<IDistanceFunctor<precision>> pDistanceFunc;
+    std::unique_ptr<AbstractKmeansInitializer<precision, int_size>> p_Initializer;
+    std::unique_ptr<AbstractKmeansMaximizer<precision, int_size>> p_Maximizer;
+    std::unique_ptr<IKmeansStateInitializer<precision, int_size>> p_KmeansStateInitializer;
+    std::shared_ptr<IDistanceFunctor<precision>> p_DistanceFunc;
 
 public:
     AbstractKmeans(IKmeansStateInitializer<precision, int_size>* dataCreator,
                    std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) :
-        pDataCreator(dataCreator), pDistanceFunc(distanceFunc)
+        p_KmeansStateInitializer(dataCreator), p_DistanceFunc(distanceFunc)
     {
     }
 
@@ -47,7 +47,10 @@ public:
                    AbstractKmeansMaximizer<precision, int_size>* maximizer,
                    IKmeansStateInitializer<precision, int_size>* dataCreator,
                    std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) :
-        pInitializer(initializer), pMaximizer(maximizer), pDataCreator(dataCreator), pDistanceFunc(distanceFunc)
+        p_Initializer(initializer),
+        p_Maximizer(maximizer),
+        p_KmeansStateInitializer(dataCreator),
+        p_DistanceFunc(distanceFunc)
     {
     }
 
@@ -85,7 +88,7 @@ public:
      *
      * @param distanceFunc - A pointer to an implementation of the IDistanceFunctor class.
      */
-    void setDistanceFunc(IDistanceFunctor<precision>* distanceFunc) { pDistanceFunc.reset(distanceFunc); }
+    void setDistanceFunc(IDistanceFunctor<precision>* distanceFunc) { p_DistanceFunc.reset(distanceFunc); }
 
 protected:
     std::shared_ptr<ClusterResults<precision, int_size>> run(const Matrix<precision, int_size>* const data,
@@ -158,15 +161,15 @@ std::shared_ptr<ClusterResults<precision, int_size>> AbstractKmeans<precision, i
     std::shared_ptr<ClusterResults<precision, int_size>> clusterResults =
       std::make_shared<ClusterResults<precision, int_size>>();
 
-    pInitializer->setState(kmeansState);
-    pMaximizer->setState(kmeansState);
+    p_Initializer->setState(kmeansState);
+    p_Maximizer->setState(kmeansState);
 
     for (int i = 0; i < numRestarts; ++i)
     {
         kmeansState->resetClusterData(numClusters, 1.0);
 
-        pInitializer->initialize();
-        pMaximizer->maximize();
+        p_Initializer->initialize();
+        p_Maximizer->maximize();
 
         kmeansState->compareResults(clusterResults);
     }
@@ -187,7 +190,7 @@ std::shared_ptr<ClusterResults<precision, int_size>> WeightedKmeans<precision, i
   const Matrix<precision, int_size>* const data, const int_size& numClusters, const int& numRestarts,
   const std::vector<precision>* const weights)
 {
-    auto kmeansState = this->pDataCreator->create(data, weights, this->pDistanceFunc);
+    auto kmeansState = this->p_KmeansStateInitializer->create(data, weights, this->p_DistanceFunc);
     return this->run(data, numClusters, numRestarts, &kmeansState);
 }
 
@@ -195,7 +198,7 @@ template <typename precision, typename int_size>
 std::shared_ptr<ClusterResults<precision, int_size>> CoresetKmeans<precision, int_size>::fit(
   const Matrix<precision, int_size>* const data, const int_size& numClusters, const int& numRestarts)
 {
-    auto kmeansState = this->pDataCreator->create(data, nullptr, this->pDistanceFunc);
+    auto kmeansState = this->p_KmeansStateInitializer->create(data, nullptr, this->p_DistanceFunc);
 
     pCreator->setState(&kmeansState);
     auto coreset = pCreator->createCoreset();
