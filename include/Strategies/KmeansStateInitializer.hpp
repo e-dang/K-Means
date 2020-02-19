@@ -2,6 +2,7 @@
 
 #include "Containers/KmeansState.hpp"
 #include "Utils/Utils.hpp"
+
 namespace HPKmeans
 {
 template <typename precision, typename int_size>
@@ -53,7 +54,7 @@ KmeansState<precision, int_size> MPIKmeansStateInitializer<precision, int_size>:
 {
     auto totalNumData = getTotalNumDataMPI(data);
     auto mpiData      = getMPIData(totalNumData);
-    return KmeansState<precision, int_size>(data, weights, distanceFunc, mpiData.rank, totalNumData, mpiData.lengths,
-                                            mpiData.displacements);
+    return KmeansState<precision, int_size>(data, weights, distanceFunc, mpiData.rank, mpiData.numProcs, totalNumData,
+                                            mpiData.lengths, mpiData.displacements);
 }
 }  // namespace HPKmeans

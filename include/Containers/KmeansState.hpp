@@ -12,6 +12,7 @@ class KmeansState
 {
 private:
     const int m_Rank;
+    const int m_NumProcs;
     const int_size m_TotalNumData;
     const std::vector<int_size> m_Lengths;
     const std::vector<int_size> m_Displacements;
@@ -29,10 +30,11 @@ private:
 
 public:
     KmeansState(const Matrix<precision, int_size>* const data, const std::vector<precision>* const weights,
-                std::shared_ptr<IDistanceFunctor<precision>> distanceFunc, const int& rank,
+                std::shared_ptr<IDistanceFunctor<precision>> distanceFunc, const int& rank, const int& numProcs,
                 const int_size& totalNumData, const std::vector<int_size> lengths,
                 const std::vector<int_size> displacements) noexcept :
         m_Rank(rank),
+        m_NumProcs(numProcs),
         m_TotalNumData(totalNumData),
         m_Lengths(lengths),
         m_Displacements(displacements),
