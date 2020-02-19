@@ -43,7 +43,7 @@ KmeansState<precision, int_size> SharedMemoryKmeansStateInitializer<precision, i
   const Matrix<precision, int_size>* const data, const std::vector<precision>* const weights,
   std::shared_ptr<IDistanceFunctor<precision>> distanceFunc)
 {
-    return KmeansState<precision, int_size>(data, weights, distanceFunc, 0, data->size(),
+    return KmeansState<precision, int_size>(data, weights, distanceFunc, 0, 1, data->size(),
                                             std::vector<int_size>(1, data->size()), std::vector<int_size>(1, 0));
 }
 
