@@ -125,19 +125,19 @@ class CoresetKmeans : public AbstractKmeans<precision, int_size>
 private:
     int_size mSampleSize;
     std::unique_ptr<AbstractKmeans<precision, int_size>> pKmeans;
-    std::unique_ptr<AbstractCoresetCreator<precision, int_size>> pCreator;
+    std::unique_ptr<AbstractCoresetCreator<precision, int_size>> p_CoresetCreator;
     std::unique_ptr<AbstractCoresetClusteringFinisher<precision, int_size>> pFinisher;
 
 public:
     CoresetKmeans(const int_size& sampleSize, AbstractKmeans<precision, int_size>* kmeans,
-                  AbstractCoresetCreator<precision, int_size>* creator,
+                  AbstractCoresetCreator<precision, int_size>* coresetCreator,
                   AbstractCoresetClusteringFinisher<precision, int_size>* finisher,
                   IKmeansStateInitializer<precision, int_size>* dataCreator,
                   std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) :
         AbstractKmeans<precision, int_size>(dataCreator, distanceFunc),
         mSampleSize(sampleSize),
         pKmeans(kmeans),
-        pCreator(creator),
+        p_CoresetCreator(coresetCreator),
         pFinisher(finisher)
     {
     }
@@ -200,8 +200,8 @@ std::shared_ptr<ClusterResults<precision, int_size>> CoresetKmeans<precision, in
 {
     auto kmeansState = this->p_KmeansStateInitializer->initializeState(data, nullptr, this->p_DistanceFunc);
 
-    pCreator->setState(&kmeansState);
-    auto coreset = pCreator->createCoreset();
+    p_CoresetCreator->setState(&kmeansState);
+    auto coreset = p_CoresetCreator->createCoreset();
 
     auto clusterResults = pKmeans->fit(&coreset.data, numClusters, numRestarts, &coreset.weights);
 
