@@ -38,7 +38,7 @@ protected:
      */
     virtual void calcClusterSums() = 0;
 
-    virtual void averageClusterSums() = 0;
+    virtual void normalizeClusterSums() = 0;
 
     /**
      * @brief Helper function that checks if each point's closest cluster has changed after the clusters have been
@@ -68,7 +68,7 @@ public:
 protected:
     void calcClusterSums() override;
 
-    void averageClusterSums() override;
+    void normalizeClusterSums() override;
 
     int_size reassignPoints() override;
 };
@@ -91,7 +91,7 @@ public:
 protected:
     void calcClusterSums() override;
 
-    void averageClusterSums() override;
+    void normalizeClusterSums() override;
 
     int_size reassignPoints() override;
 };
@@ -107,7 +107,7 @@ void TemplateLloyd<precision, int_size>::maximize()
 
         calcClusterSums();
 
-        averageClusterSums();
+        normalizeClusterSums();
 
         changed = reassignPoints();
 
@@ -122,7 +122,7 @@ void SharedMemoryLloyd<precision, int_size>::calcClusterSums()
 }
 
 template <typename precision, typename int_size>
-void SharedMemoryLloyd<precision, int_size>::averageClusterSums()
+void SharedMemoryLloyd<precision, int_size>::normalizeClusterSums()
 {
     this->p_Averager->normalizeSum(p_KmeansState->clusters(), p_KmeansState->clusterWeights());
 }
@@ -144,7 +144,7 @@ void MPILloyd<precision, int_size>::calcClusterSums()
 }
 
 template <typename precision, typename int_size>
-void MPILloyd<precision, int_size>::averageClusterSums()
+void MPILloyd<precision, int_size>::normalizeClusterSums()
 {
     std::vector<precision> copyWeights(p_KmeansState->dataSize());
     MPI_Reduce(p_KmeansState->clusterWeightsData(), copyWeights.data(), copyWeights.size(), mpi_type_t, MPI_SUM, 0,
