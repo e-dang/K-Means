@@ -2,8 +2,8 @@
 
 #include <memory>
 
-#include "Containers/DataClasses.hpp"
 #include "Containers/Definitions.hpp"
+#include "Containers/KmeansState.hpp"
 #include "Strategies/ClosestClusterFinder.hpp"
 #include "Strategies/ClusteringUpdater.hpp"
 
@@ -25,9 +25,9 @@ public:
 
     virtual ~AbstractClosestClusterUpdater() = default;
 
-    void findAndUpdateClosestCluster(const int_size& dataIdx, KmeansData<precision, int_size>* const kmeansData);
+    void findAndUpdateClosestCluster(const int_size& dataIdx, KmeansState<precision, int_size>* const kmeansState);
 
-    virtual void findAndUpdateClosestClusters(KmeansData<precision, int_size>* const kmeansData) = 0;
+    virtual void findAndUpdateClosestClusters(KmeansState<precision, int_size>* const kmeansState) = 0;
 };
 
 template <typename precision, typename int_size>
@@ -42,7 +42,7 @@ public:
 
     ~SerialClosestClusterUpdater() = default;
 
-    void findAndUpdateClosestClusters(KmeansData<precision, int_size>* const kmeansData) override;
+    void findAndUpdateClosestClusters(KmeansState<precision, int_size>* const kmeansState) override;
 };
 
 template <typename precision, typename int_size>
@@ -57,35 +57,35 @@ public:
 
     ~OMPClosestClusterUpdater() = default;
 
-    void findAndUpdateClosestClusters(KmeansData<precision, int_size>* const kmeansData) override;
+    void findAndUpdateClosestClusters(KmeansState<precision, int_size>* const kmeansState) override;
 };
 
 template <typename precision, typename int_size>
 void AbstractClosestClusterUpdater<precision, int_size>::findAndUpdateClosestCluster(
-  const int_size& dataIdx, KmeansData<precision, int_size>* const kmeansData)
+  const int_size& dataIdx, KmeansState<precision, int_size>* const kmeansState)
 {
-    auto closestCluster = pFinder->findClosestCluster(dataIdx, kmeansData);
-    pUpdater->update(dataIdx, closestCluster, kmeansData);
+    auto closestCluster = pFinder->findClosestCluster(dataIdx, kmeansState);
+    pUpdater->update(dataIdx, closestCluster, kmeansState);
 }
 
 template <typename precision, typename int_size>
 void SerialClosestClusterUpdater<precision, int_size>::findAndUpdateClosestClusters(
-  KmeansData<precision, int_size>* const kmeansData)
+  KmeansState<precision, int_size>* const kmeansState)
 {
-    for (int_size i = 0; i < kmeansData->dataSize(); ++i)
+    for (int_size i = 0; i < kmeansState->dataSize(); ++i)
     {
-        this->findAndUpdateClosestCluster(i, kmeansData);
+        this->findAndUpdateClosestCluster(i, kmeansState);
     }
 }
 
 template <typename precision, typename int_size>
 void OMPClosestClusterUpdater<precision, int_size>::findAndUpdateClosestClusters(
-  KmeansData<precision, int_size>* const kmeansData)
+  KmeansState<precision, int_size>* const kmeansState)
 {
 #pragma omp parallel for schedule(static)
-    for (int_size i = 0; i < kmeansData->data->size(); ++i)
+    for (int_size i = 0; i < kmeansState->dataSize(); ++i)
     {
-        this->findAndUpdateClosestCluster(i, kmeansData);
+        this->findAndUpdateClosestCluster(i, kmeansState);
     }
 }
 }  // namespace HPKmeans

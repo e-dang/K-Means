@@ -2,8 +2,8 @@
 
 #include <numeric>
 
-#include "Containers/DataClasses.hpp"
 #include "Containers/Definitions.hpp"
+#include "Containers/KmeansState.hpp"
 #include "Strategies/ClosestClusterUpdater.hpp"
 #include "mpi.h"
 namespace HPKmeans
@@ -21,7 +21,7 @@ public:
 
     virtual ~AbstractCoresetClusteringFinisher() = default;
 
-    virtual precision finishClustering(KmeansData<precision, int_size>* const kmeansData) = 0;
+    virtual precision finishClustering(KmeansState<precision, int_size>* const kmeansState) = 0;
 };
 
 template <typename precision, typename int_size>
@@ -35,7 +35,7 @@ public:
 
     ~SharedMemoryCoresetClusteringFinisher() = default;
 
-    precision finishClustering(KmeansData<precision, int_size>* const kmeansData) override;
+    precision finishClustering(KmeansState<precision, int_size>* const kmeansState) override;
 };
 
 template <typename precision, typename int_size>
@@ -49,30 +49,30 @@ public:
 
     ~MPICoresetClusteringFinisher() = default;
 
-    precision finishClustering(KmeansData<precision, int_size>* const kmeansData) override;
+    precision finishClustering(KmeansState<precision, int_size>* const kmeansState) override;
 };
 
 template <typename precision, typename int_size>
 precision SharedMemoryCoresetClusteringFinisher<precision, int_size>::finishClustering(
-  KmeansData<precision, int_size>* const kmeansData)
+  KmeansState<precision, int_size>* const kmeansState)
 {
-    this->pUpdater->findAndUpdateClosestClusters(kmeansData);
+    this->pUpdater->findAndUpdateClosestClusters(kmeansState);
 
-    return std::accumulate(kmeansData->sqDistancesBegin(), kmeansData->sqDistancesEnd(), 0.0);
+    return std::accumulate(kmeansState->sqDistancesBegin(), kmeansState->sqDistancesEnd(), 0.0);
 }
 
 template <typename precision, typename int_size>
 precision MPICoresetClusteringFinisher<precision, int_size>::finishClustering(
-  KmeansData<precision, int_size>* const kmeansData)
+  KmeansState<precision, int_size>* const kmeansState)
 {
-    this->pUpdater->findAndUpdateClosestClusters(kmeansData);
+    this->pUpdater->findAndUpdateClosestClusters(kmeansState);
 
-    MPI_Allgatherv(MPI_IN_PLACE, kmeansData->myLength(), MPI_INT, kmeansData->clusteringData(),
-                   kmeansData->lengthsData(), kmeansData->displacementsData(), MPI_INT, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, kmeansState->myLength(), MPI_INT, kmeansState->clusteringData(),
+                   kmeansState->lengthsData(), kmeansState->displacementsData(), MPI_INT, MPI_COMM_WORLD);
 
-    MPI_Allgatherv(MPI_IN_PLACE, kmeansData->myLength(), mpi_type_t, kmeansData->sqDistancesData(),
-                   kmeansData->lengthsData(), kmeansData->displacementsData(), mpi_type_t, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, kmeansState->myLength(), mpi_type_t, kmeansState->sqDistancesData(),
+                   kmeansState->lengthsData(), kmeansState->displacementsData(), mpi_type_t, MPI_COMM_WORLD);
 
-    return std::accumulate(kmeansData->sqDistancesBegin(), kmeansData->sqDistancesEnd(), 0.0);
+    return std::accumulate(kmeansState->sqDistancesBegin(), kmeansState->sqDistancesEnd(), 0.0);
 }
 }  // namespace HPKmeans

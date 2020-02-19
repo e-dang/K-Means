@@ -7,7 +7,7 @@
 #include "Strategies/CoresetClusteringFinisher.hpp"
 #include "Strategies/CoresetDistributionCalculator.hpp"
 #include "Strategies/DistanceSumCalculator.hpp"
-#include "Strategies/KmeansDataCreator.hpp"
+#include "Strategies/KmeansStateInitializer.hpp"
 #include "Strategies/PointReassigner.hpp"
 #include "Strategies/RandomSelector.hpp"
 
@@ -41,7 +41,7 @@ public:
 
     virtual ICoresetDistributionCalculator<precision, int_size>* createCoresetDistributionCalculator() = 0;
 
-    virtual IKmeansDataCreator<precision, int_size>* createKmeansDataCreator() = 0;
+    virtual IKmeansStateInitializer<precision, int_size>* createKmeansStateInitializer() = 0;
 
     virtual AbstractCoresetClusteringFinisher<precision, int_size>* createCoresetClusteringFinisher() = 0;
 
@@ -70,7 +70,7 @@ public:
 
     ICoresetDistributionCalculator<precision, int_size>* createCoresetDistributionCalculator() override;
 
-    IKmeansDataCreator<precision, int_size>* createKmeansDataCreator() override;
+    IKmeansStateInitializer<precision, int_size>* createKmeansStateInitializer() override;
 
     AbstractCoresetClusteringFinisher<precision, int_size>* createCoresetClusteringFinisher() override;
 };
@@ -95,7 +95,7 @@ public:
 
     ICoresetDistributionCalculator<precision, int_size>* createCoresetDistributionCalculator() override;
 
-    IKmeansDataCreator<precision, int_size>* createKmeansDataCreator() override;
+    IKmeansStateInitializer<precision, int_size>* createKmeansStateInitializer() override;
 
     AbstractCoresetClusteringFinisher<precision, int_size>* createCoresetClusteringFinisher() override;
 };
@@ -120,7 +120,7 @@ public:
 
     ICoresetDistributionCalculator<precision, int_size>* createCoresetDistributionCalculator() override;
 
-    IKmeansDataCreator<precision, int_size>* createKmeansDataCreator() override;
+    IKmeansStateInitializer<precision, int_size>* createKmeansStateInitializer() override;
 
     AbstractCoresetClusteringFinisher<precision, int_size>* createCoresetClusteringFinisher() override;
 };
@@ -145,7 +145,7 @@ public:
 
     ICoresetDistributionCalculator<precision, int_size>* createCoresetDistributionCalculator() override;
 
-    IKmeansDataCreator<precision, int_size>* createKmeansDataCreator() override;
+    IKmeansStateInitializer<precision, int_size>* createKmeansStateInitializer() override;
 
     AbstractCoresetClusteringFinisher<precision, int_size>* createCoresetClusteringFinisher() override;
 };
@@ -261,9 +261,9 @@ ICoresetDistributionCalculator<precision, int_size>*
 }
 
 template <typename precision, typename int_size>
-IKmeansDataCreator<precision, int_size>* SerialStrategyFactory<precision, int_size>::createKmeansDataCreator()
+IKmeansStateInitializer<precision, int_size>* SerialStrategyFactory<precision, int_size>::createKmeansStateInitializer()
 {
-    return new SharedMemoryKmeansDataCreator<precision, int_size>();
+    return new SharedMemoryKmeansStateInitializer<precision, int_size>();
 }
 
 template <typename precision, typename int_size>
@@ -319,9 +319,9 @@ ICoresetDistributionCalculator<precision, int_size>*
 }
 
 template <typename precision, typename int_size>
-IKmeansDataCreator<precision, int_size>* OMPStrategyFactory<precision, int_size>::createKmeansDataCreator()
+IKmeansStateInitializer<precision, int_size>* OMPStrategyFactory<precision, int_size>::createKmeansStateInitializer()
 {
-    return new SharedMemoryKmeansDataCreator<precision, int_size>();
+    return new SharedMemoryKmeansStateInitializer<precision, int_size>();
 }
 
 template <typename precision, typename int_size>
@@ -378,9 +378,9 @@ ICoresetDistributionCalculator<precision, int_size>*
 }
 
 template <typename precision, typename int_size>
-IKmeansDataCreator<precision, int_size>* MPIStrategyFactory<precision, int_size>::createKmeansDataCreator()
+IKmeansStateInitializer<precision, int_size>* MPIStrategyFactory<precision, int_size>::createKmeansStateInitializer()
 {
-    return new MPIKmeansDataCreator<precision, int_size>();
+    return new MPIKmeansStateInitializer<precision, int_size>();
 }
 
 template <typename precision, typename int_size>
@@ -438,9 +438,9 @@ ICoresetDistributionCalculator<precision, int_size>*
 }
 
 template <typename precision, typename int_size>
-IKmeansDataCreator<precision, int_size>* HybridStrategyFactory<precision, int_size>::createKmeansDataCreator()
+IKmeansStateInitializer<precision, int_size>* HybridStrategyFactory<precision, int_size>::createKmeansStateInitializer()
 {
-    return new MPIKmeansDataCreator<precision, int_size>();
+    return new MPIKmeansStateInitializer<precision, int_size>();
 }
 
 template <typename precision, typename int_size>

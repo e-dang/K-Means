@@ -2,8 +2,8 @@
 
 #include <memory>
 
-#include "Containers/DataClasses.hpp"
 #include "Containers/Definitions.hpp"
+#include "Containers/KmeansState.hpp"
 #include "Strategies/ClosestClusterUpdater.hpp"
 #include "Strategies/PointReassigner.hpp"
 #include "Utils/DistanceFunctors.hpp"
@@ -18,14 +18,14 @@ template <typename precision, typename int_size>
 class AbstractKmeansAlgorithm
 {
 protected:
-    KmeansData<precision, int_size>* pKmeansData;
+    KmeansState<precision, int_size>* p_KmeansState;
 
 public:
     AbstractKmeansAlgorithm() = default;
 
     virtual ~AbstractKmeansAlgorithm() = default;
 
-    void setKmeansData(KmeansData<precision, int_size>* kmeansData);
+    void setKmeansState(KmeansState<precision, int_size>* kmeansState);
 };
 
 /**
@@ -75,8 +75,8 @@ public:
 };
 
 template <typename precision, typename int_size>
-void AbstractKmeansAlgorithm<precision, int_size>::setKmeansData(KmeansData<precision, int_size>* kmeansData)
+void AbstractKmeansAlgorithm<precision, int_size>::setKmeansState(KmeansState<precision, int_size>* kmeansState)
 {
-    pKmeansData = kmeansData;
+    p_KmeansState = kmeansState;
 }
 }  // namespace HPKmeans
