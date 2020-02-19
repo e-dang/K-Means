@@ -10,9 +10,9 @@ class IKmeansStateInitializer
 public:
     virtual ~IKmeansStateInitializer() = default;
 
-    virtual KmeansState<precision, int_size> create(const Matrix<precision, int_size>* const data,
-                                                    const std::vector<precision>* const weights,
-                                                    std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) = 0;
+    virtual KmeansState<precision, int_size> initializeState(
+      const Matrix<precision, int_size>* const data, const std::vector<precision>* const weights,
+      std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) = 0;
 };
 
 template <typename precision, typename int_size>
@@ -21,9 +21,9 @@ class SharedMemoryKmeansStateInitializer : public IKmeansStateInitializer<precis
 public:
     ~SharedMemoryKmeansStateInitializer() = default;
 
-    KmeansState<precision, int_size> create(const Matrix<precision, int_size>* const data,
-                                            const std::vector<precision>* const weights,
-                                            std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) override;
+    KmeansState<precision, int_size> initializeState(
+      const Matrix<precision, int_size>* const data, const std::vector<precision>* const weights,
+      std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) override;
 };
 
 template <typename precision, typename int_size>
@@ -32,13 +32,13 @@ class MPIKmeansStateInitializer : public IKmeansStateInitializer<precision, int_
 public:
     ~MPIKmeansStateInitializer() = default;
 
-    KmeansState<precision, int_size> create(const Matrix<precision, int_size>* const data,
-                                            const std::vector<precision>* const weights,
-                                            std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) override;
+    KmeansState<precision, int_size> initializeState(
+      const Matrix<precision, int_size>* const data, const std::vector<precision>* const weights,
+      std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) override;
 };
 
 template <typename precision, typename int_size>
-KmeansState<precision, int_size> SharedMemoryKmeansStateInitializer<precision, int_size>::create(
+KmeansState<precision, int_size> SharedMemoryKmeansStateInitializer<precision, int_size>::initializeState(
   const Matrix<precision, int_size>* const data, const std::vector<precision>* const weights,
   std::shared_ptr<IDistanceFunctor<precision>> distanceFunc)
 {
@@ -47,7 +47,7 @@ KmeansState<precision, int_size> SharedMemoryKmeansStateInitializer<precision, i
 }
 
 template <typename precision, typename int_size>
-KmeansState<precision, int_size> MPIKmeansStateInitializer<precision, int_size>::create(
+KmeansState<precision, int_size> MPIKmeansStateInitializer<precision, int_size>::initializeState(
   const Matrix<precision, int_size>* const data, const std::vector<precision>* const weights,
   std::shared_ptr<IDistanceFunctor<precision>> distanceFunc)
 {

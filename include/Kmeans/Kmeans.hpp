@@ -190,7 +190,7 @@ std::shared_ptr<ClusterResults<precision, int_size>> WeightedKmeans<precision, i
   const Matrix<precision, int_size>* const data, const int_size& numClusters, const int& numRestarts,
   const std::vector<precision>* const weights)
 {
-    auto kmeansState = this->p_KmeansStateInitializer->create(data, weights, this->p_DistanceFunc);
+    auto kmeansState = this->p_KmeansStateInitializer->initializeState(data, weights, this->p_DistanceFunc);
     return this->run(data, numClusters, numRestarts, &kmeansState);
 }
 
@@ -198,7 +198,7 @@ template <typename precision, typename int_size>
 std::shared_ptr<ClusterResults<precision, int_size>> CoresetKmeans<precision, int_size>::fit(
   const Matrix<precision, int_size>* const data, const int_size& numClusters, const int& numRestarts)
 {
-    auto kmeansState = this->p_KmeansStateInitializer->create(data, nullptr, this->p_DistanceFunc);
+    auto kmeansState = this->p_KmeansStateInitializer->initializeState(data, nullptr, this->p_DistanceFunc);
 
     pCreator->setState(&kmeansState);
     auto coreset = pCreator->createCoreset();
