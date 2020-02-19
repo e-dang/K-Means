@@ -65,11 +65,10 @@ inline MPIData<int_size> getMPIData(const int_size& totalNumData)
 template <typename precision, typename int_size>
 inline int_size getTotalNumDataMPI(const Matrix<precision, int_size>* const data)
 {
-    int rank, numProcs;
+    int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
-    int_size totalNumData = 0;
+    int_size totalNumData;
     int_size localNumData = data->rows();
 
     MPI_Allreduce(&localNumData, &totalNumData, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
