@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Containers/DataClasses.hpp"
-#include "Containers/Definitions.hpp"
+#include "Containers/KmeansState.hpp"
 
 namespace HPKmeans
 {
@@ -11,10 +10,9 @@ class IDistanceSumCalculator
 public:
     virtual ~IDistanceSumCalculator() = default;
 
-    virtual precision calcDistances(const Matrix<precision, int_size>* const data,
+    virtual precision calcDistances(KmeansState<precision, int_size>* kmeansState,
                                     const std::vector<precision>* const point,
-                                    std::vector<precision>* const sqDistances,
-                                    std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) = 0;
+                                    std::vector<precision>* const sqDistances) = 0;
 };
 
 template <typename precision, typename int_size>
@@ -23,9 +21,8 @@ class SerialDistanceSumCalculator : public IDistanceSumCalculator<precision, int
 public:
     ~SerialDistanceSumCalculator() = default;
 
-    precision calcDistances(const Matrix<precision, int_size>* const data, const std::vector<precision>* const point,
-                            std::vector<precision>* const sqDistances,
-                            std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) override;
+    precision calcDistances(KmeansState<precision, int_size>* kmeansState, const std::vector<precision>* const point,
+                            std::vector<precision>* const sqDistances) override;
 };
 
 template <typename precision, typename int_size>
@@ -34,20 +31,19 @@ class OMPDistanceSumCalculator : public IDistanceSumCalculator<precision, int_si
 public:
     ~OMPDistanceSumCalculator() = default;
 
-    precision calcDistances(const Matrix<precision, int_size>* const data, const std::vector<precision>* const point,
-                            std::vector<precision>* const sqDistances,
-                            std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) override;
+    precision calcDistances(KmeansState<precision, int_size>* kmeansState, const std::vector<precision>* const point,
+                            std::vector<precision>* const sqDistances) override;
 };
 
 template <typename precision, typename int_size>
-precision SerialDistanceSumCalculator<precision, int_size>::calcDistances(
-  const Matrix<precision, int_size>* const data, const std::vector<precision>* const point,
-  std::vector<precision>* const sqDistances, std::shared_ptr<IDistanceFunctor<precision>> distanceFunc)
+precision SerialDistanceSumCalculator<precision, int_size>::calcDistances(KmeansState<precision, int_size>* kmeansState,
+                                                                          const std::vector<precision>* const point,
+                                                                          std::vector<precision>* const sqDistances)
 {
     precision distanceSum = 0.0;
-    for (int_size i = 0; i < data->size(); ++i)
+    for (int_size i = 0; i < kmeansState->dataSize(); ++i)
     {
-        sqDistances->at(i) = std::pow((*distanceFunc)(data->at(i), point->data(), point->size()), 2);
+        sqDistances->at(i) = std::pow((*kmeansState)(kmeansState->dataAt(i), point->data()), 2);
         distanceSum += sqDistances->at(i);
     }
 
@@ -55,15 +51,15 @@ precision SerialDistanceSumCalculator<precision, int_size>::calcDistances(
 }
 
 template <typename precision, typename int_size>
-precision OMPDistanceSumCalculator<precision, int_size>::calcDistances(
-  const Matrix<precision, int_size>* const data, const std::vector<precision>* const point,
-  std::vector<precision>* const sqDistances, std::shared_ptr<IDistanceFunctor<precision>> distanceFunc)
+precision OMPDistanceSumCalculator<precision, int_size>::calcDistances(KmeansState<precision, int_size>* kmeansState,
+                                                                       const std::vector<precision>* const point,
+                                                                       std::vector<precision>* const sqDistances)
 {
     precision distanceSum = 0.0;
-#pragma omp parallel for shared(distanceFunc), schedule(static), reduction(+ : distanceSum)
-    for (int_size i = 0; i < data->size(); ++i)
+#pragma omp parallel for schedule(static), reduction(+ : distanceSum)
+    for (int_size i = 0; i < kmeansState->dataSize(); ++i)
     {
-        sqDistances->at(i) = std::pow((*distanceFunc)(data->at(i), point->data(), point->size()), 2);
+        sqDistances->at(i) = std::pow((*kmeansState)(kmeansState->dataAt(i), point->data()), 2);
         distanceSum += sqDistances->at(i);
     }
 

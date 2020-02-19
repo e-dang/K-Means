@@ -110,13 +110,11 @@ int_size SerialOptimizedPointReassigner<precision, int_size>::reassignPoints(
   KmeansState<precision, int_size>* const kmeansState)
 {
     int_size changed = 0;
-    auto numFeatures = kmeansState->clustersCols();
 
     for (int_size i = 0; i < kmeansState->dataSize(); ++i)
     {
         auto clusterIdx = kmeansState->clusteringAt(i);
-        auto dist =
-          std::pow((*kmeansState)(kmeansState->dataAt(i), kmeansState->clustersAt(clusterIdx), numFeatures), 2);
+        auto dist       = std::pow((*kmeansState)(kmeansState->dataAt(i), kmeansState->clustersAt(clusterIdx)), 2);
         if (dist > kmeansState->sqDistancesAt(i) || kmeansState->sqDistancesAt(i) < 0)
         {
             changed += this->reassignPoint(i, kmeansState);
@@ -135,7 +133,7 @@ int_size OMPPointReassigner<precision, int_size>::reassignPoints(KmeansState<pre
 {
     int_size changed = 0;
 
-#pragma omp parallel for schedule(static), reduction(+ : changed)
+#pragma omp parallel for shared(kmeansState), schedule(static), reduction(+ : changed)
     for (int_size i = 0; i < kmeansState->dataSize(); ++i)
     {
         changed += this->reassignPoint(i, kmeansState);
@@ -149,14 +147,12 @@ int_size OMPOptimizedPointReassigner<precision, int_size>::reassignPoints(
   KmeansState<precision, int_size>* const kmeansState)
 {
     int_size changed = 0;
-    auto numFeatures = kmeansState->clustersCols();
 
-#pragma omp parallel for shared(numFeatures), schedule(static), reduction(+ : changed)
+#pragma omp parallel for shared(kmeansState), schedule(static), reduction(+ : changed)
     for (int_size i = 0; i < kmeansState->dataSize(); ++i)
     {
         auto clusterIdx = kmeansState->clusteringAt(i);
-        auto dist =
-          std::pow((*kmeansState)(kmeansState->dataAt(i), kmeansState->clustersAt(clusterIdx), numFeatures), 2);
+        auto dist       = std::pow((*kmeansState)(kmeansState->dataAt(i), kmeansState->clustersAt(clusterIdx)), 2);
         if (dist > kmeansState->sqDistancesAt(i) || kmeansState->sqDistancesAt(i) < 0)
         {
             changed += this->reassignPoint(i, kmeansState);

@@ -91,17 +91,6 @@ protected:
     std::shared_ptr<ClusterResults<precision, int_size>> run(const Matrix<precision, int_size>* const data,
                                                              const int_size& numClusters, const int& numRestarts,
                                                              KmeansState<precision, int_size>* const kmeansState);
-
-    /**
-     * @brief Helper function that takes in the resulting clusterData and squared distances of each datapoint to their
-     *        assigned cluster and calculates the error. If the error is less than the previous run's error, the
-     *        clusterData from the current run is stored in finalClusterData.
-     *
-     * @param clusterData - The clusterData from the current run.
-     * @param sqDistances - The square distances from each to point to their assigned cluster.
-     */
-    void compareResults(ClusterData<precision, int_size>* const clusterData, std::vector<precision>* const sqDistances,
-                        std::shared_ptr<ClusterResults<precision, int_size>> clusterResults);
 };
 
 template <typename precision, typename int_size>
@@ -169,39 +158,20 @@ std::shared_ptr<ClusterResults<precision, int_size>> AbstractKmeans<precision, i
     std::shared_ptr<ClusterResults<precision, int_size>> clusterResults =
       std::make_shared<ClusterResults<precision, int_size>>();
 
-    pInitializer->setKmeansState(kmeansState);
-    pMaximizer->setKmeansState(kmeansState);
+    pInitializer->setState(kmeansState);
+    pMaximizer->setState(kmeansState);
 
     for (int i = 0; i < numRestarts; ++i)
     {
-        std::vector<precision> distances(kmeansState->totalNumData(), 1);
-        ClusterData<precision, int_size> clusterData(kmeansState->totalNumData(), data->cols(), numClusters);
-
-        kmeansState->setClusterData(&clusterData);
-        kmeansState->setSqDistances(&distances);
+        kmeansState->resetClusterData(numClusters, 1.0);
 
         pInitializer->initialize();
         pMaximizer->maximize();
 
-        compareResults(&clusterData, &distances, clusterResults);
+        kmeansState->compareResults(clusterResults);
     }
 
     return clusterResults;
-}
-
-template <typename precision, typename int_size>
-void AbstractKmeans<precision, int_size>::compareResults(
-  ClusterData<precision, int_size>* const clusterData, std::vector<precision>* const sqDistances,
-  std::shared_ptr<ClusterResults<precision, int_size>> clusterResults)
-{
-    precision currError = std::accumulate(sqDistances->begin(), sqDistances->end(), 0.0);
-
-    if (clusterResults->error > currError || clusterResults->error < 0)
-    {
-        clusterResults->error       = currError;
-        clusterResults->clusterData = std::move(*clusterData);
-        clusterResults->sqDistances = std::move(*sqDistances);
-    }
 }
 
 template <typename precision, typename int_size>
@@ -227,18 +197,19 @@ std::shared_ptr<ClusterResults<precision, int_size>> CoresetKmeans<precision, in
 {
     auto kmeansState = this->pDataCreator->create(data, nullptr, this->pDistanceFunc);
 
-    auto coreset = pCreator->createCoreset(data);
+    pCreator->setState(&kmeansState);
+    auto coreset = pCreator->createCoreset();
 
     auto clusterResults = pKmeans->fit(&coreset.data, numClusters, numRestarts, &coreset.weights);
-    clusterResults->clusterData.clustering.resize(kmeansState.totalNumData());
-    clusterResults->sqDistances.resize(kmeansState.totalNumData());
-    std::fill(clusterResults->clusterData.clustering.begin(), clusterResults->clusterData.clustering.end(), -1);
-    std::fill(clusterResults->sqDistances.begin(), clusterResults->sqDistances.end(), -1);
 
-    kmeansState.setClusterData(&clusterResults->clusterData);
-    kmeansState.setSqDistances(&clusterResults->sqDistances);
+    clusterResults->error = -1.0;
+    // TODO:has to allocate memory and then move for clustering and clusterWeights and sqDistances...if they sahre
+    // pointer could be faster
+    kmeansState.setClusters(clusterResults->clusters);
+    kmeansState.resetClusterData(numClusters);
 
-    clusterResults->error = pFinisher->finishClustering(&kmeansState);
+    pFinisher->finishClustering(&kmeansState);
+    kmeansState.compareResults(clusterResults);
 
     return clusterResults;
 }

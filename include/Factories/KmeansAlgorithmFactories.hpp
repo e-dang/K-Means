@@ -28,9 +28,8 @@ public:
 
     AbstractKmeansMaximizer<precision, int_size>* createMaximizer(Maximizer maximizer);
 
-    AbstractCoresetCreator<precision, int_size>* createCoresetCreator(
-      CoresetCreator coresetCreator, const int_size& sampleSize,
-      std::shared_ptr<IDistanceFunctor<precision>> distanceFunc);
+    AbstractCoresetCreator<precision, int_size>* createCoresetCreator(CoresetCreator coresetCreator,
+                                                                      const int_size& sampleSize);
 
 protected:
     virtual AbstractKmeansInitializer<precision, int_size>* getKPP() = 0;
@@ -41,8 +40,7 @@ protected:
 
     virtual AbstractKmeansMaximizer<precision, int_size>* getOptLloyd() = 0;
 
-    virtual AbstractCoresetCreator<precision, int_size>* getLWCoreset(
-      const int_size& sampleSize, std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) = 0;
+    virtual AbstractCoresetCreator<precision, int_size>* getLWCoreset(const int_size& sampleSize) = 0;
 };
 
 template <typename precision, typename int_size>
@@ -64,8 +62,7 @@ public:
 
     AbstractKmeansMaximizer<precision, int_size>* getOptLloyd();
 
-    AbstractCoresetCreator<precision, int_size>* getLWCoreset(
-      const int_size& sampleSize, std::shared_ptr<IDistanceFunctor<precision>> distanceFunc);
+    AbstractCoresetCreator<precision, int_size>* getLWCoreset(const int_size& sampleSize);
 };
 
 template <typename precision, typename int_size>
@@ -85,8 +82,7 @@ public:
 
     AbstractKmeansMaximizer<precision, int_size>* getOptLloyd();
 
-    AbstractCoresetCreator<precision, int_size>* getLWCoreset(
-      const int32_t& sampleSize, std::shared_ptr<IDistanceFunctor<precision>> distanceFunc);
+    AbstractCoresetCreator<precision, int_size>* getLWCoreset(const int32_t& sampleSize);
 };
 
 template <typename precision, typename int_size>
@@ -137,12 +133,12 @@ AbstractKmeansMaximizer<precision, int_size>* AbstractKmeansAlgorithmFactory<pre
 
 template <typename precision, typename int_size>
 AbstractCoresetCreator<precision, int_size>* AbstractKmeansAlgorithmFactory<precision, int_size>::createCoresetCreator(
-  CoresetCreator coresetCreator, const int_size& sampleSize, std::shared_ptr<IDistanceFunctor<precision>> distanceFunc)
+  CoresetCreator coresetCreator, const int_size& sampleSize)
 {
     switch (coresetCreator)
     {
         case (LWCoreset):
-            return getLWCoreset(sampleSize, distanceFunc);
+            return getLWCoreset(sampleSize);
         default:
             return nullptr;
     }
@@ -178,12 +174,11 @@ AbstractKmeansMaximizer<precision, int_size>* SharedMemoryKmeansAlgorithmFactory
 
 template <typename precision, typename int_size>
 AbstractCoresetCreator<precision, int_size>* SharedMemoryKmeansAlgorithmFactory<precision, int_size>::getLWCoreset(
-  const int_size& sampleSize, std::shared_ptr<IDistanceFunctor<precision>> distanceFunc)
+  const int_size& sampleSize)
 {
     return new SharedMemoryCoresetCreator<precision, int_size>(
       sampleSize, this->pStratFactory->createMultiWeightedRandomSelector(), this->pStratFactory->createVectorAverager(),
-      this->pStratFactory->createDistanceSumCalculator(), this->pStratFactory->createCoresetDistributionCalculator(),
-      distanceFunc);
+      this->pStratFactory->createDistanceSumCalculator(), this->pStratFactory->createCoresetDistributionCalculator());
 }
 
 template <typename precision, typename int_size>
@@ -216,11 +211,11 @@ AbstractKmeansMaximizer<precision, int_size>* MPIKmeansAlgorithmFactory<precisio
 
 template <typename precision, typename int_size>
 AbstractCoresetCreator<precision, int_size>* MPIKmeansAlgorithmFactory<precision, int_size>::getLWCoreset(
-  const int32_t& sampleSize, std::shared_ptr<IDistanceFunctor<precision>> distanceFunc)
+  const int32_t& sampleSize)
 {
     return new MPICoresetCreator<precision, int_size>(
       sampleSize, this->pStratFactory->createMultiWeightedRandomSelector(), this->pStratFactory->createVectorAverager(),
-      this->pStratFactory->createDistanceSumCalculator(), distanceFunc);
+      this->pStratFactory->createDistanceSumCalculator());
 }
 
 template <typename precision, typename int_size>

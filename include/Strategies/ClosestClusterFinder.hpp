@@ -49,7 +49,6 @@ template <typename precision, typename int_size>
 ClosestCluster<precision, int_size> ClosestClusterFinder<precision, int_size>::findClosestCluster(
   const int_size& dataIdx, KmeansState<precision, int_size>* const kmeansState)
 {
-    auto numFeatures         = kmeansState->clustersCols();
     auto numExistingClusters = kmeansState->clustersSize();
     const auto datapoint     = kmeansState->dataAt(dataIdx);
     precision minDistance    = -1.0;
@@ -57,7 +56,7 @@ ClosestCluster<precision, int_size> ClosestClusterFinder<precision, int_size>::f
 
     for (int32_t i = 0; i < numExistingClusters; ++i)
     {
-        precision tempDistance = (*kmeansState)(datapoint, kmeansState->clustersAt(i), numFeatures);
+        precision tempDistance = (*kmeansState)(datapoint, kmeansState->clustersAt(i));
 
         if (minDistance > tempDistance || minDistance < 0)
         {
@@ -75,7 +74,6 @@ ClosestCluster<precision, int_size> ClosestNewClusterFinder<precision, int_size>
 {
     thread_local static int_size prevNumClusters;
     thread_local static int_size intermediate;
-    auto numFeatures         = kmeansState->clustersCols();
     auto numExistingClusters = kmeansState->clustersSize();
     const auto datapoint     = kmeansState->dataAt(dataIdx);
     precision minDistance    = -1.0;
@@ -89,7 +87,7 @@ ClosestCluster<precision, int_size> ClosestNewClusterFinder<precision, int_size>
 
     for (auto i = prevNumClusters; i < numExistingClusters; ++i)
     {
-        precision tempDistance = (*kmeansState)(datapoint, kmeansState->clustersAt(i), numFeatures);
+        precision tempDistance = (*kmeansState)(datapoint, kmeansState->clustersAt(i));
 
         if (minDistance > tempDistance || minDistance < 0)
         {

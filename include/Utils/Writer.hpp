@@ -96,10 +96,10 @@ template <typename precision, typename int_size>
 void AbstractWriter<precision, int_size>::writeClusterResults(
   std::shared_ptr<ClusterResults<precision, int_size>> clusterResults, const int_fast64_t& time, std::string& filepath)
 {
-    writeClusters(&clusterResults->clusterData.clusters, filepath);
-    writeClustering(&clusterResults->clusterData.clustering, filepath);
-    writeClusterWeights(&clusterResults->clusterData.clusterWeights, filepath);
-    writeSqDistances(&clusterResults->sqDistances, filepath);
+    writeClusters(clusterResults->clusters.get(), filepath);
+    writeClustering(clusterResults->clustering.get(), filepath);
+    writeClusterWeights(clusterResults->clusterWeights.get(), filepath);
+    writeSqDistances(clusterResults->sqDistances.get(), filepath);
     writeRunStats(clusterResults->error, time, filepath);
 }
 

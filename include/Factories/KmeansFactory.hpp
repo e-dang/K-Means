@@ -35,8 +35,8 @@ AbstractKmeans<precision, int_size>* KmeansFactory<precision, int_size>::createK
     {
         return new CoresetKmeans<precision, int_size>(
           sampleSize, createKmeans(initializer, maximizer, None, parallelism, distanceFunc, sampleSize),
-          algFactory->createCoresetCreator(coreset, sampleSize, distanceFunc),
-          stratFactory->createCoresetClusteringFinisher(), stratFactory->createKmeansStateInitializer(), distanceFunc);
+          algFactory->createCoresetCreator(coreset, sampleSize), stratFactory->createCoresetClusteringFinisher(),
+          stratFactory->createKmeansStateInitializer(), distanceFunc);
     }
 
     return new WeightedKmeans<precision, int_size>(algFactory->createInitializer(initializer),

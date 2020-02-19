@@ -25,7 +25,7 @@ public:
 
     virtual ~AbstractKmeansAlgorithm() = default;
 
-    void setKmeansState(KmeansState<precision, int_size>* kmeansState);
+    void setState(KmeansState<precision, int_size>* kmeansState);
 };
 
 /**
@@ -75,7 +75,7 @@ public:
 };
 
 template <typename precision, typename int_size>
-void AbstractKmeansAlgorithm<precision, int_size>::setKmeansState(KmeansState<precision, int_size>* kmeansState)
+void AbstractKmeansAlgorithm<precision, int_size>::setState(KmeansState<precision, int_size>* kmeansState)
 {
     p_KmeansState = kmeansState;
 }
