@@ -192,7 +192,7 @@ public:
 
     inline precision* data() noexcept { return p_Data; }
     inline const precision* data() const noexcept { return p_Data; }
-
+    inline void clear() { m_Size = 0; }
     inline const int_size capacity() const noexcept { return m_Capacity; }
     inline const int_size rows() const noexcept { return m_Rows; }
     inline const int_size cols() const noexcept { return m_Cols; }
