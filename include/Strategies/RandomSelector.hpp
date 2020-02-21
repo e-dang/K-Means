@@ -41,7 +41,7 @@ template <typename precision, typename int_size>
 class IMultiWeightedRandomSelector
 {
 public:
-    ~IMultiWeightedRandomSelector() = default;
+    virtual ~IMultiWeightedRandomSelector() = default;
 
     virtual std::vector<int_size> select(const std::vector<precision>* const weights, const int_size& sampleSize) = 0;
 };
