@@ -81,10 +81,12 @@ protected:
 };
 
 template <typename precision, typename int_size>
-class MPIKPlusPlus : public TemplateKPlusPlus<precision, int_size>
+class MPIKPlusPlus : public TemplateKPlusPlus<precision, int_size>, public MPIImplementation<precision, int_size>
 {
 private:
     using AbstractKmeansAlgorithm<precision, int_size>::p_KmeansState;
+    using MPIImplementation<precision, int_size>::mpi_precision;
+    using MPIImplementation<precision, int_size>::mpi_int_size;
 
 public:
     MPIKPlusPlus(AbstractClosestClusterUpdater<precision, int_size>* updater,
@@ -150,7 +152,7 @@ void MPIKPlusPlus<precision, int_size>::weightedClusterSelection()
         dataIdx               = this->p_Selector->select(p_KmeansState->sqDistances(), randSumFrac);
     }
 
-    MPI_Bcast(&dataIdx, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&dataIdx, 1, mpi_int_size, 0, MPI_COMM_WORLD);
 
     // find which rank holds the selected datapoint
     int_size rank = 0, lengthSum = 0;
@@ -172,8 +174,8 @@ void MPIKPlusPlus<precision, int_size>::weightedClusterSelection()
         p_KmeansState->clustersReserve(1);
     }
 
-    MPI_Bcast(p_KmeansState->clusteringData(), p_KmeansState->clusteringSize(), MPI_INT, rank, MPI_COMM_WORLD);
-    MPI_Bcast(p_KmeansState->clustersData(), p_KmeansState->clustersElements(), mpi_type_t, rank, MPI_COMM_WORLD);
+    MPI_Bcast(p_KmeansState->clusteringData(), p_KmeansState->clusteringSize(), mpi_int_size, rank, MPI_COMM_WORLD);
+    MPI_Bcast(p_KmeansState->clustersData(), p_KmeansState->clustersElements(), mpi_precision, rank, MPI_COMM_WORLD);
 }
 
 template <typename precision, typename int_size>
@@ -181,9 +183,9 @@ void MPIKPlusPlus<precision, int_size>::findAndUpdateClosestClusters()
 {
     this->pUpdater->findAndUpdateClosestClusters(p_KmeansState);
 
-    MPI_Allgatherv(MPI_IN_PLACE, p_KmeansState->myLength(), MPI_INT, p_KmeansState->clusteringData(),
-                   p_KmeansState->lengthsData(), p_KmeansState->displacementsData(), MPI_INT, MPI_COMM_WORLD);
-    MPI_Allgatherv(MPI_IN_PLACE, p_KmeansState->myLength(), mpi_type_t, p_KmeansState->sqDistancesData(),
-                   p_KmeansState->lengthsData(), p_KmeansState->displacementsData(), mpi_type_t, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, p_KmeansState->myLength(), mpi_int_size, p_KmeansState->clusteringData(),
+                   p_KmeansState->lengthsData(), p_KmeansState->displacementsData(), mpi_int_size, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, p_KmeansState->myLength(), mpi_precision, p_KmeansState->sqDistancesData(),
+                   p_KmeansState->lengthsData(), p_KmeansState->displacementsData(), mpi_precision, MPI_COMM_WORLD);
 }
 }  // namespace HPKmeans

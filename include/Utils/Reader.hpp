@@ -34,7 +34,7 @@ public:
 };
 
 template <typename precision = double, typename int_size = int32_t>
-class MPIMatrixReader : public IReader<precision, int_size>
+class MPIMatrixReader : public IReader<precision, int_size>, public MPIImplementation<precision, int_size>
 {
 public:
     ~MPIMatrixReader() = default;
@@ -84,13 +84,13 @@ Matrix<precision, int_size> MPIMatrixReader<precision, int_size>::read(const std
     MPI_File_open(MPI_COMM_WORLD, filepath.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
 
     Matrix<precision, int_size> data(mpiData.lengths[mpiData.rank], numFeatures);
-    MPI_File_read_at(fh, offset, data.data(), lengths, mpi_type_t, &status);
+    MPI_File_read_at(fh, offset, data.data(), lengths, mpi_precision, &status);
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_File_close(&fh);
 
     int_size count;
-    MPI_Get_count(&status, MPI_INT, &count);
-    MPI_Allreduce(MPI_IN_PLACE, &count, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Get_count(&status, mpi_int_size, &count);
+    MPI_Allreduce(MPI_IN_PLACE, &count, 1, mpi_int_size, MPI_SUM, MPI_COMM_WORLD);
     if (numData * numFeatures != count / static_cast<int_size>(sizeof(precision) / sizeof(float)) || count < 0)
     {
         if (mpiData.rank == 0)

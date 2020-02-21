@@ -79,10 +79,14 @@ protected:
 };
 
 template <typename precision, typename int_size>
-class MPICoresetCreator : public AbstractCoresetCreator<precision, int_size>
+class MPICoresetCreator :
+    public AbstractCoresetCreator<precision, int_size>,
+    public MPIImplementation<precision, int_size>
 {
 private:
     using AbstractKmeansAlgorithm<precision, int_size>::p_KmeansState;
+    using MPIImplementation<precision, int_size>::mpi_precision;
+    using MPIImplementation<precision, int_size>::mpi_int_size;
 
 protected:
     int_size mNumUniformSamples;
@@ -186,7 +190,8 @@ std::vector<precision> MPICoresetCreator<precision, int_size>::calcMean()
 
     this->p_Averager->calculateSum(p_KmeansState->data(), &mean);
 
-    MPI_Gather(mean.data(), mean.size(), mpi_type_t, chunkMeans.data(), mean.size(), mpi_type_t, 0, MPI_COMM_WORLD);
+    MPI_Gather(mean.data(), mean.size(), mpi_precision, chunkMeans.data(), mean.size(), mpi_precision, 0,
+               MPI_COMM_WORLD);
 
     if (p_KmeansState->rank() == 0)
     {
@@ -195,7 +200,7 @@ std::vector<precision> MPICoresetCreator<precision, int_size>::calcMean()
         this->p_Averager->normalizeSum(&mean, p_KmeansState->totalNumData());
     }
 
-    MPI_Bcast(mean.data(), mean.size(), mpi_type_t, 0, MPI_COMM_WORLD);
+    MPI_Bcast(mean.data(), mean.size(), mpi_precision, 0, MPI_COMM_WORLD);
 
     return mean;
 }
@@ -208,7 +213,7 @@ precision MPICoresetCreator<precision, int_size>::calcDistsFromMean(const std::v
     precision localDistanceSum = this->p_DistSumCalc->calcDistances(p_KmeansState, mean, sqDistances);
     mDistanceSums              = std::vector<precision>(p_KmeansState->dataSize());
 
-    MPI_Gather(&localDistanceSum, 1, mpi_type_t, mDistanceSums.data(), 1, mpi_type_t, 0, MPI_COMM_WORLD);
+    MPI_Gather(&localDistanceSum, 1, mpi_precision, mDistanceSums.data(), 1, mpi_precision, 0, MPI_COMM_WORLD);
 
     return localDistanceSum;
 }
@@ -228,9 +233,10 @@ std::vector<precision> MPICoresetCreator<precision, int_size>::calcDistribution(
         calculateSamplingStrategy(&uniformSampleCounts, &nonUniformSampleCounts, totalDistanceSums);
     }
 
-    MPI_Bcast(&totalDistanceSums, 1, mpi_type_t, 0, MPI_COMM_WORLD);
-    MPI_Scatter(uniformSampleCounts.data(), 1, MPI_INT, &mNumUniformSamples, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Scatter(nonUniformSampleCounts.data(), 1, MPI_INT, &mNumNonUniformSamples, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&totalDistanceSums, 1, mpi_precision, 0, MPI_COMM_WORLD);
+    MPI_Scatter(uniformSampleCounts.data(), 1, mpi_int_size, &mNumUniformSamples, 1, mpi_int_size, 0, MPI_COMM_WORLD);
+    MPI_Scatter(nonUniformSampleCounts.data(), 1, mpi_int_size, &mNumNonUniformSamples, 1, mpi_int_size, 0,
+                MPI_COMM_WORLD);
 
     std::transform(sqDistances->begin(), sqDistances->end(), distribution.begin(),
                    [&totalDistanceSums](const precision& dist) { return dist / totalDistanceSums; });
@@ -326,7 +332,7 @@ void MPICoresetCreator<precision, int_size>::distributeCoreset(Coreset<precision
     // get the number of datapoints in each process' coreset
     auto numCoresetData = coreset->weights.size();
     std::vector<int_size> numCoresetDataPerProc(p_KmeansState->numProcs());
-    MPI_Allgather(&numCoresetData, 1, MPI_INT, numCoresetDataPerProc.data(), 1, MPI_INT, MPI_COMM_WORLD);
+    MPI_Allgather(&numCoresetData, 1, mpi_int_size, numCoresetDataPerProc.data(), 1, mpi_int_size, MPI_COMM_WORLD);
 
     // create length and displacement vectors for transfer of coreset data
     std::vector<int_size> matrixLengths(p_KmeansState->numProcs());
@@ -345,10 +351,10 @@ void MPICoresetCreator<precision, int_size>::distributeCoreset(Coreset<precision
     // create and fill temporary coreset with data at root
     Coreset<precision, int_size> fullCoreset(this->mSampleSize, p_KmeansState->dataCols());
 
-    MPI_Gatherv(coreset->data.data(), coreset->data.elements(), mpi_type_t, fullCoreset.data.data(),
-                matrixLengths.data(), matrixDisplacements.data(), mpi_type_t, 0, MPI_COMM_WORLD);
-    MPI_Gatherv(coreset->weights.data(), coreset->weights.size(), mpi_type_t, fullCoreset.weights.data(),
-                numCoresetDataPerProc.data(), vectorDisplacements.data(), mpi_type_t, 0, MPI_COMM_WORLD);
+    MPI_Gatherv(coreset->data.data(), coreset->data.elements(), mpi_precision, fullCoreset.data.data(),
+                matrixLengths.data(), matrixDisplacements.data(), mpi_precision, 0, MPI_COMM_WORLD);
+    MPI_Gatherv(coreset->weights.data(), coreset->weights.size(), mpi_precision, fullCoreset.weights.data(),
+                numCoresetDataPerProc.data(), vectorDisplacements.data(), mpi_precision, 0, MPI_COMM_WORLD);
 
     // get lengths and displacements for evenly distributing coreset data amoung processes
     auto mpiData        = getMPIData(this->mSampleSize);
@@ -366,9 +372,9 @@ void MPICoresetCreator<precision, int_size>::distributeCoreset(Coreset<precision
     // resize and distribute coreset data
     *coreset = Coreset<precision, int_size>(vectorLengths.at(p_KmeansState->rank()), p_KmeansState->dataCols());
 
-    MPI_Scatterv(fullCoreset.weights.data(), vectorLengths.data(), vectorDisplacements.data(), mpi_type_t,
-                 coreset->weights.data(), coreset->weights.size(), mpi_type_t, 0, MPI_COMM_WORLD);
-    MPI_Scatterv(fullCoreset.data.data(), matrixLengths.data(), matrixDisplacements.data(), mpi_type_t,
-                 coreset->data.data(), matrixLengths.at(p_KmeansState->rank()), mpi_type_t, 0, MPI_COMM_WORLD);
+    MPI_Scatterv(fullCoreset.weights.data(), vectorLengths.data(), vectorDisplacements.data(), mpi_precision,
+                 coreset->weights.data(), coreset->weights.size(), mpi_precision, 0, MPI_COMM_WORLD);
+    MPI_Scatterv(fullCoreset.data.data(), matrixLengths.data(), matrixDisplacements.data(), mpi_precision,
+                 coreset->data.data(), matrixLengths.at(p_KmeansState->rank()), mpi_precision, 0, MPI_COMM_WORLD);
 }
 }  // namespace HPKmeans

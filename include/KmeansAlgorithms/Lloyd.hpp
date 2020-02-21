@@ -74,10 +74,12 @@ protected:
 };
 
 template <typename precision, typename int_size>
-class MPILloyd : public TemplateLloyd<precision, int_size>
+class MPILloyd : public TemplateLloyd<precision, int_size>, public MPIImplementation<precision, int_size>
 {
 private:
     using AbstractKmeansAlgorithm<precision, int_size>::p_KmeansState;
+    using MPIImplementation<precision, int_size>::mpi_precision;
+    using MPIImplementation<precision, int_size>::mpi_int_size;
 
 public:
     MPILloyd(AbstractPointReassigner<precision, int_size>* pointReassigner,
@@ -139,15 +141,15 @@ void MPILloyd<precision, int_size>::calcClusterSums()
     this->p_Averager->calculateSum(p_KmeansState->data(), p_KmeansState->clusters(), p_KmeansState->clustering(),
                                    p_KmeansState->weights(), p_KmeansState->myDisplacement());
 
-    MPI_Allreduce(MPI_IN_PLACE, p_KmeansState->clustersData(), p_KmeansState->clustersElements(), mpi_type_t, MPI_SUM,
-                  MPI_COMM_WORLD);
+    MPI_Allreduce(MPI_IN_PLACE, p_KmeansState->clustersData(), p_KmeansState->clustersElements(), mpi_precision,
+                  MPI_SUM, MPI_COMM_WORLD);
 }
 
 template <typename precision, typename int_size>
 void MPILloyd<precision, int_size>::normalizeClusterSums()
 {
     std::vector<precision> copyWeights(p_KmeansState->dataSize());
-    MPI_Reduce(p_KmeansState->clusterWeightsData(), copyWeights.data(), copyWeights.size(), mpi_type_t, MPI_SUM, 0,
+    MPI_Reduce(p_KmeansState->clusterWeightsData(), copyWeights.data(), copyWeights.size(), mpi_precision, MPI_SUM, 0,
                MPI_COMM_WORLD);
 
     if (p_KmeansState->rank() == 0)
@@ -155,7 +157,7 @@ void MPILloyd<precision, int_size>::normalizeClusterSums()
         this->p_Averager->normalizeSum(p_KmeansState->clusters(), &copyWeights);
     }
 
-    MPI_Bcast(p_KmeansState->clustersData(), p_KmeansState->clustersElements(), mpi_type_t, 0, MPI_COMM_WORLD);
+    MPI_Bcast(p_KmeansState->clustersData(), p_KmeansState->clustersElements(), mpi_precision, 0, MPI_COMM_WORLD);
 }
 
 template <typename precision, typename int_size>
@@ -163,11 +165,11 @@ int_size MPILloyd<precision, int_size>::reassignPoints()
 {
     int_size changed = this->pPointReassigner->reassignPoints(p_KmeansState);
 
-    MPI_Allreduce(MPI_IN_PLACE, &changed, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-    MPI_Allgatherv(MPI_IN_PLACE, p_KmeansState->myLength(), MPI_INT, p_KmeansState->clusteringData(),
-                   p_KmeansState->lengthsData(), p_KmeansState->displacementsData(), MPI_INT, MPI_COMM_WORLD);
-    MPI_Allgatherv(MPI_IN_PLACE, p_KmeansState->myLength(), mpi_type_t, p_KmeansState->sqDistancesData(),
-                   p_KmeansState->lengthsData(), p_KmeansState->displacementsData(), mpi_type_t, MPI_COMM_WORLD);
+    MPI_Allreduce(MPI_IN_PLACE, &changed, 1, mpi_int_size, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, p_KmeansState->myLength(), mpi_int_size, p_KmeansState->clusteringData(),
+                   p_KmeansState->lengthsData(), p_KmeansState->displacementsData(), mpi_int_size, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, p_KmeansState->myLength(), mpi_precision, p_KmeansState->sqDistancesData(),
+                   p_KmeansState->lengthsData(), p_KmeansState->displacementsData(), mpi_precision, MPI_COMM_WORLD);
 
     return changed;
 }
