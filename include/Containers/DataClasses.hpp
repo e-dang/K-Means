@@ -44,7 +44,7 @@ struct Coreset
     Matrix<precision, int_size> data;
     std::vector<precision> weights;
 
-    Coreset(const int_size& numData, const int_size& numFeatures, bool autoReserve = true) :
+    Coreset(const int_size& numData, const int_size& numFeatures, bool autoReserve = false) :
         data(numData, numFeatures, autoReserve)
     {
         if (autoReserve)

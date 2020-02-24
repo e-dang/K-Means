@@ -170,7 +170,7 @@ template <typename precision, typename int_size>
 Coreset<precision, int_size> SharedMemoryCoresetCreator<precision, int_size>::sampleDistribution(
   const std::vector<precision>* const distribution)
 {
-    Coreset<precision, int_size> coreset(this->mSampleSize, p_KmeansState->dataCols(), false);
+    Coreset<precision, int_size> coreset(this->mSampleSize, p_KmeansState->dataCols());
 
     auto selectedIdxs = this->p_Selector->select(distribution, this->mSampleSize);
     for (const auto& idx : selectedIdxs)
@@ -186,7 +186,7 @@ template <typename precision, typename int_size>
 std::vector<precision> MPICoresetCreator<precision, int_size>::calcMean()
 {
     std::vector<precision> mean(p_KmeansState->dataCols());
-    Matrix<precision, int_size> chunkMeans(p_KmeansState->numProcs(), p_KmeansState->dataCols());
+    Matrix<precision, int_size> chunkMeans(p_KmeansState->numProcs(), p_KmeansState->dataCols(), true);
 
     this->p_Averager->calculateSum(p_KmeansState->data(), &mean);
 
@@ -300,7 +300,7 @@ template <typename precision, typename int_size>
 Coreset<precision, int_size> MPICoresetCreator<precision, int_size>::sampleDistribution(
   const std::vector<precision>* const distribution)
 {
-    Coreset<precision, int_size> coreset(this->mSampleSize, p_KmeansState->dataCols(), false);
+    Coreset<precision, int_size> coreset(this->mSampleSize, p_KmeansState->dataCols());
     std::vector<precision> uniformWeights(distribution->size(), 1.0 / p_KmeansState->totalNumData());
 
     appendDataToCoreset(&coreset, &uniformWeights, distribution, mNumUniformSamples);
@@ -349,7 +349,7 @@ void MPICoresetCreator<precision, int_size>::distributeCoreset(Coreset<precision
     }
 
     // create and fill temporary coreset with data at root
-    Coreset<precision, int_size> fullCoreset(this->mSampleSize, p_KmeansState->dataCols());
+    Coreset<precision, int_size> fullCoreset(this->mSampleSize, p_KmeansState->dataCols(), true);
 
     MPI_Gatherv(coreset->data.data(), coreset->data.elements(), mpi_precision, fullCoreset.data.data(),
                 matrixLengths.data(), matrixDisplacements.data(), mpi_precision, 0, MPI_COMM_WORLD);
@@ -370,7 +370,7 @@ void MPICoresetCreator<precision, int_size>::distributeCoreset(Coreset<precision
     }
 
     // resize and distribute coreset data
-    *coreset = Coreset<precision, int_size>(vectorLengths.at(p_KmeansState->rank()), p_KmeansState->dataCols());
+    *coreset = Coreset<precision, int_size>(vectorLengths.at(p_KmeansState->rank()), p_KmeansState->dataCols(), true);
 
     MPI_Scatterv(fullCoreset.weights.data(), vectorLengths.data(), vectorDisplacements.data(), mpi_precision,
                  coreset->weights.data(), coreset->weights.size(), mpi_precision, 0, MPI_COMM_WORLD);

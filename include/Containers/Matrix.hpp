@@ -110,7 +110,7 @@ public:
 
     Matrix() noexcept : p_Data(nullptr), m_Rows(0), m_Cols(0), m_Capacity(0), m_Size(0) {}
 
-    Matrix(const int_size& numRows, const int_size& numCols, bool autoReserve = true, const int_size initVal = 0.0) :
+    Matrix(const int_size& numRows, const int_size& numCols, bool autoReserve = false, const int_size initVal = 0.0) :
         p_Data(nullptr), m_Rows(numRows), m_Cols(numCols), m_Capacity(numRows * numCols), m_Size(0)
     {
         if (!isValidNumRows() || !isValidNumCols() || !isValidNumCols())

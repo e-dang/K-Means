@@ -60,7 +60,7 @@ public:
     inline void resetClusterData(const int_size& numClusters, const precision& sqDistsFillVal = -1.0)
     {
         if (!p_Clusters)
-            p_Clusters = std::make_shared<Matrix<precision, int_size>>(numClusters, dataCols(), false);
+            p_Clusters = std::make_shared<Matrix<precision, int_size>>(numClusters, dataCols());
         else if (p_Clusters.use_count() == 1)
             p_Clusters->clear();
 

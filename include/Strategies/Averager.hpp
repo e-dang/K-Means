@@ -17,11 +17,11 @@ namespace HPKmeans
 
 #pragma omp declare reduction(+ : Matrix<float, int> : \
                                std::transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), std::plus<float>())) \
-                                initializer(omp_priv = decltype(omp_orig)(omp_orig.rows(), omp_orig.cols()))
+                                initializer(omp_priv = decltype(omp_orig)(omp_orig.rows(), omp_orig.cols(), true))
 
 #pragma omp declare reduction(+ : Matrix<double, int> : \
                               std::transform(omp_out.begin(), omp_out.end(), omp_in.begin(), omp_out.begin(), std::plus<double>())) \
-                                initializer(omp_priv = decltype(omp_orig)(omp_orig.rows(), omp_orig.cols()))
+                                initializer(omp_priv = decltype(omp_orig)(omp_orig.rows(), omp_orig.cols(), true))
 
 template <typename precision, typename int_size>
 class AbstractWeightedAverager

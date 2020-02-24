@@ -67,7 +67,7 @@ Matrix<precision, int_size> MatrixReader<precision, int_size>::read(const std::s
 {
     auto file = openFile(filepath);
 
-    Matrix<precision, int_size> data(numData, numFeatures);
+    Matrix<precision, int_size> data(numData, numFeatures, true);
     file.read(reinterpret_cast<char*>(data.data()), sizeof(precision) * numData * numFeatures);
     file.close();
 
@@ -87,7 +87,7 @@ Matrix<precision, int_size> MPIMatrixReader<precision, int_size>::read(const std
 
     MPI_File_open(MPI_COMM_WORLD, filepath.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
 
-    Matrix<precision, int_size> data(mpiData.lengths[mpiData.rank], numFeatures);
+    Matrix<precision, int_size> data(mpiData.lengths[mpiData.rank], numFeatures, true);
     MPI_File_read_at(fh, offset, data.data(), lengths, mpi_precision, &status);
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_File_close(&fh);
