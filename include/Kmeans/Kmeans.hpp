@@ -4,6 +4,7 @@
 #include "Containers/Definitions.hpp"
 #include "Factories/KmeansFactory.hpp"
 #include "Kmeans/KmeansWrappers.hpp"
+
 namespace HPKmeans
 {
 template <typename precision = double, typename int_size = int32_t>
