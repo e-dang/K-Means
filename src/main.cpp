@@ -2,15 +2,18 @@
 #include <iostream>
 
 #include "Containers/Definitions.hpp"
-#include "Kmeans/KmeansFacade.hpp"
+#include "Kmeans/Kmeans.hpp"
 #include "Utils/DistanceFunctors.hpp"
 #include "Utils/Reader.hpp"
 #include "Utils/Writer.hpp"
 #include "mpi.h"
 #include "sarge/sarge.h"
+#include "version.hpp"
 
 const int DEFAULT_REPEATS = 10;
+
 using namespace HPKmeans;
+
 void parseFilePath(Sarge& sarge, std::string& filepath)
 {
     if (!sarge.getTextArgument(0, filepath))
