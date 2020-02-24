@@ -36,6 +36,10 @@ public:
 template <typename precision = double, typename int_size = int32_t>
 class MPIMatrixReader : public IReader<precision, int_size>, public MPIImplementation<precision, int_size>
 {
+private:
+    using MPIImplementation<precision, int_size>::mpi_precision;
+    using MPIImplementation<precision, int_size>::mpi_int_size;
+
 public:
     ~MPIMatrixReader() = default;
 
