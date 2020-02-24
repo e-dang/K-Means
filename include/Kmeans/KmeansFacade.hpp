@@ -3,14 +3,14 @@
 #include "Containers/DataClasses.hpp"
 #include "Containers/Definitions.hpp"
 #include "Factories/KmeansFactory.hpp"
-#include "Kmeans/Kmeans.hpp"
+#include "Kmeans/KmeansWrappers.hpp"
 namespace HPKmeans
 {
 template <typename precision = double, typename int_size = int32_t>
 class Kmeans
 {
 protected:
-    std::unique_ptr<AbstractKmeans<precision, int_size>> pKmeans;
+    std::unique_ptr<AbstractKmeansWrapper<precision, int_size>> pKmeans;
     std::unique_ptr<KmeansFactory<precision, int_size>> pFactory;
 
     Initializer mInitializer;
@@ -102,7 +102,7 @@ bool Kmeans<precision, int_size>::setKmeans(const Initializer initializer, const
         setMaximizer(maximizer);
         setCoresetCreator(coreset);
         setParallelism(parallelism);
-        pKmeans = std::unique_ptr<AbstractKmeans<precision, int_size>>(
+        pKmeans = std::unique_ptr<AbstractKmeansWrapper<precision, int_size>>(
           pFactory->createKmeans(initializer, maximizer, coreset, parallelism, distanceFunc, sampleSize));
 
         return true;

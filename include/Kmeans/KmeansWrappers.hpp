@@ -20,7 +20,7 @@ namespace HPKmeans
  *        concretion will need to function.
  */
 template <typename precision, typename int_size>
-class AbstractKmeans
+class AbstractKmeansWrapper
 {
 protected:
     std::unique_ptr<AbstractKmeansInitializer<precision, int_size>> p_Initializer;
@@ -29,8 +29,8 @@ protected:
     std::shared_ptr<IDistanceFunctor<precision>> p_DistanceFunc;
 
 public:
-    AbstractKmeans(IKmeansStateInitializer<precision, int_size>* stateInitializer,
-                   std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) :
+    AbstractKmeansWrapper(IKmeansStateInitializer<precision, int_size>* stateInitializer,
+                          std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) :
         p_stateInitializer(stateInitializer), p_DistanceFunc(distanceFunc)
     {
     }
@@ -43,10 +43,10 @@ public:
      * @param distanceFunc - A pointer to a functor class used to calculate the distance between points, such as the
      *                       euclidean distance.
      */
-    AbstractKmeans(AbstractKmeansInitializer<precision, int_size>* initializer,
-                   AbstractKmeansMaximizer<precision, int_size>* maximizer,
-                   IKmeansStateInitializer<precision, int_size>* stateInitializer,
-                   std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) :
+    AbstractKmeansWrapper(AbstractKmeansInitializer<precision, int_size>* initializer,
+                          AbstractKmeansMaximizer<precision, int_size>* maximizer,
+                          IKmeansStateInitializer<precision, int_size>* stateInitializer,
+                          std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) :
         p_Initializer(initializer),
         p_Maximizer(maximizer),
         p_stateInitializer(stateInitializer),
@@ -54,7 +54,7 @@ public:
     {
     }
 
-    virtual ~AbstractKmeans() = default;
+    virtual ~AbstractKmeansWrapper() = default;
 
     /**
      * @brief Overloaded interface for the top level function that initiates the clustering process, where the weights
@@ -97,18 +97,18 @@ protected:
 };
 
 template <typename precision, typename int_size>
-class WeightedKmeans : public AbstractKmeans<precision, int_size>
+class WeightedKmeansWrapper : public AbstractKmeansWrapper<precision, int_size>
 {
 public:
-    WeightedKmeans(AbstractKmeansInitializer<precision, int_size>* initializer,
-                   AbstractKmeansMaximizer<precision, int_size>* maximizer,
-                   IKmeansStateInitializer<precision, int_size>* stateInitializer,
-                   std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) :
-        AbstractKmeans<precision, int_size>(initializer, maximizer, stateInitializer, distanceFunc)
+    WeightedKmeansWrapper(AbstractKmeansInitializer<precision, int_size>* initializer,
+                          AbstractKmeansMaximizer<precision, int_size>* maximizer,
+                          IKmeansStateInitializer<precision, int_size>* stateInitializer,
+                          std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) :
+        AbstractKmeansWrapper<precision, int_size>(initializer, maximizer, stateInitializer, distanceFunc)
     {
     }
 
-    ~WeightedKmeans() = default;
+    ~WeightedKmeansWrapper() = default;
 
     std::shared_ptr<ClusterResults<precision, int_size>> fit(const Matrix<precision, int_size>* const data,
                                                              const int_size& numClusters,
@@ -120,21 +120,21 @@ public:
 };
 
 template <typename precision, typename int_size>
-class CoresetKmeans : public AbstractKmeans<precision, int_size>
+class CoresetKmeansWrapper : public AbstractKmeansWrapper<precision, int_size>
 {
 private:
     int_size m_SampleSize;
-    std::unique_ptr<AbstractKmeans<precision, int_size>> p_Kmeans;
+    std::unique_ptr<AbstractKmeansWrapper<precision, int_size>> p_Kmeans;
     std::unique_ptr<AbstractCoresetCreator<precision, int_size>> p_CoresetCreator;
     std::unique_ptr<AbstractCoresetClusteringFinisher<precision, int_size>> p_Finisher;
 
 public:
-    CoresetKmeans(const int_size& sampleSize, AbstractKmeans<precision, int_size>* kmeans,
-                  AbstractCoresetCreator<precision, int_size>* coresetCreator,
-                  AbstractCoresetClusteringFinisher<precision, int_size>* finisher,
-                  IKmeansStateInitializer<precision, int_size>* stateInitializer,
-                  std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) :
-        AbstractKmeans<precision, int_size>(stateInitializer, distanceFunc),
+    CoresetKmeansWrapper(const int_size& sampleSize, AbstractKmeansWrapper<precision, int_size>* kmeans,
+                         AbstractCoresetCreator<precision, int_size>* coresetCreator,
+                         AbstractCoresetClusteringFinisher<precision, int_size>* finisher,
+                         IKmeansStateInitializer<precision, int_size>* stateInitializer,
+                         std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) :
+        AbstractKmeansWrapper<precision, int_size>(stateInitializer, distanceFunc),
         m_SampleSize(sampleSize),
         p_Kmeans(kmeans),
         p_CoresetCreator(coresetCreator),
@@ -142,7 +142,7 @@ public:
     {
     }
 
-    ~CoresetKmeans() = default;
+    ~CoresetKmeansWrapper() = default;
 
     std::shared_ptr<ClusterResults<precision, int_size>> fit(const Matrix<precision, int_size>* const data,
                                                              const int_size& numClusters,
@@ -154,7 +154,7 @@ public:
 };
 
 template <typename precision, typename int_size>
-std::shared_ptr<ClusterResults<precision, int_size>> AbstractKmeans<precision, int_size>::run(
+std::shared_ptr<ClusterResults<precision, int_size>> AbstractKmeansWrapper<precision, int_size>::run(
   const Matrix<precision, int_size>* const data, const int_size& numClusters, const int& numRestarts,
   KmeansState<precision, int_size>* const kmeansState)
 {
@@ -178,7 +178,7 @@ std::shared_ptr<ClusterResults<precision, int_size>> AbstractKmeans<precision, i
 }
 
 template <typename precision, typename int_size>
-std::shared_ptr<ClusterResults<precision, int_size>> WeightedKmeans<precision, int_size>::fit(
+std::shared_ptr<ClusterResults<precision, int_size>> WeightedKmeansWrapper<precision, int_size>::fit(
   const Matrix<precision, int_size>* const data, const int_size& numClusters, const int& numRestarts)
 {
     std::vector<precision> weights(data->rows(), 1);
@@ -186,7 +186,7 @@ std::shared_ptr<ClusterResults<precision, int_size>> WeightedKmeans<precision, i
 }
 
 template <typename precision, typename int_size>
-std::shared_ptr<ClusterResults<precision, int_size>> WeightedKmeans<precision, int_size>::fit(
+std::shared_ptr<ClusterResults<precision, int_size>> WeightedKmeansWrapper<precision, int_size>::fit(
   const Matrix<precision, int_size>* const data, const int_size& numClusters, const int& numRestarts,
   const std::vector<precision>* const weights)
 {
@@ -195,7 +195,7 @@ std::shared_ptr<ClusterResults<precision, int_size>> WeightedKmeans<precision, i
 }
 
 template <typename precision, typename int_size>
-std::shared_ptr<ClusterResults<precision, int_size>> CoresetKmeans<precision, int_size>::fit(
+std::shared_ptr<ClusterResults<precision, int_size>> CoresetKmeansWrapper<precision, int_size>::fit(
   const Matrix<precision, int_size>* const data, const int_size& numClusters, const int& numRestarts)
 {
     auto kmeansState = this->p_stateInitializer->initializeState(data, nullptr, this->p_DistanceFunc);
@@ -218,7 +218,7 @@ std::shared_ptr<ClusterResults<precision, int_size>> CoresetKmeans<precision, in
 }
 
 template <typename precision, typename int_size>
-std::shared_ptr<ClusterResults<precision, int_size>> CoresetKmeans<precision, int_size>::fit(
+std::shared_ptr<ClusterResults<precision, int_size>> CoresetKmeansWrapper<precision, int_size>::fit(
   const Matrix<precision, int_size>* const data, const int_size& numClusters, const int& numRestarts,
   const std::vector<precision>* const weights)
 {

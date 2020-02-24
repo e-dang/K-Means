@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Factories/KmeansAlgorithmFactories.hpp"
-#include "Kmeans/Kmeans.hpp"
+#include "Kmeans/KmeansWrappers.hpp"
 
 namespace HPKmeans
 {
@@ -16,14 +16,14 @@ public:
 
     ~KmeansFactory() = default;
 
-    AbstractKmeans<precision, int_size>* createKmeans(Initializer initializer, Maximizer maximizer,
-                                                      CoresetCreator coreset, Parallelism parallelism,
-                                                      std::shared_ptr<IDistanceFunctor<precision>> distanceFunc,
-                                                      const int_size& sampleSize);
+    AbstractKmeansWrapper<precision, int_size>* createKmeans(Initializer initializer, Maximizer maximizer,
+                                                             CoresetCreator coreset, Parallelism parallelism,
+                                                             std::shared_ptr<IDistanceFunctor<precision>> distanceFunc,
+                                                             const int_size& sampleSize);
 };
 
 template <typename precision, typename int_size>
-AbstractKmeans<precision, int_size>* KmeansFactory<precision, int_size>::createKmeans(
+AbstractKmeansWrapper<precision, int_size>* KmeansFactory<precision, int_size>::createKmeans(
   Initializer initializer, Maximizer maximizer, CoresetCreator coreset, Parallelism parallelism,
   std::shared_ptr<IDistanceFunctor<precision>> distanceFunc, const int_size& sampleSize)
 {
@@ -33,14 +33,14 @@ AbstractKmeans<precision, int_size>* KmeansFactory<precision, int_size>::createK
 
     if (coreset)
     {
-        return new CoresetKmeans<precision, int_size>(
+        return new CoresetKmeansWrapper<precision, int_size>(
           sampleSize, createKmeans(initializer, maximizer, None, parallelism, distanceFunc, sampleSize),
           algFactory->createCoresetCreator(coreset, sampleSize), stratFactory->createCoresetClusteringFinisher(),
           stratFactory->createKmeansStateInitializer(), distanceFunc);
     }
 
-    return new WeightedKmeans<precision, int_size>(algFactory->createInitializer(initializer),
-                                                   algFactory->createMaximizer(maximizer),
-                                                   stratFactory->createKmeansStateInitializer(), distanceFunc);
+    return new WeightedKmeansWrapper<precision, int_size>(algFactory->createInitializer(initializer),
+                                                          algFactory->createMaximizer(maximizer),
+                                                          stratFactory->createKmeansStateInitializer(), distanceFunc);
 }
 }  // namespace HPKmeans
