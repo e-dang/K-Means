@@ -1,11 +1,14 @@
 #pragma once
 
+#include <mpi.h>
+
 #include <numeric>
 
 #include "Containers/Definitions.hpp"
 #include "Containers/KmeansState.hpp"
+#include "KmeansAlgorithms/KmeansAlgorithms.hpp"
 #include "Strategies/ClosestClusterUpdater.hpp"
-#include "mpi.h"
+
 namespace HPKmeans
 {
 template <typename precision, typename int_size>
@@ -39,8 +42,14 @@ public:
 };
 
 template <typename precision, typename int_size>
-class MPICoresetClusteringFinisher : public AbstractCoresetClusteringFinisher<precision, int_size>
+class MPICoresetClusteringFinisher :
+    public AbstractCoresetClusteringFinisher<precision, int_size>,
+    public MPIImplementation<precision, int_size>
 {
+private:
+    using MPIImplementation<precision, int_size>::mpi_precision;
+    using MPIImplementation<precision, int_size>::mpi_int_size;
+
 public:
     MPICoresetClusteringFinisher(AbstractClosestClusterUpdater<precision, int_size>* updater) :
         AbstractCoresetClusteringFinisher<precision, int_size>(updater)
@@ -67,11 +76,11 @@ void MPICoresetClusteringFinisher<precision, int_size>::finishClustering(
 {
     this->pUpdater->findAndUpdateClosestClusters(kmeansState);
 
-    MPI_Allgatherv(MPI_IN_PLACE, kmeansState->myLength(), MPI_INT, kmeansState->clusteringData(),
-                   kmeansState->lengthsData(), kmeansState->displacementsData(), MPI_INT, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, kmeansState->myLength(), mpi_int_size, kmeansState->clusteringData(),
+                   kmeansState->lengthsData(), kmeansState->displacementsData(), mpi_int_size, MPI_COMM_WORLD);
 
-    MPI_Allgatherv(MPI_IN_PLACE, kmeansState->myLength(), mpi_type_t, kmeansState->sqDistancesData(),
-                   kmeansState->lengthsData(), kmeansState->displacementsData(), mpi_type_t, MPI_COMM_WORLD);
+    MPI_Allgatherv(MPI_IN_PLACE, kmeansState->myLength(), mpi_precision, kmeansState->sqDistancesData(),
+                   kmeansState->lengthsData(), kmeansState->displacementsData(), mpi_precision, MPI_COMM_WORLD);
 
     // return std::accumulate(kmeansState->sqDistancesBegin(), kmeansState->sqDistancesEnd(), 0.0);
 }
