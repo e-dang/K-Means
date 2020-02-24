@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "Containers/Matrix.hpp"
 #include "Utils/DistanceFunctors.hpp"
