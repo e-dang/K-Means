@@ -1,6 +1,6 @@
 #pragma once
 
-#include <hpkmeans/factories/AlgorithmFactories.hpp>
+#include <hpkmeans/factories/algorithm_factories.hpp>
 #include <hpkmeans/kmeans/KmeansWrappers.hpp>
 
 namespace HPKmeans

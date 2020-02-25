@@ -6,7 +6,7 @@
 #include <hpkmeans/algorithms/kmeans_algorithm.hpp>
 #include <hpkmeans/algorithms/maximizers/Lloyd.hpp>
 #include <hpkmeans/algorithms/maximizers/interface.hpp>
-#include <hpkmeans/factories/StrategyFactories.hpp>
+#include <hpkmeans/factories/strategy_factories.hpp>
 #include <memory>
 
 namespace HPKmeans
