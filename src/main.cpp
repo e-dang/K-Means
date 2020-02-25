@@ -1,14 +1,13 @@
 #include <mpi.h>
+#include <sarge/sarge.h>
 
 #include <chrono>
+#include <hpkmeans/DistanceFunctors.hpp>
+#include <hpkmeans/Kmeans.hpp>
+#include <hpkmeans/filesystem/Reader.hpp>
+#include <hpkmeans/filesystem/Writer.hpp>
+#include <hpkmeans/version.hpp>
 #include <iostream>
-
-#include "Kmeans/Kmeans.hpp"
-#include "Utils/DistanceFunctors.hpp"
-#include "Utils/Reader.hpp"
-#include "Utils/Writer.hpp"
-#include "sarge/sarge.h"
-#include "version.hpp"
 
 const int DEFAULT_REPEATS = 10;
 
@@ -262,11 +261,11 @@ void runDistributed(int& argc, char** argv, std::string filepath, const int32_t&
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
-    MPIMatrixReader<float> reader;
+    MPIMatrixReader<double> reader;
     auto data = reader.read(filepath, numData, numFeatures);
 
-    Kmeans<float> kmeans(initializer, maximizer, coresetCreator, parallelism,
-                         std::make_shared<EuclideanDistance<float>>(), sampleSize);
+    Kmeans<double> kmeans(initializer, maximizer, coresetCreator, parallelism,
+                          std::make_shared<EuclideanDistance<double>>(), sampleSize);
 
     auto start          = std::chrono::high_resolution_clock::now();
     auto clusterResults = kmeans.fit(&data, numClusters, numRestarts);
@@ -275,7 +274,7 @@ void runDistributed(int& argc, char** argv, std::string filepath, const int32_t&
 
     if (rank == 0)
     {
-        ClusterResultWriter<float> writer(initializer, maximizer, coresetCreator, parallelism);
+        ClusterResultWriter<double> writer(initializer, maximizer, coresetCreator, parallelism);
         writer.writeClusterResults(clusterResults, duration, filepath);
     }
 
