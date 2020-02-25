@@ -4,9 +4,11 @@
 #include <omp.h>
 
 #include <hpkmeans/algorithms/initializers/interface.hpp>
+#include <hpkmeans/algorithms/strategies/closest_cluster_updater.hpp>
 #include <hpkmeans/algorithms/strategies/random_selector.hpp>
 #include <hpkmeans/utils/Utils.hpp>
 #include <hpkmeans/utils/mpi_class.hpp>
+
 namespace HPKmeans
 {
 /**
@@ -20,7 +22,7 @@ class TemplateKPlusPlus : public IKmeansInitializer<precision, int_size>
 protected:
     using AbstractKmeansAlgorithm<precision, int_size>::p_KmeansState;
 
-protected:
+    std::unique_ptr<AbstractClosestClusterUpdater<precision, int_size>> p_Updater;
     std::unique_ptr<IWeightedRandomSelector<precision, int_size>> p_Selector;
 
 public:
@@ -32,7 +34,7 @@ public:
      */
     TemplateKPlusPlus(AbstractClosestClusterUpdater<precision, int_size>* updater,
                       IWeightedRandomSelector<precision, int_size>* selector) :
-        IKmeansInitializer<precision, int_size>(updater), p_Selector(selector)
+        p_Updater(updater), p_Selector(selector)
     {
     }
 
@@ -139,7 +141,7 @@ void SharedMemoryKPlusPlus<precision, int_size>::weightedClusterSelection()
 template <typename precision, typename int_size>
 void SharedMemoryKPlusPlus<precision, int_size>::findAndUpdateClosestClusters()
 {
-    this->pUpdater->findAndUpdateClosestClusters(p_KmeansState);
+    this->p_Updater->findAndUpdateClosestClusters(p_KmeansState);
 }
 
 template <typename precision, typename int_size>
@@ -182,7 +184,7 @@ void MPIKPlusPlus<precision, int_size>::weightedClusterSelection()
 template <typename precision, typename int_size>
 void MPIKPlusPlus<precision, int_size>::findAndUpdateClosestClusters()
 {
-    this->pUpdater->findAndUpdateClosestClusters(p_KmeansState);
+    this->p_Updater->findAndUpdateClosestClusters(p_KmeansState);
 
     MPI_Allgatherv(MPI_IN_PLACE, p_KmeansState->myLength(), mpi_int_size, p_KmeansState->clusteringData(),
                    p_KmeansState->lengthsData(), p_KmeansState->displacementsData(), mpi_int_size, MPI_COMM_WORLD);

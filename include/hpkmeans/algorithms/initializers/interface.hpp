@@ -1,7 +1,6 @@
 #pragma once
 
 #include <hpkmeans/algorithms/kmeans_algorithm.hpp>
-#include <hpkmeans/algorithms/strategies/closest_cluster_updater.hpp>
 
 namespace HPKmeans
 {
@@ -12,12 +11,7 @@ namespace HPKmeans
 template <typename precision, typename int_size>
 class IKmeansInitializer : public AbstractKmeansAlgorithm<precision, int_size>
 {
-protected:
-    std::unique_ptr<AbstractClosestClusterUpdater<precision, int_size>> pUpdater;
-
 public:
-    IKmeansInitializer(AbstractClosestClusterUpdater<precision, int_size>* updater) : pUpdater(updater) {}
-
     virtual ~IKmeansInitializer() = default;
 
     /**
