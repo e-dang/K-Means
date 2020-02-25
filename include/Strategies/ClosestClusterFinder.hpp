@@ -65,7 +65,7 @@ ClosestCluster<precision, int_size> ClosestClusterFinder<precision, int_size>::f
         }
     }
 
-    return ClosestCluster<precision, int_size>{ clusterIdx, std::pow(minDistance, 2) };
+    return ClosestCluster<precision, int_size>{ clusterIdx, static_cast<precision>(std::pow(minDistance, 2)) };
 }
 
 template <typename precision, typename int_size>
@@ -102,6 +102,6 @@ ClosestCluster<precision, int_size> ClosestNewClusterFinder<precision, int_size>
         intermediate    = numExistingClusters;
     }
 
-    return ClosestCluster<precision, int_size>{ clusterIdx, std::pow(minDistance, 2) };
+    return ClosestCluster<precision, int_size>{ clusterIdx, static_cast<precision>(std::pow(minDistance, 2)) };
 }
 }  // namespace HPKmeans
