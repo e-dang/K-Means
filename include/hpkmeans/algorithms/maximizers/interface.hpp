@@ -1,7 +1,7 @@
 #pragma once
 
 #include <hpkmeans/algorithms/kmeans_algorithm.hpp>
-#include <hpkmeans/algorithms/strategies/PointReassigner.hpp>
+#include <hpkmeans/algorithms/strategies/point_reassigner.hpp>
 
 namespace HPKmeans
 {

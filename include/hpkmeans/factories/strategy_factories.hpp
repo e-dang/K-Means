@@ -1,14 +1,14 @@
 #pragma once
 
-#include <hpkmeans/algorithms/strategies/Averager.hpp>
-#include <hpkmeans/algorithms/strategies/ClosestClusterFinder.hpp>
-#include <hpkmeans/algorithms/strategies/ClosestClusterUpdater.hpp>
-#include <hpkmeans/algorithms/strategies/CoresetClusteringFinisher.hpp>
-#include <hpkmeans/algorithms/strategies/CoresetDistributionCalculator.hpp>
-#include <hpkmeans/algorithms/strategies/DistanceSumCalculator.hpp>
-#include <hpkmeans/algorithms/strategies/KmeansStateInitializer.hpp>
-#include <hpkmeans/algorithms/strategies/PointReassigner.hpp>
-#include <hpkmeans/algorithms/strategies/RandomSelector.hpp>
+#include <hpkmeans/algorithms/strategies/averager.hpp>
+#include <hpkmeans/algorithms/strategies/closest_cluster_finder.hpp>
+#include <hpkmeans/algorithms/strategies/closest_cluster_updater.hpp>
+#include <hpkmeans/algorithms/strategies/coreset_clustering_finisher.hpp>
+#include <hpkmeans/algorithms/strategies/coreset_distribution_calculator.hpp>
+#include <hpkmeans/algorithms/strategies/distance_sum_calculator.hpp>
+#include <hpkmeans/algorithms/strategies/kmeans_state_initializer.hpp>
+#include <hpkmeans/algorithms/strategies/point_reassigner.hpp>
+#include <hpkmeans/algorithms/strategies/random_selector.hpp>
 #include <hpkmeans/data_types/enums.hpp>
 
 namespace HPKmeans

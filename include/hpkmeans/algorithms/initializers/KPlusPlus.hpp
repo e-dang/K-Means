@@ -4,7 +4,7 @@
 #include <omp.h>
 
 #include <hpkmeans/algorithms/initializers/interface.hpp>
-#include <hpkmeans/algorithms/strategies/RandomSelector.hpp>
+#include <hpkmeans/algorithms/strategies/random_selector.hpp>
 #include <hpkmeans/utils/Utils.hpp>
 #include <hpkmeans/utils/mpi_class.hpp>
 namespace HPKmeans

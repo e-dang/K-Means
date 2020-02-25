@@ -3,8 +3,7 @@
 #include <mpi.h>
 
 #include <hpkmeans/algorithms/maximizers/interface.hpp>
-#include <hpkmeans/algorithms/strategies/Averager.hpp>
-#include <hpkmeans/algorithms/strategies/PointReassigner.hpp>
+#include <hpkmeans/algorithms/strategies/averager.hpp>
 #include <hpkmeans/utils/mpi_class.hpp>
 
 namespace HPKmeans

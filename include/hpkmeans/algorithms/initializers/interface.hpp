@@ -1,7 +1,7 @@
 #pragma once
 
 #include <hpkmeans/algorithms/kmeans_algorithm.hpp>
-#include <hpkmeans/algorithms/strategies/ClosestClusterUpdater.hpp>
+#include <hpkmeans/algorithms/strategies/closest_cluster_updater.hpp>
 
 namespace HPKmeans
 {

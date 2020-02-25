@@ -1,7 +1,7 @@
 #pragma once
 
-#include <hpkmeans/algorithms/strategies/ClosestClusterFinder.hpp>
-#include <hpkmeans/algorithms/strategies/ClusteringDataUpdater.hpp>
+#include <hpkmeans/algorithms/strategies/closest_cluster_finder.hpp>
+#include <hpkmeans/algorithms/strategies/clustering_data_updater.hpp>
 #include <hpkmeans/data_types/kmeans_state.hpp>
 #include <memory>
 

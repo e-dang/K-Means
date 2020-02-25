@@ -3,10 +3,10 @@
 #include <omp.h>
 
 #include <hpkmeans/algorithms/kmeans_algorithm.hpp>
-#include <hpkmeans/algorithms/strategies/Averager.hpp>
-#include <hpkmeans/algorithms/strategies/CoresetDistributionCalculator.hpp>
-#include <hpkmeans/algorithms/strategies/DistanceSumCalculator.hpp>
-#include <hpkmeans/algorithms/strategies/RandomSelector.hpp>
+#include <hpkmeans/algorithms/strategies/averager.hpp>
+#include <hpkmeans/algorithms/strategies/coreset_distribution_calculator.hpp>
+#include <hpkmeans/algorithms/strategies/distance_sum_calculator.hpp>
+#include <hpkmeans/algorithms/strategies/random_selector.hpp>
 #include <hpkmeans/data_types/coreset.hpp>
 #include <hpkmeans/utils/Utils.hpp>
 #include <hpkmeans/utils/mpi_class.hpp>

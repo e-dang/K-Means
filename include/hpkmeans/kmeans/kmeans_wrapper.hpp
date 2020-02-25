@@ -3,7 +3,7 @@
 #include <mpi.h>
 
 #include <hpkmeans/algorithms/kmeans_algorithm.hpp>
-#include <hpkmeans/algorithms/strategies/KmeansStateInitializer.hpp>
+#include <hpkmeans/algorithms/strategies/kmeans_state_initializer.hpp>
 #include <hpkmeans/data_types/cluster_results.hpp>
 #include <memory>
 #include <numeric>

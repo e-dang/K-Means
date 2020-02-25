@@ -2,7 +2,7 @@
 
 #include <mpi.h>
 
-#include <hpkmeans/algorithms/strategies/ClosestClusterUpdater.hpp>
+#include <hpkmeans/algorithms/strategies/closest_cluster_updater.hpp>
 #include <hpkmeans/data_types/kmeans_state.hpp>
 #include <hpkmeans/utils/mpi_class.hpp>
 #include <numeric>
