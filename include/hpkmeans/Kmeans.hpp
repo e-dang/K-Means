@@ -1,6 +1,7 @@
 #pragma once
 
-#include <hpkmeans/data_types/DataClasses.hpp>
+#include <hpkmeans/data_types/enums.hpp>
+#include <hpkmeans/data_types/matrix.hpp>
 #include <hpkmeans/factories/KmeansFactory.hpp>
 #include <hpkmeans/kmeans/KmeansWrappers.hpp>
 

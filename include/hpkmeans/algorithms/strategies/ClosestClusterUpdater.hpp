@@ -2,7 +2,7 @@
 
 #include <hpkmeans/algorithms/strategies/ClosestClusterFinder.hpp>
 #include <hpkmeans/algorithms/strategies/ClusteringDataUpdater.hpp>
-#include <hpkmeans/data_types/KmeansState.hpp>
+#include <hpkmeans/data_types/kmeans_state.hpp>
 #include <memory>
 
 namespace HPKmeans

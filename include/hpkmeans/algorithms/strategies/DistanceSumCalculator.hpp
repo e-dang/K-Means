@@ -1,6 +1,6 @@
 #pragma once
 
-#include <hpkmeans/data_types/KmeansState.hpp>
+#include <hpkmeans/data_types/kmeans_state.hpp>
 
 namespace HPKmeans
 {

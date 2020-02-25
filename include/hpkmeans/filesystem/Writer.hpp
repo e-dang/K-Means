@@ -1,7 +1,6 @@
 #pragma once
 
 #include <fstream>
-#include <hpkmeans/data_types/DataClasses.hpp>
 #include <hpkmeans/filesystem/FileRotator.hpp>
 #include <iomanip>
 #include <string>

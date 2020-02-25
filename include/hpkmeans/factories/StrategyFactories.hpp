@@ -9,7 +9,7 @@
 #include <hpkmeans/algorithms/strategies/KmeansStateInitializer.hpp>
 #include <hpkmeans/algorithms/strategies/PointReassigner.hpp>
 #include <hpkmeans/algorithms/strategies/RandomSelector.hpp>
-#include <hpkmeans/data_types/DataClasses.hpp>
+#include <hpkmeans/data_types/enums.hpp>
 
 namespace HPKmeans
 {

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <hpkmeans/data_types/DataClasses.hpp>
-#include <hpkmeans/data_types/Matrix.hpp>
+#include <hpkmeans/data_types/cluster_results.hpp>
+#include <hpkmeans/data_types/matrix.hpp>
 #include <numeric>
 #include <vector>
 

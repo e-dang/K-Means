@@ -7,7 +7,7 @@
 #include <hpkmeans/algorithms/coreset/CoresetCreator.hpp>
 #include <hpkmeans/algorithms/strategies/CoresetClusteringFinisher.hpp>
 #include <hpkmeans/algorithms/strategies/KmeansStateInitializer.hpp>
-#include <hpkmeans/data_types/KmeansState.hpp>
+#include <hpkmeans/data_types/kmeans_state.hpp>
 #include <memory>
 #include <numeric>
 

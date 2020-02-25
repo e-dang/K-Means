@@ -7,6 +7,7 @@
 #include <hpkmeans/algorithms/strategies/CoresetDistributionCalculator.hpp>
 #include <hpkmeans/algorithms/strategies/DistanceSumCalculator.hpp>
 #include <hpkmeans/algorithms/strategies/RandomSelector.hpp>
+#include <hpkmeans/data_types/coreset.hpp>
 #include <hpkmeans/utils/Utils.hpp>
 #include <hpkmeans/utils/mpi_class.hpp>
 #include <memory>

@@ -5,7 +5,6 @@
 #include <boost/generator_iterator.hpp>
 #include <boost/random.hpp>
 #include <chrono>
-#include <hpkmeans/data_types/DataClasses.hpp>
 
 typedef boost::mt19937 RNGType;
 namespace HPKmeans

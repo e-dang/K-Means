@@ -1,8 +1,8 @@
 #pragma once
 
-#include <hpkmeans/data_types/DataClasses.hpp>
 #include <set>
 #include <string>
+#include <vector>
 
 namespace HPKmeans
 {

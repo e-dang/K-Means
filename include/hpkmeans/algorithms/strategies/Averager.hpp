@@ -3,7 +3,7 @@
 #include <omp.h>
 
 #include <algorithm>
-#include <hpkmeans/data_types/DataClasses.hpp>
+#include <hpkmeans/data_types/matrix.hpp>
 
 namespace HPKmeans
 {
