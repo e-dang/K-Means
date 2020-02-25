@@ -3,7 +3,7 @@
 #include <fstream>
 #include <hpkmeans/data_types/cluster_results.hpp>
 #include <hpkmeans/data_types/enums.hpp>
-#include <hpkmeans/filesystem/FileRotator.hpp>
+#include <hpkmeans/filesystem/file_rotator.hpp>
 #include <iomanip>
 #include <string>
 #include <unordered_map>

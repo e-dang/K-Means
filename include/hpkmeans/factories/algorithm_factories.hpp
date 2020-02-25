@@ -1,11 +1,11 @@
 #pragma once
 
 #include <hpkmeans/algorithms/coreset/CoresetCreator.hpp>
-#include <hpkmeans/algorithms/initializers/KPlusPlus.hpp>
+#include <hpkmeans/algorithms/initializers/kplusplus.hpp>
 #include <hpkmeans/algorithms/initializers/interface.hpp>
 #include <hpkmeans/algorithms/kmeans_algorithm.hpp>
-#include <hpkmeans/algorithms/maximizers/Lloyd.hpp>
 #include <hpkmeans/algorithms/maximizers/interface.hpp>
+#include <hpkmeans/algorithms/maximizers/lloyd.hpp>
 #include <hpkmeans/factories/strategy_factories.hpp>
 #include <memory>
 

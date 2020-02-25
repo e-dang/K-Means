@@ -2,10 +2,10 @@
 #include <sarge/sarge.h>
 
 #include <chrono>
-#include <hpkmeans/Kmeans.hpp>
 #include <hpkmeans/distances.hpp>
-#include <hpkmeans/filesystem/Reader.hpp>
-#include <hpkmeans/filesystem/Writer.hpp>
+#include <hpkmeans/filesystem/reader.hpp>
+#include <hpkmeans/filesystem/writer.hpp>
+#include <hpkmeans/kmeans.hpp>
 #include <hpkmeans/version.hpp>
 #include <iostream>
 
