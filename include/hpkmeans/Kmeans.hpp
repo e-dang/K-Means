@@ -3,7 +3,7 @@
 #include <hpkmeans/data_types/enums.hpp>
 #include <hpkmeans/data_types/matrix.hpp>
 #include <hpkmeans/factories/kmeans_factory.hpp>
-#include <hpkmeans/kmeans/KmeansWrappers.hpp>
+#include <hpkmeans/kmeans/kmeans_wrapper.hpp>
 
 namespace HPKmeans
 {

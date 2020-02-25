@@ -1,7 +1,8 @@
 #pragma once
 
 #include <hpkmeans/factories/algorithm_factories.hpp>
-#include <hpkmeans/kmeans/KmeansWrappers.hpp>
+#include <hpkmeans/kmeans/coreset_kmeans.hpp>
+#include <hpkmeans/kmeans/weighted_kmeans.hpp>
 
 namespace HPKmeans
 {
