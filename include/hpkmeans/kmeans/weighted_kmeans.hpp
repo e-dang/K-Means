@@ -1,6 +1,5 @@
 #pragma once
 
-#include <hpkmeans/algorithms/strategies/CoresetClusteringFinisher.hpp>
 #include <hpkmeans/kmeans/kmeans_wrapper.hpp>
 
 namespace HPKmeans
