@@ -6,6 +6,7 @@
 #include <hpkmeans/algorithms/KmeansAlgorithms.hpp>
 #include <hpkmeans/data_types/DataClasses.hpp>
 #include <hpkmeans/utils/Utils.hpp>
+#include <hpkmeans/utils/mpi_class.hpp>
 #include <iostream>
 #include <string>
 
@@ -34,11 +35,11 @@ public:
 };
 
 template <typename precision = double, typename int_size = int32_t>
-class MPIMatrixReader : public IReader<precision, int_size>, public MPIImplementation<precision, int_size>
+class MPIMatrixReader : public IReader<precision, int_size>, public MPIClass<precision, int_size>
 {
 private:
-    using MPIImplementation<precision, int_size>::mpi_precision;
-    using MPIImplementation<precision, int_size>::mpi_int_size;
+    using MPIClass<precision, int_size>::mpi_precision;
+    using MPIClass<precision, int_size>::mpi_int_size;
 
 public:
     ~MPIMatrixReader() = default;

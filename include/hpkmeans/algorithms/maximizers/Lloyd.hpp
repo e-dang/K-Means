@@ -5,6 +5,7 @@
 #include <hpkmeans/algorithms/KmeansAlgorithms.hpp>
 #include <hpkmeans/algorithms/strategies/Averager.hpp>
 #include <hpkmeans/algorithms/strategies/PointReassigner.hpp>
+#include <hpkmeans/utils/mpi_class.hpp>
 
 namespace HPKmeans
 {
@@ -76,12 +77,12 @@ protected:
 };
 
 template <typename precision, typename int_size>
-class MPILloyd : public TemplateLloyd<precision, int_size>, public MPIImplementation<precision, int_size>
+class MPILloyd : public TemplateLloyd<precision, int_size>, public MPIClass<precision, int_size>
 {
 private:
     using AbstractKmeansAlgorithm<precision, int_size>::p_KmeansState;
-    using MPIImplementation<precision, int_size>::mpi_precision;
-    using MPIImplementation<precision, int_size>::mpi_int_size;
+    using MPIClass<precision, int_size>::mpi_precision;
+    using MPIClass<precision, int_size>::mpi_int_size;
 
 public:
     MPILloyd(AbstractPointReassigner<precision, int_size>* pointReassigner,

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <hpkmeans/DistanceFunctors.hpp>
 #include <hpkmeans/algorithms/strategies/ClosestClusterUpdater.hpp>
 #include <hpkmeans/algorithms/strategies/PointReassigner.hpp>
 #include <hpkmeans/data_types/KmeansState.hpp>
@@ -70,23 +69,6 @@ public:
      *        pre-initialized clusters.
      */
     virtual void maximize() = 0;
-};
-
-template <typename precision, typename int_size>
-class MPIImplementation
-{
-protected:
-    MPI_Datatype mpi_precision;
-    MPI_Datatype mpi_int_size;
-
-public:
-    MPIImplementation()
-    {
-        MPI_Type_match_size(MPI_TYPECLASS_REAL, sizeof(precision), &mpi_precision);
-        MPI_Type_match_size(MPI_TYPECLASS_INTEGER, sizeof(int_size), &mpi_int_size);
-    }
-
-    virtual ~MPIImplementation() {}
 };
 
 template <typename precision, typename int_size>

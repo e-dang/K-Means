@@ -5,6 +5,7 @@
 #include <hpkmeans/algorithms/KmeansAlgorithms.hpp>
 #include <hpkmeans/algorithms/strategies/ClosestClusterUpdater.hpp>
 #include <hpkmeans/data_types/KmeansState.hpp>
+#include <hpkmeans/utils/mpi_class.hpp>
 #include <numeric>
 
 namespace HPKmeans
@@ -42,11 +43,11 @@ public:
 template <typename precision, typename int_size>
 class MPICoresetClusteringFinisher :
     public AbstractCoresetClusteringFinisher<precision, int_size>,
-    public MPIImplementation<precision, int_size>
+    public MPIClass<precision, int_size>
 {
 private:
-    using MPIImplementation<precision, int_size>::mpi_precision;
-    using MPIImplementation<precision, int_size>::mpi_int_size;
+    using MPIClass<precision, int_size>::mpi_precision;
+    using MPIClass<precision, int_size>::mpi_int_size;
 
 public:
     MPICoresetClusteringFinisher(AbstractClosestClusterUpdater<precision, int_size>* updater) :
