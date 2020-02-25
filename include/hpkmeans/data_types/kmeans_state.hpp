@@ -2,6 +2,7 @@
 
 #include <hpkmeans/data_types/cluster_results.hpp>
 #include <hpkmeans/data_types/matrix.hpp>
+#include <hpkmeans/distances.hpp>
 #include <numeric>
 #include <vector>
 

@@ -2,12 +2,12 @@
 
 #include <mpi.h>
 
-#include <hpkmeans/DistanceFunctors.hpp>
 #include <hpkmeans/algorithms/coreset/CoresetCreator.hpp>
 #include <hpkmeans/algorithms/kmeans_algorithm.hpp>
 #include <hpkmeans/algorithms/strategies/CoresetClusteringFinisher.hpp>
 #include <hpkmeans/algorithms/strategies/KmeansStateInitializer.hpp>
 #include <hpkmeans/data_types/kmeans_state.hpp>
+#include <hpkmeans/distances.hpp>
 #include <memory>
 #include <numeric>
 

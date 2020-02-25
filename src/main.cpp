@@ -2,8 +2,8 @@
 #include <sarge/sarge.h>
 
 #include <chrono>
-#include <hpkmeans/DistanceFunctors.hpp>
 #include <hpkmeans/Kmeans.hpp>
+#include <hpkmeans/distances.hpp>
 #include <hpkmeans/filesystem/Reader.hpp>
 #include <hpkmeans/filesystem/Writer.hpp>
 #include <hpkmeans/version.hpp>
