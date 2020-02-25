@@ -2,7 +2,7 @@
 
 #include <omp.h>
 
-#include <hpkmeans/algorithms/KmeansAlgorithms.hpp>
+#include <hpkmeans/algorithms/kmeans_algorithm.hpp>
 #include <hpkmeans/algorithms/strategies/Averager.hpp>
 #include <hpkmeans/algorithms/strategies/CoresetDistributionCalculator.hpp>
 #include <hpkmeans/algorithms/strategies/DistanceSumCalculator.hpp>

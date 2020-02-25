@@ -1,9 +1,11 @@
 #pragma once
 
-#include <hpkmeans/algorithms/KmeansAlgorithms.hpp>
 #include <hpkmeans/algorithms/coreset/CoresetCreator.hpp>
 #include <hpkmeans/algorithms/initializers/KPlusPlus.hpp>
+#include <hpkmeans/algorithms/initializers/interface.hpp>
+#include <hpkmeans/algorithms/kmeans_algorithm.hpp>
 #include <hpkmeans/algorithms/maximizers/Lloyd.hpp>
+#include <hpkmeans/algorithms/maximizers/interface.hpp>
 #include <hpkmeans/factories/StrategyFactories.hpp>
 #include <memory>
 
@@ -23,21 +25,21 @@ public:
 
     virtual ~AbstractKmeansAlgorithmFactory() = default;
 
-    AbstractKmeansInitializer<precision, int_size>* createInitializer(Initializer initializer);
+    IKmeansInitializer<precision, int_size>* createInitializer(Initializer initializer);
 
-    AbstractKmeansMaximizer<precision, int_size>* createMaximizer(Maximizer maximizer);
+    IKmeansMaximizer<precision, int_size>* createMaximizer(Maximizer maximizer);
 
     AbstractCoresetCreator<precision, int_size>* createCoresetCreator(CoresetCreator coresetCreator,
                                                                       const int_size& sampleSize);
 
 protected:
-    virtual AbstractKmeansInitializer<precision, int_size>* getKPP() = 0;
+    virtual IKmeansInitializer<precision, int_size>* getKPP() = 0;
 
-    virtual AbstractKmeansInitializer<precision, int_size>* getOptKPP() = 0;
+    virtual IKmeansInitializer<precision, int_size>* getOptKPP() = 0;
 
-    virtual AbstractKmeansMaximizer<precision, int_size>* getLloyd() = 0;
+    virtual IKmeansMaximizer<precision, int_size>* getLloyd() = 0;
 
-    virtual AbstractKmeansMaximizer<precision, int_size>* getOptLloyd() = 0;
+    virtual IKmeansMaximizer<precision, int_size>* getOptLloyd() = 0;
 
     virtual AbstractCoresetCreator<precision, int_size>* getLWCoreset(const int_size& sampleSize) = 0;
 };
@@ -53,13 +55,13 @@ public:
 
     ~SharedMemoryKmeansAlgorithmFactory() = default;
 
-    AbstractKmeansInitializer<precision, int_size>* getKPP();
+    IKmeansInitializer<precision, int_size>* getKPP();
 
-    AbstractKmeansInitializer<precision, int_size>* getOptKPP();
+    IKmeansInitializer<precision, int_size>* getOptKPP();
 
-    AbstractKmeansMaximizer<precision, int_size>* getLloyd();
+    IKmeansMaximizer<precision, int_size>* getLloyd();
 
-    AbstractKmeansMaximizer<precision, int_size>* getOptLloyd();
+    IKmeansMaximizer<precision, int_size>* getOptLloyd();
 
     AbstractCoresetCreator<precision, int_size>* getLWCoreset(const int_size& sampleSize);
 };
@@ -73,13 +75,13 @@ public:
 
     ~MPIKmeansAlgorithmFactory() = default;
 
-    AbstractKmeansInitializer<precision, int_size>* getKPP();
+    IKmeansInitializer<precision, int_size>* getKPP();
 
-    AbstractKmeansInitializer<precision, int_size>* getOptKPP();
+    IKmeansInitializer<precision, int_size>* getOptKPP();
 
-    AbstractKmeansMaximizer<precision, int_size>* getLloyd();
+    IKmeansMaximizer<precision, int_size>* getLloyd();
 
-    AbstractKmeansMaximizer<precision, int_size>* getOptLloyd();
+    IKmeansMaximizer<precision, int_size>* getOptLloyd();
 
     AbstractCoresetCreator<precision, int_size>* getLWCoreset(const int32_t& sampleSize);
 };
@@ -101,7 +103,7 @@ public:
 };
 
 template <typename precision, typename int_size>
-AbstractKmeansInitializer<precision, int_size>* AbstractKmeansAlgorithmFactory<precision, int_size>::createInitializer(
+IKmeansInitializer<precision, int_size>* AbstractKmeansAlgorithmFactory<precision, int_size>::createInitializer(
   Initializer initializer)
 {
     switch (initializer)
@@ -116,7 +118,7 @@ AbstractKmeansInitializer<precision, int_size>* AbstractKmeansAlgorithmFactory<p
 }
 
 template <typename precision, typename int_size>
-AbstractKmeansMaximizer<precision, int_size>* AbstractKmeansAlgorithmFactory<precision, int_size>::createMaximizer(
+IKmeansMaximizer<precision, int_size>* AbstractKmeansAlgorithmFactory<precision, int_size>::createMaximizer(
   Maximizer maximizer)
 {
     switch (maximizer)
@@ -144,28 +146,28 @@ AbstractCoresetCreator<precision, int_size>* AbstractKmeansAlgorithmFactory<prec
 }
 
 template <typename precision, typename int_size>
-AbstractKmeansInitializer<precision, int_size>* SharedMemoryKmeansAlgorithmFactory<precision, int_size>::getKPP()
+IKmeansInitializer<precision, int_size>* SharedMemoryKmeansAlgorithmFactory<precision, int_size>::getKPP()
 {
     return new SharedMemoryKPlusPlus<precision, int_size>(this->pStratFactory->createClosestClusterUpdater(Reg),
                                                           this->pStratFactory->createWeightedRandomSelector());
 }
 
 template <typename precision, typename int_size>
-AbstractKmeansInitializer<precision, int_size>* SharedMemoryKmeansAlgorithmFactory<precision, int_size>::getOptKPP()
+IKmeansInitializer<precision, int_size>* SharedMemoryKmeansAlgorithmFactory<precision, int_size>::getOptKPP()
 {
     return new SharedMemoryKPlusPlus<precision, int_size>(this->pStratFactory->createClosestClusterUpdater(Opt),
                                                           this->pStratFactory->createWeightedRandomSelector());
 }
 
 template <typename precision, typename int_size>
-AbstractKmeansMaximizer<precision, int_size>* SharedMemoryKmeansAlgorithmFactory<precision, int_size>::getLloyd()
+IKmeansMaximizer<precision, int_size>* SharedMemoryKmeansAlgorithmFactory<precision, int_size>::getLloyd()
 {
     return new SharedMemoryLloyd<precision, int_size>(this->pStratFactory->createPointReassigner(Reg),
                                                       this->pStratFactory->createWeightedAverager());
 }
 
 template <typename precision, typename int_size>
-AbstractKmeansMaximizer<precision, int_size>* SharedMemoryKmeansAlgorithmFactory<precision, int_size>::getOptLloyd()
+IKmeansMaximizer<precision, int_size>* SharedMemoryKmeansAlgorithmFactory<precision, int_size>::getOptLloyd()
 {
     return new SharedMemoryLloyd<precision, int_size>(this->pStratFactory->createPointReassigner(Opt),
                                                       this->pStratFactory->createWeightedAverager());
@@ -181,28 +183,28 @@ AbstractCoresetCreator<precision, int_size>* SharedMemoryKmeansAlgorithmFactory<
 }
 
 template <typename precision, typename int_size>
-AbstractKmeansInitializer<precision, int_size>* MPIKmeansAlgorithmFactory<precision, int_size>::getKPP()
+IKmeansInitializer<precision, int_size>* MPIKmeansAlgorithmFactory<precision, int_size>::getKPP()
 {
     return new MPIKPlusPlus<precision, int_size>(this->pStratFactory->createClosestClusterUpdater(Reg),
                                                  this->pStratFactory->createWeightedRandomSelector());
 }
 
 template <typename precision, typename int_size>
-AbstractKmeansInitializer<precision, int_size>* MPIKmeansAlgorithmFactory<precision, int_size>::getOptKPP()
+IKmeansInitializer<precision, int_size>* MPIKmeansAlgorithmFactory<precision, int_size>::getOptKPP()
 {
     return new MPIKPlusPlus<precision, int_size>(this->pStratFactory->createClosestClusterUpdater(Opt),
                                                  this->pStratFactory->createWeightedRandomSelector());
 }
 
 template <typename precision, typename int_size>
-AbstractKmeansMaximizer<precision, int_size>* MPIKmeansAlgorithmFactory<precision, int_size>::getLloyd()
+IKmeansMaximizer<precision, int_size>* MPIKmeansAlgorithmFactory<precision, int_size>::getLloyd()
 {
     return new MPILloyd<precision, int_size>(this->pStratFactory->createPointReassigner(Reg),
                                              this->pStratFactory->createWeightedAverager());
 }
 
 template <typename precision, typename int_size>
-AbstractKmeansMaximizer<precision, int_size>* MPIKmeansAlgorithmFactory<precision, int_size>::getOptLloyd()
+IKmeansMaximizer<precision, int_size>* MPIKmeansAlgorithmFactory<precision, int_size>::getOptLloyd()
 {
     return new MPILloyd<precision, int_size>(this->pStratFactory->createPointReassigner(Opt),
                                              this->pStratFactory->createWeightedAverager());

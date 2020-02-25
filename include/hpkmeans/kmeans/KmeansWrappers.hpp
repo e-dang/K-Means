@@ -3,8 +3,8 @@
 #include <mpi.h>
 
 #include <hpkmeans/DistanceFunctors.hpp>
-#include <hpkmeans/algorithms/KmeansAlgorithms.hpp>
 #include <hpkmeans/algorithms/coreset/CoresetCreator.hpp>
+#include <hpkmeans/algorithms/kmeans_algorithm.hpp>
 #include <hpkmeans/algorithms/strategies/CoresetClusteringFinisher.hpp>
 #include <hpkmeans/algorithms/strategies/KmeansStateInitializer.hpp>
 #include <hpkmeans/data_types/kmeans_state.hpp>
@@ -23,8 +23,8 @@ template <typename precision, typename int_size>
 class AbstractKmeansWrapper
 {
 protected:
-    std::unique_ptr<AbstractKmeansInitializer<precision, int_size>> p_Initializer;
-    std::unique_ptr<AbstractKmeansMaximizer<precision, int_size>> p_Maximizer;
+    std::unique_ptr<IKmeansInitializer<precision, int_size>> p_Initializer;
+    std::unique_ptr<IKmeansMaximizer<precision, int_size>> p_Maximizer;
     std::unique_ptr<IKmeansStateInitializer<precision, int_size>> p_stateInitializer;
     std::shared_ptr<IDistanceFunctor<precision>> p_DistanceFunc;
 
@@ -43,8 +43,8 @@ public:
      * @param distanceFunc - A pointer to a functor class used to calculate the distance between points, such as the
      *                       euclidean distance.
      */
-    AbstractKmeansWrapper(AbstractKmeansInitializer<precision, int_size>* initializer,
-                          AbstractKmeansMaximizer<precision, int_size>* maximizer,
+    AbstractKmeansWrapper(IKmeansInitializer<precision, int_size>* initializer,
+                          IKmeansMaximizer<precision, int_size>* maximizer,
                           IKmeansStateInitializer<precision, int_size>* stateInitializer,
                           std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) :
         p_Initializer(initializer),
@@ -100,8 +100,8 @@ template <typename precision, typename int_size>
 class WeightedKmeansWrapper : public AbstractKmeansWrapper<precision, int_size>
 {
 public:
-    WeightedKmeansWrapper(AbstractKmeansInitializer<precision, int_size>* initializer,
-                          AbstractKmeansMaximizer<precision, int_size>* maximizer,
+    WeightedKmeansWrapper(IKmeansInitializer<precision, int_size>* initializer,
+                          IKmeansMaximizer<precision, int_size>* maximizer,
                           IKmeansStateInitializer<precision, int_size>* stateInitializer,
                           std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) :
         AbstractKmeansWrapper<precision, int_size>(initializer, maximizer, stateInitializer, distanceFunc)

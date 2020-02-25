@@ -2,7 +2,7 @@
 
 #include <mpi.h>
 
-#include <hpkmeans/algorithms/KmeansAlgorithms.hpp>
+#include <hpkmeans/algorithms/maximizers/interface.hpp>
 #include <hpkmeans/algorithms/strategies/Averager.hpp>
 #include <hpkmeans/algorithms/strategies/PointReassigner.hpp>
 #include <hpkmeans/utils/mpi_class.hpp>
@@ -14,7 +14,7 @@ namespace HPKmeans
  *        optimize the clusters using Lloyd's algorithm.
  */
 template <typename precision, typename int_size>
-class TemplateLloyd : public AbstractKmeansMaximizer<precision, int_size>
+class TemplateLloyd : public IKmeansMaximizer<precision, int_size>
 {
 protected:
     using AbstractKmeansAlgorithm<precision, int_size>::p_KmeansState;
@@ -24,7 +24,7 @@ protected:
 public:
     TemplateLloyd(AbstractPointReassigner<precision, int_size>* pointReassigner,
                   AbstractWeightedAverager<precision, int_size>* averager) :
-        AbstractKmeansMaximizer<precision, int_size>(pointReassigner), p_Averager(averager)
+        IKmeansMaximizer<precision, int_size>(pointReassigner), p_Averager(averager)
     {
     }
 

@@ -3,7 +3,7 @@
 #include <mpi.h>
 #include <omp.h>
 
-#include <hpkmeans/algorithms/KmeansAlgorithms.hpp>
+#include <hpkmeans/algorithms/initializers/interface.hpp>
 #include <hpkmeans/algorithms/strategies/RandomSelector.hpp>
 #include <hpkmeans/utils/Utils.hpp>
 #include <hpkmeans/utils/mpi_class.hpp>
@@ -15,7 +15,7 @@ namespace HPKmeans
  *        probability of being selected.
  */
 template <typename precision, typename int_size>
-class TemplateKPlusPlus : public AbstractKmeansInitializer<precision, int_size>
+class TemplateKPlusPlus : public IKmeansInitializer<precision, int_size>
 {
 protected:
     using AbstractKmeansAlgorithm<precision, int_size>::p_KmeansState;
@@ -32,7 +32,7 @@ public:
      */
     TemplateKPlusPlus(AbstractClosestClusterUpdater<precision, int_size>* updater,
                       IWeightedRandomSelector<precision, int_size>* selector) :
-        AbstractKmeansInitializer<precision, int_size>(updater), p_Selector(selector)
+        IKmeansInitializer<precision, int_size>(updater), p_Selector(selector)
     {
     }
 
