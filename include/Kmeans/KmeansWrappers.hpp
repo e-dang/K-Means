@@ -1,16 +1,16 @@
 #pragma once
 
+#include <mpi.h>
+
 #include <memory>
 #include <numeric>
 
-#include "Containers/Definitions.hpp"
 #include "Containers/KmeansState.hpp"
 #include "KmeansAlgorithms/CoresetCreator.hpp"
 #include "KmeansAlgorithms/KmeansAlgorithms.hpp"
 #include "Strategies/CoresetClusteringFinisher.hpp"
 #include "Strategies/KmeansStateInitializer.hpp"
 #include "Utils/DistanceFunctors.hpp"
-#include "mpi.h"
 namespace HPKmeans
 {
 /**

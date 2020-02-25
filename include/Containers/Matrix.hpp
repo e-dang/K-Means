@@ -3,8 +3,6 @@
 #include <cstdint>
 #include <iostream>
 
-#include "Containers/Definitions.hpp"
-
 namespace HPKmeans
 {
 template <typename precision, typename int_size>

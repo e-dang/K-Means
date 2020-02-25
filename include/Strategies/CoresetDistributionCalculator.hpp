@@ -3,7 +3,6 @@
 #include <algorithm>
 
 #include "Containers/DataClasses.hpp"
-#include "Containers/Definitions.hpp"
 namespace HPKmeans
 {
 template <typename precision, typename int_size>

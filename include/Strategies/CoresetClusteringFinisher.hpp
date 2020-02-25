@@ -4,7 +4,6 @@
 
 #include <numeric>
 
-#include "Containers/Definitions.hpp"
 #include "Containers/KmeansState.hpp"
 #include "KmeansAlgorithms/KmeansAlgorithms.hpp"
 #include "Strategies/ClosestClusterUpdater.hpp"

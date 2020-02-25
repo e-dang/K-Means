@@ -1,9 +1,10 @@
 #pragma once
 
+#include <omp.h>
+
 #include <algorithm>
 
 #include "Containers/DataClasses.hpp"
-#include "omp.h"
 
 namespace HPKmeans
 {

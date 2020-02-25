@@ -1,12 +1,12 @@
 #pragma once
 
+#include <mpi.h>
+
 #include <chrono>
 
 #include "Containers/DataClasses.hpp"
-#include "Containers/Definitions.hpp"
 #include "boost/generator_iterator.hpp"
 #include "boost/random.hpp"
-#include "mpi.h"
 
 typedef boost::mt19937 RNGType;
 namespace HPKmeans

@@ -1,11 +1,11 @@
 #pragma once
 
+#include <mpi.h>
 #include <omp.h>
 
 #include "KmeansAlgorithms/KmeansAlgorithms.hpp"
 #include "Strategies/RandomSelector.hpp"
 #include "Utils/Utils.hpp"
-#include "mpi.h"
 namespace HPKmeans
 {
 /**

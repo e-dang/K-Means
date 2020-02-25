@@ -1,13 +1,13 @@
 #pragma once
 
+#include <mpi.h>
+
 #include <fstream>
 #include <iostream>
 #include <string>
 
 #include "Containers/DataClasses.hpp"
-#include "Containers/Definitions.hpp"
 #include "Utils/Utils.hpp"
-#include "mpi.h"
 
 namespace HPKmeans
 {

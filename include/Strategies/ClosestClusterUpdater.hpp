@@ -2,7 +2,6 @@
 
 #include <memory>
 
-#include "Containers/Definitions.hpp"
 #include "Containers/KmeansState.hpp"
 #include "Strategies/ClosestClusterFinder.hpp"
 #include "Strategies/ClusteringDataUpdater.hpp"

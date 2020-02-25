@@ -1,9 +1,11 @@
 #pragma once
 
+#include <mpi.h>
+
 #include "KmeansAlgorithms/KmeansAlgorithms.hpp"
 #include "Strategies/Averager.hpp"
 #include "Strategies/PointReassigner.hpp"
-#include "mpi.h"
+
 namespace HPKmeans
 {
 /**

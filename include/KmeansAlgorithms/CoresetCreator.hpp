@@ -1,5 +1,7 @@
 #pragma once
 
+#include <omp.h>
+
 #include <memory>
 
 #include "KmeansAlgorithms/KmeansAlgorithms.hpp"
@@ -8,7 +10,6 @@
 #include "Strategies/DistanceSumCalculator.hpp"
 #include "Strategies/RandomSelector.hpp"
 #include "Utils/Utils.hpp"
-#include "omp.h"
 namespace HPKmeans
 {
 template <typename precision, typename int_size>

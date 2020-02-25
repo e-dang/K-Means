@@ -2,7 +2,6 @@
 
 #include <memory>
 
-#include "Containers/Definitions.hpp"
 #include "Containers/KmeansState.hpp"
 #include "Strategies/ClosestClusterUpdater.hpp"
 #include "Strategies/PointReassigner.hpp"

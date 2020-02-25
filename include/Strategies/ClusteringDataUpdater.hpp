@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Containers/Definitions.hpp"
 #include "Containers/KmeansState.hpp"
 
 namespace HPKmeans

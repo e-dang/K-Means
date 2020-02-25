@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Containers/DataClasses.hpp"
-#include "Containers/Definitions.hpp"
 #include "Factories/KmeansFactory.hpp"
 #include "Kmeans/KmeansWrappers.hpp"
 

@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <vector>
 
-#include "Containers/Definitions.hpp"
 #include "Utils/Utils.hpp"
 
 namespace HPKmeans

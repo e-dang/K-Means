@@ -2,8 +2,6 @@
 
 #include <cmath>
 
-#include "Containers/Definitions.hpp"
-
 namespace HPKmeans
 {
 /**
