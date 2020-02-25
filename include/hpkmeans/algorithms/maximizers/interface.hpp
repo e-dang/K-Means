@@ -1,7 +1,6 @@
 #pragma once
 
 #include <hpkmeans/algorithms/kmeans_algorithm.hpp>
-#include <hpkmeans/algorithms/strategies/point_reassigner.hpp>
 
 namespace HPKmeans
 {
@@ -15,12 +14,7 @@ protected:
     const precision MIN_PERCENT_CHANGED = 0.0001;  // the % amount of data points allowed to changed before going to
                                                    // next iteration
 
-    std::unique_ptr<AbstractPointReassigner<precision, int_size>> pPointReassigner;
-
 public:
-    IKmeansMaximizer(AbstractPointReassigner<precision, int_size>* pointReassigner) :
-        pPointReassigner(pointReassigner){};
-
     virtual ~IKmeansMaximizer() = default;
 
     /**

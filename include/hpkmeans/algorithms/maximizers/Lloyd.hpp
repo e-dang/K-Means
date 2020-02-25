@@ -4,6 +4,7 @@
 
 #include <hpkmeans/algorithms/maximizers/interface.hpp>
 #include <hpkmeans/algorithms/strategies/averager.hpp>
+#include <hpkmeans/algorithms/strategies/point_reassigner.hpp>
 #include <hpkmeans/utils/mpi_class.hpp>
 
 namespace HPKmeans
@@ -18,12 +19,13 @@ class TemplateLloyd : public IKmeansMaximizer<precision, int_size>
 protected:
     using AbstractKmeansAlgorithm<precision, int_size>::p_KmeansState;
 
+    std::unique_ptr<AbstractPointReassigner<precision, int_size>> p_PointReassigner;
     std::unique_ptr<AbstractWeightedAverager<precision, int_size>> p_Averager;
 
 public:
     TemplateLloyd(AbstractPointReassigner<precision, int_size>* pointReassigner,
                   AbstractWeightedAverager<precision, int_size>* averager) :
-        IKmeansMaximizer<precision, int_size>(pointReassigner), p_Averager(averager)
+        p_PointReassigner(pointReassigner), p_Averager(averager)
     {
     }
 
@@ -134,7 +136,7 @@ void SharedMemoryLloyd<precision, int_size>::normalizeClusterSums()
 template <typename precision, typename int_size>
 int_size SharedMemoryLloyd<precision, int_size>::reassignPoints()
 {
-    return this->pPointReassigner->reassignPoints(p_KmeansState);
+    return this->p_PointReassigner->reassignPoints(p_KmeansState);
 }
 
 template <typename precision, typename int_size>
@@ -165,7 +167,7 @@ void MPILloyd<precision, int_size>::normalizeClusterSums()
 template <typename precision, typename int_size>
 int_size MPILloyd<precision, int_size>::reassignPoints()
 {
-    int_size changed = this->pPointReassigner->reassignPoints(p_KmeansState);
+    int_size changed = this->p_PointReassigner->reassignPoints(p_KmeansState);
 
     MPI_Allreduce(MPI_IN_PLACE, &changed, 1, mpi_int_size, MPI_SUM, MPI_COMM_WORLD);
     MPI_Allgatherv(MPI_IN_PLACE, p_KmeansState->myLength(), mpi_int_size, p_KmeansState->clusteringData(),
