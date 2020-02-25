@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <hpkmeans/data_types/matrix.hpp>
 
 namespace HPKmeans
 {

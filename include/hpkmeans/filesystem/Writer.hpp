@@ -1,6 +1,8 @@
 #pragma once
 
 #include <fstream>
+#include <hpkmeans/data_types/cluster_results.hpp>
+#include <hpkmeans/data_types/enums.hpp>
 #include <hpkmeans/filesystem/FileRotator.hpp>
 #include <iomanip>
 #include <string>

@@ -3,6 +3,7 @@
 #include <mpi.h>
 
 #include <fstream>
+#include <hpkmeans/data_types/matrix.hpp>
 #include <hpkmeans/utils/Utils.hpp>
 #include <hpkmeans/utils/mpi_class.hpp>
 #include <iostream>
