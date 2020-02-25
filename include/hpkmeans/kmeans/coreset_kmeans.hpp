@@ -1,5 +1,6 @@
 #pragma once
 
+#include <hpkmeans/algorithms/coreset/lw_coreset.hpp>
 #include <hpkmeans/kmeans/kmeans_wrapper.hpp>
 
 namespace HPKmeans

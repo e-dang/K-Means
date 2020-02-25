@@ -1,8 +1,8 @@
 #pragma once
 
-#include <hpkmeans/algorithms/coreset/CoresetCreator.hpp>
-#include <hpkmeans/algorithms/initializers/kplusplus.hpp>
+#include <hpkmeans/algorithms/coreset/lw_coreset.hpp>
 #include <hpkmeans/algorithms/initializers/interface.hpp>
+#include <hpkmeans/algorithms/initializers/kplusplus.hpp>
 #include <hpkmeans/algorithms/kmeans_algorithm.hpp>
 #include <hpkmeans/algorithms/maximizers/interface.hpp>
 #include <hpkmeans/algorithms/maximizers/lloyd.hpp>
