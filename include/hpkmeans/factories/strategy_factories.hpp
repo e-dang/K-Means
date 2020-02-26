@@ -6,7 +6,6 @@
 #include <hpkmeans/algorithms/strategies/coreset_clustering_finisher.hpp>
 #include <hpkmeans/algorithms/strategies/coreset_distribution_calculator.hpp>
 #include <hpkmeans/algorithms/strategies/distance_sum_calculator.hpp>
-#include <hpkmeans/algorithms/strategies/kmeans_state_initializer.hpp>
 #include <hpkmeans/algorithms/strategies/point_reassigner.hpp>
 #include <hpkmeans/algorithms/strategies/random_selector.hpp>
 #include <hpkmeans/data_types/enums.hpp>
@@ -70,8 +69,6 @@ public:
 
     ICoresetDistributionCalculator<precision, int_size>* createCoresetDistributionCalculator() override;
 
-    // IKmeansStateInitializer<precision, int_size>* createKmeansStateInitializer() override;
-
     AbstractCoresetClusteringFinisher<precision, int_size>* createCoresetClusteringFinisher() override;
 };
 
@@ -94,8 +91,6 @@ public:
     IDistanceSumCalculator<precision, int_size>* createDistanceSumCalculator() override;
 
     ICoresetDistributionCalculator<precision, int_size>* createCoresetDistributionCalculator() override;
-
-    // IKmeansStateInitializer<precision, int_size>* createKmeansStateInitializer() override;
 
     AbstractCoresetClusteringFinisher<precision, int_size>* createCoresetClusteringFinisher() override;
 };
@@ -120,8 +115,6 @@ public:
 
     ICoresetDistributionCalculator<precision, int_size>* createCoresetDistributionCalculator() override;
 
-    // IKmeansStateInitializer<precision, int_size>* createKmeansStateInitializer() override;
-
     AbstractCoresetClusteringFinisher<precision, int_size>* createCoresetClusteringFinisher() override;
 };
 
@@ -144,8 +137,6 @@ public:
     IDistanceSumCalculator<precision, int_size>* createDistanceSumCalculator() override;
 
     ICoresetDistributionCalculator<precision, int_size>* createCoresetDistributionCalculator() override;
-
-    // IKmeansStateInitializer<precision, int_size>* createKmeansStateInitializer() override;
 
     AbstractCoresetClusteringFinisher<precision, int_size>* createCoresetClusteringFinisher() override;
 };
@@ -260,13 +251,6 @@ ICoresetDistributionCalculator<precision, int_size>*
     return new SerialCoresetDistributionCalculator<precision, int_size>();
 }
 
-// template <typename precision, typename int_size>
-// IKmeansStateInitializer<precision, int_size>* SerialStrategyFactory<precision,
-// int_size>::createKmeansStateInitializer()
-// {
-//     return new SharedMemoryKmeansStateInitializer<precision, int_size>();
-// }
-
 template <typename precision, typename int_size>
 AbstractCoresetClusteringFinisher<precision, int_size>*
   SerialStrategyFactory<precision, int_size>::createCoresetClusteringFinisher()
@@ -318,12 +302,6 @@ ICoresetDistributionCalculator<precision, int_size>*
 {
     return new OMPCoresetDistributionCalculator<precision, int_size>();
 }
-
-// template <typename precision, typename int_size>
-// IKmeansStateInitializer<precision, int_size>* OMPStrategyFactory<precision, int_size>::createKmeansStateInitializer()
-// {
-//     return new SharedMemoryKmeansStateInitializer<precision, int_size>();
-// }
 
 template <typename precision, typename int_size>
 AbstractCoresetClusteringFinisher<precision, int_size>*
@@ -378,12 +356,6 @@ ICoresetDistributionCalculator<precision, int_size>*
     return nullptr;
 }
 
-// template <typename precision, typename int_size>
-// IKmeansStateInitializer<precision, int_size>* MPIStrategyFactory<precision, int_size>::createKmeansStateInitializer()
-// {
-//     return new MPIKmeansStateInitializer<precision, int_size>();
-// }
-
 template <typename precision, typename int_size>
 AbstractCoresetClusteringFinisher<precision, int_size>*
   MPIStrategyFactory<precision, int_size>::createCoresetClusteringFinisher()
@@ -437,13 +409,6 @@ ICoresetDistributionCalculator<precision, int_size>*
 {
     return nullptr;
 }
-
-// template <typename precision, typename int_size>
-// IKmeansStateInitializer<precision, int_size>* HybridStrategyFactory<precision,
-// int_size>::createKmeansStateInitializer()
-// {
-//     return new MPIKmeansStateInitializer<precision, int_size>();
-// }
 
 template <typename precision, typename int_size>
 AbstractCoresetClusteringFinisher<precision, int_size>*
