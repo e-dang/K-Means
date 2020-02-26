@@ -360,11 +360,9 @@ void MPICoresetCreator<precision, int_size>::distributeCoreset(Coreset<precision
 
     // get lengths and displacements for evenly distributing coreset data amoung processes
     MPIDataChunks<int_size> mpiData(this->mSampleSize);
-    auto& vectorLengths = mpiData.lengths();
-    vectorDisplacements = mpiData.displacements();
-    for (int32_t i = 0; i < p_KmeansState->numProcs(); ++i)
+    for (int32_t i = 0; i < mpiData.numProcs(); ++i)
     {
-        matrixLengths.at(i) = vectorLengths.at(i) * p_KmeansState->dataCols();
+        matrixLengths.at(i) = mpiData.lengthsAt(i) * p_KmeansState->dataCols();
         if (i != 0)
         {
             matrixDisplacements.at(i) = matrixDisplacements.at(i - 1) + matrixLengths.at(i - 1);
@@ -372,11 +370,11 @@ void MPICoresetCreator<precision, int_size>::distributeCoreset(Coreset<precision
     }
 
     // resize and distribute coreset data
-    *coreset = Coreset<precision, int_size>(vectorLengths.at(p_KmeansState->rank()), p_KmeansState->dataCols(), true);
+    *coreset = Coreset<precision, int_size>(mpiData.myLength(), p_KmeansState->dataCols(), true);
 
-    MPI_Scatterv(fullCoreset.weights.data(), vectorLengths.data(), vectorDisplacements.data(), mpi_precision,
+    MPI_Scatterv(fullCoreset.weights.data(), mpiData.lengthsData(), mpiData.displacementsData(), mpi_precision,
                  coreset->weights.data(), coreset->weights.size(), mpi_precision, 0, MPI_COMM_WORLD);
     MPI_Scatterv(fullCoreset.data.data(), matrixLengths.data(), matrixDisplacements.data(), mpi_precision,
-                 coreset->data.data(), matrixLengths.at(p_KmeansState->rank()), mpi_precision, 0, MPI_COMM_WORLD);
+                 coreset->data.data(), matrixLengths.at(mpiData.rank()), mpi_precision, 0, MPI_COMM_WORLD);
 }
 }  // namespace HPKmeans

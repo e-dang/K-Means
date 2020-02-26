@@ -3,6 +3,7 @@
 #include <hpkmeans/data_types/enums.hpp>
 #include <hpkmeans/data_types/kmeans_state.hpp>
 #include <hpkmeans/data_types/matrix.hpp>
+#include <memory>
 
 namespace HPKmeans
 {
@@ -12,7 +13,7 @@ class IKmeansStateFactory
 public:
     virtual ~IKmeansStateFactory() = default;
 
-    virtual KmeansState<precision, int_size>* createState(
+    virtual std::unique_ptr<KmeansState<precision, int_size>> createState(
       const Matrix<precision, int_size>* const data, const std::vector<precision>* const weights,
       std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) = 0;
 };
@@ -23,12 +24,12 @@ class SharedMemoryKmeansStateFactory : public IKmeansStateFactory<precision, int
 public:
     ~SharedMemoryKmeansStateFactory() = default;
 
-    KmeansState<precision, int_size>* createState(const Matrix<precision, int_size>* const data,
-                                                  const std::vector<precision>* const weights,
-                                                  std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) override
+    std::unique_ptr<KmeansState<precision, int_size>> createState(
+      const Matrix<precision, int_size>* const data, const std::vector<precision>* const weights,
+      std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) override
     {
-        return new KmeansState<precision, int_size>(data, weights, distanceFunc,
-                                                    new SharedMemoryDataChunks<int_size>(data->size()));
+        return std::unique_ptr<KmeansState<precision, int_size>>(new KmeansState<precision, int_size>(
+          data, weights, distanceFunc, new SharedMemoryDataChunks<int_size>(data->size())));
     }
 };
 
@@ -38,12 +39,12 @@ class MPIKmeansStateFactory : public IKmeansStateFactory<precision, int_size>
 public:
     ~MPIKmeansStateFactory() = default;
 
-    KmeansState<precision, int_size>* createState(const Matrix<precision, int_size>* const data,
-                                                  const std::vector<precision>* const weights,
-                                                  std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) override
+    std::unique_ptr<KmeansState<precision, int_size>> createState(
+      const Matrix<precision, int_size>* const data, const std::vector<precision>* const weights,
+      std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) override
     {
-        return new KmeansState<precision, int_size>(data, weights, distanceFunc,
-                                                    new MPIDataChunks<int_size>(data->size()));
+        return std::unique_ptr<KmeansState<precision, int_size>>(new KmeansState<precision, int_size>(
+          data, weights, distanceFunc, new MPIDataChunks<int_size>(data->size(), true)));
     }
 };
 

@@ -45,7 +45,7 @@ std::shared_ptr<ClusterResults<precision, int_size>> CoresetKmeansWrapper<precis
 {
     auto kmeansState = this->p_stateFactory->createState(data, nullptr, this->p_DistanceFunc);
 
-    p_CoresetCreator->setState(kmeansState);
+    p_CoresetCreator->setState(kmeansState.get());
     auto coreset = p_CoresetCreator->createCoreset();
 
     auto clusterResults = p_Kmeans->fit(&coreset.data, numClusters, numRestarts, &coreset.weights);
@@ -56,7 +56,7 @@ std::shared_ptr<ClusterResults<precision, int_size>> CoresetKmeansWrapper<precis
     kmeansState->setClusters(clusterResults->clusters);
     kmeansState->resetClusterData(numClusters);
 
-    p_Finisher->finishClustering(kmeansState);
+    p_Finisher->finishClustering(kmeansState.get());
     kmeansState->compareResults(clusterResults);
 
     return clusterResults;

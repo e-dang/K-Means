@@ -41,6 +41,6 @@ std::shared_ptr<ClusterResults<precision, int_size>> WeightedKmeansWrapper<preci
   const std::vector<precision>* const weights)
 {
     auto kmeansState = this->p_stateFactory->createState(data, weights, this->p_DistanceFunc);
-    return this->run(data, numClusters, numRestarts, kmeansState);
+    return this->run(data, numClusters, numRestarts, kmeansState.get());
 }
 }  // namespace HPKmeans

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <hpkmeans/utils/mpi_class.hpp>
+#include <iostream>
 #include <vector>
 
 namespace HPKmeans
@@ -30,10 +31,11 @@ public:
     {
         if (this != &rhs)
         {
-            rank          = rhs.rank;
-            numProcs      = rhs.numProcs;
-            lengths       = std::move(rhs.lengths);
-            displacements = std::move(rhs.displacements);
+            m_Rank          = rhs.m_Rank;
+            m_NumProcs      = rhs.m_NumProcs;
+            m_TotalNumData  = rhs.m_TotalNumData;
+            m_Lengths       = std::move(rhs.m_Lengths);
+            m_Displacements = std::move(rhs.m_Displacements);
         }
 
         return *this;
@@ -43,7 +45,7 @@ public:
 
     inline const int numProcs() noexcept { return m_NumProcs; }
 
-    inline const int totalNumData() noexcept { return m_TotalNumData; }
+    inline const int_size totalNumData() noexcept { return m_TotalNumData; }
 
     inline const std::vector<int_size>& lengths() const noexcept { return m_Lengths; }
 
@@ -53,11 +55,11 @@ public:
 
     inline const int_size& myLength() const { return m_Lengths[m_Rank]; }
 
-    inline const std::vector<int_size>& displacements() const noexcept { return m_Displacements; }
+    // inline const std::vector<int_size>& displacements() const noexcept { return m_Displacements; }
 
     inline const int_size* displacementsData() const noexcept { return m_Displacements.data(); }
 
-    inline const int_size& displacementsAt(const int rank) const { return m_Displacements[rank]; }
+    // inline const int_size& displacementsAt(const int rank) const { return m_Displacements[rank]; }
 
     inline const int_size& myDisplacement() const { return m_Displacements[m_Rank]; }
 
@@ -91,28 +93,13 @@ private:
     using MPIClass<float, int_size>::mpi_int_size;
 
 public:
-    MPIDataChunks(const int_size numData) : AbstractDataChunks<int_size>() { initialize(numData); }
+    MPIDataChunks(int_size numData, const bool calcTotal = false) : AbstractDataChunks<int_size>()
+    {
+        numData = calcTotal ? getTotalNumData(numData, mpi_int_size) : numData;
+        initialize(numData);
+    }
 
     ~MPIDataChunks() = default;
-
-    inline void calcChunks()
-    {
-        MPI_Comm_rank(MPI_COMM_WORLD, &this->m_Rank);
-        MPI_Comm_size(MPI_COMM_WORLD, &this->m_NumProcs);
-
-        // number of datapoints allocated for each process to compute
-        int_size chunk = this->m_TotalNumData / this->m_NumProcs;
-        int_size scrap = chunk + (this->m_TotalNumData % this->m_NumProcs);
-
-        this->m_Lengths       = std::vector<int_size>(this->m_NumProcs);  // size of each sub-array to gather
-        this->m_Displacements = std::vector<int_size>(this->m_NumProcs);  // index of each sub-array to gather
-        for (int i = 0; i < this->m_NumProcs; ++i)
-        {
-            this->m_Lengths.at(i)       = chunk;
-            this->m_Displacements.at(i) = i * chunk;
-        }
-        this->m_Lengths.at(this->m_NumProcs - 1) = scrap;
-    }
 
     static int_size getTotalNumData(const int_size numData, const MPI_Datatype& mpi_int_size)
     {
@@ -124,8 +111,23 @@ public:
 private:
     inline void initialize(const int_size numData) override
     {
-        this->m_TotalNumData = getTotalNumData(numData, mpi_int_size);
-        calcChunks();
+        this->m_TotalNumData = numData;
+
+        MPI_Comm_rank(MPI_COMM_WORLD, &this->m_Rank);
+        MPI_Comm_size(MPI_COMM_WORLD, &this->m_NumProcs);
+
+        // number of datapoints allocated for each process to compute
+        int_size chunk = numData / this->m_NumProcs;
+        int_size scrap = chunk + (numData % this->m_NumProcs);
+
+        this->m_Lengths       = std::vector<int_size>(this->m_NumProcs);  // size of each sub-array to gather
+        this->m_Displacements = std::vector<int_size>(this->m_NumProcs);  // index of each sub-array to gather
+        for (int i = 0; i < this->m_NumProcs; ++i)
+        {
+            this->m_Lengths.at(i)       = chunk;
+            this->m_Displacements.at(i) = i * chunk;
+        }
+        this->m_Lengths.at(this->m_NumProcs - 1) = scrap;
     }
 };
 }  // namespace HPKmeans
