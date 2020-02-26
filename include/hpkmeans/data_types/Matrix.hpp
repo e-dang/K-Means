@@ -5,7 +5,7 @@
 
 namespace HPKmeans
 {
-template <typename precision, typename int_size>
+template <typename precision, typename int_size = int32_t>
 class Matrix
 {
 private:
