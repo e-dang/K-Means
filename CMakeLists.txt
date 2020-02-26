@@ -17,11 +17,9 @@ add_subdirectory(./libs)
 # include
 include_directories(./include ./libs/include ${CMAKE_CURRENT_BINARY_DIR} ${MPI_INCLUDE_PATH} ${Boost_INCLUDE_DIRS})
 
-configure_file(./include/version.hpp.in version.hpp)
-
 # target
 if(Boost_FOUND AND MPI_FOUND)
     add_executable(kmeans ./src/main.cpp
-                          ./src/Utils/FileRotator.cpp)
+                          ./src/filesystem/file_rotator.cpp)
     target_link_libraries(kmeans sarge ${MPI_LIBRARIES} ${Boost_LIBRARIES})
 endif()
