@@ -31,7 +31,7 @@ template <typename precision, typename int_size>
 std::shared_ptr<ClusterResults<precision, int_size>> WeightedKmeansWrapper<precision, int_size>::fit(
   const Matrix<precision, int_size>* const data, const int_size& numClusters, const int& numRestarts)
 {
-    std::vector<precision> weights(data->rows(), 1);
+    std::vector<precision> weights(data->rows(), 1.0);
     return fit(data, numClusters, numRestarts, &weights);
 }
 
