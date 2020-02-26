@@ -1,6 +1,7 @@
 #pragma once
 
 #include <hpkmeans/data_types/cluster_results.hpp>
+#include <hpkmeans/data_types/data_chunks.hpp>
 #include <hpkmeans/data_types/matrix.hpp>
 #include <hpkmeans/distances.hpp>
 #include <numeric>
@@ -12,16 +13,10 @@ template <typename precision, typename int_size>
 class KmeansState
 {
 private:
-    const int m_Rank;
-    const int m_NumProcs;
-    const int_size m_TotalNumData;
-    const std::vector<int_size> m_Lengths;
-    const std::vector<int_size> m_Displacements;
-    const int_size m_Displacement;
-
     const Matrix<precision, int_size>* const p_Data;
     const std::vector<precision>* const p_Weights;
     const std::shared_ptr<IDistanceFunctor<precision>> p_DistanceFunc;
+    const std::unique_ptr<AbstractDataChunks<int_size>> p_DataChunks;
 
     // dynamic data that changes each repeat
     std::shared_ptr<Matrix<precision, int_size>> p_Clusters;
@@ -31,18 +26,12 @@ private:
 
 public:
     KmeansState(const Matrix<precision, int_size>* const data, const std::vector<precision>* const weights,
-                std::shared_ptr<IDistanceFunctor<precision>> distanceFunc, const int& rank, const int& numProcs,
-                const int_size& totalNumData, const std::vector<int_size> lengths,
-                const std::vector<int_size> displacements) noexcept :
-        m_Rank(rank),
-        m_NumProcs(numProcs),
-        m_TotalNumData(totalNumData),
-        m_Lengths(lengths),
-        m_Displacements(displacements),
-        m_Displacement(displacements.at(rank)),
+                std::shared_ptr<IDistanceFunctor<precision>> distanceFunc,
+                AbstractDataChunks<int_size>* dataChunks) noexcept :
         p_Data(data),
         p_Weights(weights),
         p_DistanceFunc(distanceFunc),
+        p_DataChunks(dataChunks),
         p_Clusters(nullptr),
         p_Clustering(nullptr),
         p_ClusterWeights(nullptr),
@@ -65,7 +54,7 @@ public:
             p_Clusters->clear();
 
         if (!p_Clustering)
-            p_Clustering = std::make_shared<std::vector<int_size>>(m_TotalNumData, -1);
+            p_Clustering = std::make_shared<std::vector<int_size>>(p_DataChunks->totalNumData(), -1);
         else
             std::fill(p_Clustering->begin(), p_Clustering->end(), -1);
 
@@ -75,7 +64,7 @@ public:
             std::fill(p_ClusterWeights->begin(), p_ClusterWeights->end(), 0.0);
 
         if (!p_SqDistances)
-            p_SqDistances = std::make_shared<std::vector<precision>>(m_TotalNumData, sqDistsFillVal);
+            p_SqDistances = std::make_shared<std::vector<precision>>(p_DataChunks->totalNumData(), sqDistsFillVal);
         else
             std::fill(p_SqDistances->begin(), p_SqDistances->end(), sqDistsFillVal);
     }
@@ -96,11 +85,11 @@ public:
         }
     }
 
-    inline const int_size totalNumData() noexcept { return m_TotalNumData; }
+    inline const int_size totalNumData() noexcept { return p_DataChunks->totalNumData(); }
 
-    inline const int rank() noexcept { return m_Rank; }
+    inline const int rank() noexcept { return p_DataChunks->rank(); }
 
-    inline const int numProcs() noexcept { return static_cast<int>(m_Lengths.size()); }
+    inline const int numProcs() noexcept { return p_DataChunks->numProcs(); }
 
     inline const Matrix<precision, int_size>* data() const noexcept { return p_Data; }
 
@@ -114,21 +103,21 @@ public:
 
     inline const precision& weightsAt(const int_size& dataIdx) const { return p_Weights->at(dataIdx); }
 
-    inline const int_size& myLength() const { return m_Lengths.at(m_Rank); }
+    inline const int_size& myLength() const { return p_DataChunks->myLength(); }
 
-    inline const std::vector<int_size>& lengths() const noexcept { return m_Lengths; }
+    inline const std::vector<int_size>& lengths() const noexcept { return p_DataChunks->lengths(); }
 
-    inline const int_size& lengthsAt(const int& rank) const { return m_Lengths.at(rank); }
+    inline const int_size& lengthsAt(const int& rank) const { return p_DataChunks->lengthsAt(rank); }
 
-    inline const int_size* lengthsData() const noexcept { return m_Lengths.data(); }
+    inline const int_size* lengthsData() const noexcept { return p_DataChunks->lengthsData(); }
 
-    inline const int_size& myDisplacement() const noexcept { return m_Displacement; }
+    inline const int_size& myDisplacement() const noexcept { return p_DataChunks->myDisplacement(); }
 
-    inline const int_size* displacementsData() const noexcept { return m_Displacements.data(); }
+    inline const int_size* displacementsData() const noexcept { return p_DataChunks->displacementsData(); }
 
     inline const std::vector<int_size>* clustering() const { return p_Clustering.get(); }
 
-    inline int_size& clusteringAt(const int_size& dataIdx) { return p_Clustering->at(m_Displacement + dataIdx); }
+    inline int_size& clusteringAt(const int_size& dataIdx) { return p_Clustering->at(myDisplacement() + dataIdx); }
 
     inline const int_size clusteringSize() const noexcept { return static_cast<int_size>(p_Clustering->size()); }
 
@@ -136,7 +125,7 @@ public:
 
     inline const std::vector<precision>* sqDistances() const { return p_SqDistances.get(); }
 
-    inline precision& sqDistancesAt(const int_size& dataIdx) { return p_SqDistances->at(m_Displacement + dataIdx); }
+    inline precision& sqDistancesAt(const int_size& dataIdx) { return p_SqDistances->at(myDisplacement() + dataIdx); }
 
     inline precision* sqDistancesData() noexcept { return p_SqDistances->data(); }
 

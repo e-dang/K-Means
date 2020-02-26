@@ -3,8 +3,8 @@
 #include <mpi.h>
 
 #include <hpkmeans/algorithms/kmeans_algorithm.hpp>
-#include <hpkmeans/algorithms/strategies/kmeans_state_initializer.hpp>
 #include <hpkmeans/data_types/cluster_results.hpp>
+#include <hpkmeans/factories/state_factories.hpp>
 #include <memory>
 #include <numeric>
 
@@ -22,13 +22,13 @@ class AbstractKmeansWrapper
 protected:
     std::unique_ptr<IKmeansInitializer<precision, int_size>> p_Initializer;
     std::unique_ptr<IKmeansMaximizer<precision, int_size>> p_Maximizer;
-    std::unique_ptr<IKmeansStateInitializer<precision, int_size>> p_stateInitializer;
+    std::unique_ptr<IKmeansStateFactory<precision, int_size>> p_stateFactory;
     std::shared_ptr<IDistanceFunctor<precision>> p_DistanceFunc;
 
 public:
-    AbstractKmeansWrapper(IKmeansStateInitializer<precision, int_size>* stateInitializer,
+    AbstractKmeansWrapper(IKmeansStateFactory<precision, int_size>* stateFactory,
                           std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) :
-        p_stateInitializer(stateInitializer), p_DistanceFunc(distanceFunc)
+        p_stateFactory(stateFactory), p_DistanceFunc(distanceFunc)
     {
     }
 
@@ -42,12 +42,9 @@ public:
      */
     AbstractKmeansWrapper(IKmeansInitializer<precision, int_size>* initializer,
                           IKmeansMaximizer<precision, int_size>* maximizer,
-                          IKmeansStateInitializer<precision, int_size>* stateInitializer,
+                          IKmeansStateFactory<precision, int_size>* stateFactory,
                           std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) :
-        p_Initializer(initializer),
-        p_Maximizer(maximizer),
-        p_stateInitializer(stateInitializer),
-        p_DistanceFunc(distanceFunc)
+        p_Initializer(initializer), p_Maximizer(maximizer), p_stateFactory(stateFactory), p_DistanceFunc(distanceFunc)
     {
     }
 

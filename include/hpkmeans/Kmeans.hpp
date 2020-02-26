@@ -127,7 +127,7 @@ bool Kmeans<precision, int_size>::isValidSampleSize(const Matrix<precision, int_
 {
     if (mParallelism == MPI || mParallelism == Hybrid)
     {
-        if (mSampleSize <= getTotalNumDataMPI(data))
+        if (mSampleSize <= MPIDataChunks<int_size>::getTotalNumData(data->size(), MPI_INT))
             return true;
     }
     else

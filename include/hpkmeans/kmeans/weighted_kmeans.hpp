@@ -10,9 +10,9 @@ class WeightedKmeansWrapper : public AbstractKmeansWrapper<precision, int_size>
 public:
     WeightedKmeansWrapper(IKmeansInitializer<precision, int_size>* initializer,
                           IKmeansMaximizer<precision, int_size>* maximizer,
-                          IKmeansStateInitializer<precision, int_size>* stateInitializer,
+                          IKmeansStateFactory<precision, int_size>* stateFactory,
                           std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) :
-        AbstractKmeansWrapper<precision, int_size>(initializer, maximizer, stateInitializer, distanceFunc)
+        AbstractKmeansWrapper<precision, int_size>(initializer, maximizer, stateFactory, distanceFunc)
     {
     }
 
@@ -40,7 +40,7 @@ std::shared_ptr<ClusterResults<precision, int_size>> WeightedKmeansWrapper<preci
   const Matrix<precision, int_size>* const data, const int_size& numClusters, const int& numRestarts,
   const std::vector<precision>* const weights)
 {
-    auto kmeansState = this->p_stateInitializer->initializeState(data, weights, this->p_DistanceFunc);
-    return this->run(data, numClusters, numRestarts, &kmeansState);
+    auto kmeansState = this->p_stateFactory->createState(data, weights, this->p_DistanceFunc);
+    return this->run(data, numClusters, numRestarts, kmeansState);
 }
 }  // namespace HPKmeans

@@ -8,6 +8,7 @@
 #include <hpkmeans/algorithms/strategies/distance_sum_calculator.hpp>
 #include <hpkmeans/algorithms/strategies/random_selector.hpp>
 #include <hpkmeans/data_types/coreset.hpp>
+#include <hpkmeans/data_types/data_chunks.hpp>
 #include <hpkmeans/utils/Utils.hpp>
 #include <hpkmeans/utils/mpi_class.hpp>
 #include <memory>
@@ -358,9 +359,9 @@ void MPICoresetCreator<precision, int_size>::distributeCoreset(Coreset<precision
                 numCoresetDataPerProc.data(), vectorDisplacements.data(), mpi_precision, 0, MPI_COMM_WORLD);
 
     // get lengths and displacements for evenly distributing coreset data amoung processes
-    auto mpiData        = getMPIData(this->mSampleSize);
-    auto& vectorLengths = mpiData.lengths;
-    vectorDisplacements = mpiData.displacements;
+    MPIDataChunks<int_size> mpiData(this->mSampleSize);
+    auto& vectorLengths = mpiData.lengths();
+    vectorDisplacements = mpiData.displacements();
     for (int32_t i = 0; i < p_KmeansState->numProcs(); ++i)
     {
         matrixLengths.at(i) = vectorLengths.at(i) * p_KmeansState->dataCols();

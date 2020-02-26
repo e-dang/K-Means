@@ -18,9 +18,9 @@ public:
     CoresetKmeansWrapper(const int_size& sampleSize, AbstractKmeansWrapper<precision, int_size>* kmeans,
                          AbstractCoresetCreator<precision, int_size>* coresetCreator,
                          AbstractCoresetClusteringFinisher<precision, int_size>* finisher,
-                         IKmeansStateInitializer<precision, int_size>* stateInitializer,
+                         IKmeansStateFactory<precision, int_size>* stateFactory,
                          std::shared_ptr<IDistanceFunctor<precision>> distanceFunc) :
-        AbstractKmeansWrapper<precision, int_size>(stateInitializer, distanceFunc),
+        AbstractKmeansWrapper<precision, int_size>(stateFactory, distanceFunc),
         m_SampleSize(sampleSize),
         p_Kmeans(kmeans),
         p_CoresetCreator(coresetCreator),
@@ -43,9 +43,9 @@ template <typename precision, typename int_size>
 std::shared_ptr<ClusterResults<precision, int_size>> CoresetKmeansWrapper<precision, int_size>::fit(
   const Matrix<precision, int_size>* const data, const int_size& numClusters, const int& numRestarts)
 {
-    auto kmeansState = this->p_stateInitializer->initializeState(data, nullptr, this->p_DistanceFunc);
+    auto kmeansState = this->p_stateFactory->createState(data, nullptr, this->p_DistanceFunc);
 
-    p_CoresetCreator->setState(&kmeansState);
+    p_CoresetCreator->setState(kmeansState);
     auto coreset = p_CoresetCreator->createCoreset();
 
     auto clusterResults = p_Kmeans->fit(&coreset.data, numClusters, numRestarts, &coreset.weights);
@@ -53,11 +53,11 @@ std::shared_ptr<ClusterResults<precision, int_size>> CoresetKmeansWrapper<precis
     clusterResults->error = -1.0;
     // TODO:has to allocate memory and then move for clustering and clusterWeights and sqDistances...if they sahre
     // pointer could be faster
-    kmeansState.setClusters(clusterResults->clusters);
-    kmeansState.resetClusterData(numClusters);
+    kmeansState->setClusters(clusterResults->clusters);
+    kmeansState->resetClusterData(numClusters);
 
-    p_Finisher->finishClustering(&kmeansState);
-    kmeansState.compareResults(clusterResults);
+    p_Finisher->finishClustering(kmeansState);
+    kmeansState->compareResults(clusterResults);
 
     return clusterResults;
 }
