@@ -55,11 +55,7 @@ public:
 
     inline const int_size& myLength() const { return m_Lengths[m_Rank]; }
 
-    // inline const std::vector<int_size>& displacements() const noexcept { return m_Displacements; }
-
     inline const int_size* displacementsData() const noexcept { return m_Displacements.data(); }
-
-    // inline const int_size& displacementsAt(const int rank) const { return m_Displacements[rank]; }
 
     inline const int_size& myDisplacement() const { return m_Displacements[m_Rank]; }
 
