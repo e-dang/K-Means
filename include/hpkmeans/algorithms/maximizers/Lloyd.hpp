@@ -152,7 +152,7 @@ void MPILloyd<precision, int_size>::calcClusterSums()
 template <typename precision, typename int_size>
 void MPILloyd<precision, int_size>::normalizeClusterSums()
 {
-    std::vector<precision> copyWeights(p_KmeansState->dataSize());
+    std::vector<precision> copyWeights(p_KmeansState->clusterWeights()->size());
     MPI_Reduce(p_KmeansState->clusterWeightsData(), copyWeights.data(), copyWeights.size(), mpi_precision, MPI_SUM, 0,
                MPI_COMM_WORLD);
 
