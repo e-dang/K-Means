@@ -11,7 +11,7 @@
 
 const int DEFAULT_REPEATS = 10;
 
-using namespace HPKmeans;
+namespace hp = HPKmeans;
 
 void parseFilePath(Sarge& sarge, std::string& filepath)
 {
@@ -126,26 +126,26 @@ int parseNumRestarts(Sarge& sarge)
     return DEFAULT_REPEATS;
 }
 
-Initializer parseInitializer(Sarge& sarge)
+hp::Initializer parseInitializer(Sarge& sarge)
 {
-    Initializer initializer = InitNull;
+    hp::Initializer initializer = hp::InitNull;
     bool argPresent;
     std::string kpp;
     if (sarge.getFlag("kpp", kpp))
-        initializer = KPP;
+        initializer = hp::KPP;
 
     std::string optkpp;
     argPresent = sarge.getFlag("optkpp", optkpp);
-    if (argPresent && initializer == InitNull)
+    if (argPresent && initializer == hp::InitNull)
     {
-        initializer = OptKPP;
+        initializer = hp::OptKPP;
     }
-    else if (argPresent && initializer != InitNull)
+    else if (argPresent && initializer != hp::InitNull)
     {
         std::cerr << "Cannot specify two types of initializer methods!" << std::endl;
         exit(1);
     }
-    else if (!argPresent && initializer == InitNull)
+    else if (!argPresent && initializer == hp::InitNull)
     {
         std::cerr << "Must specify an initializer method!" << std::endl;
         exit(1);
@@ -154,26 +154,26 @@ Initializer parseInitializer(Sarge& sarge)
     return initializer;
 }
 
-Maximizer parseMaximizer(Sarge& sarge)
+hp::Maximizer parseMaximizer(Sarge& sarge)
 {
-    Maximizer maximizer = MaxNull;
+    hp::Maximizer maximizer = hp::MaxNull;
     bool argPresent;
     std::string lloyd;
     if (sarge.getFlag("lloyd", lloyd))
-        maximizer = Lloyd;
+        maximizer = hp::Lloyd;
 
     std::string optlloyd;
     argPresent = sarge.getFlag("optlloyd", optlloyd);
-    if (sarge.getFlag("optlloyd", optlloyd) && maximizer == MaxNull)
+    if (sarge.getFlag("optlloyd", optlloyd) && maximizer == hp::MaxNull)
     {
-        maximizer = OptLloyd;
+        maximizer = hp::OptLloyd;
     }
-    else if (argPresent && maximizer != MaxNull)
+    else if (argPresent && maximizer != hp::MaxNull)
     {
         std::cerr << "Cannot specify two types of maximizer methods!" << std::endl;
         exit(1);
     }
-    else if (!argPresent && maximizer == MaxNull)
+    else if (!argPresent && maximizer == hp::MaxNull)
     {
         std::cerr << "Must specify a maximizer method!" << std::endl;
         exit(1);
@@ -182,13 +182,13 @@ Maximizer parseMaximizer(Sarge& sarge)
     return maximizer;
 }
 
-CoresetCreator parseCoresetCreator(Sarge& sarge, int32_t& sampleSize)
+hp::CoresetCreator parseCoresetCreator(Sarge& sarge, int32_t& sampleSize)
 {
-    CoresetCreator coresetCreator = None;
+    hp::CoresetCreator coresetCreator = hp::None;
     std::string coreset;
     if (sarge.getFlag("coreset", coreset))
     {
-        coresetCreator = LWCoreset;
+        coresetCreator = hp::LWCoreset;
         if (sampleSize <= 0)
         {
             std::cerr << "Must give a sample size greater than 0 when using a coreset!" << std::endl;
@@ -199,21 +199,21 @@ CoresetCreator parseCoresetCreator(Sarge& sarge, int32_t& sampleSize)
     return coresetCreator;
 }
 
-Parallelism parseParallelism(Sarge& sarge)
+hp::Parallelism parseParallelism(Sarge& sarge)
 {
-    Parallelism parallelism = ParaNull;
+    hp::Parallelism parallelism = hp::ParaNull;
     bool argPresent;
     std::string serial;
     if (sarge.getFlag("serial", serial))
-        parallelism = Serial;
+        parallelism = hp::Serial;
 
     std::string omp;
     argPresent = sarge.getFlag("omp", omp);
-    if (argPresent && parallelism == ParaNull)
+    if (argPresent && parallelism == hp::ParaNull)
     {
-        parallelism = OMP;
+        parallelism = hp::OMP;
     }
-    else if (argPresent && parallelism != ParaNull)
+    else if (argPresent && parallelism != hp::ParaNull)
     {
         std::cerr << "Cannot specify two different levels of parallelism!" << std::endl;
         exit(1);
@@ -221,11 +221,11 @@ Parallelism parseParallelism(Sarge& sarge)
 
     std::string mpi;
     argPresent = sarge.getFlag("mpi", mpi);
-    if (argPresent && parallelism == ParaNull)
+    if (argPresent && parallelism == hp::ParaNull)
     {
-        parallelism = MPI;
+        parallelism = hp::MPI;
     }
-    else if (argPresent && parallelism != ParaNull)
+    else if (argPresent && parallelism != hp::ParaNull)
     {
         std::cerr << "Cannot specify two different levels of parallelism!" << std::endl;
         exit(1);
@@ -233,16 +233,16 @@ Parallelism parseParallelism(Sarge& sarge)
 
     std::string hybrid;
     argPresent = sarge.getFlag("hybrid", hybrid);
-    if (argPresent && parallelism == ParaNull)
+    if (argPresent && parallelism == hp::ParaNull)
     {
-        parallelism = Hybrid;
+        parallelism = hp::Hybrid;
     }
-    else if (argPresent && parallelism != ParaNull)
+    else if (argPresent && parallelism != hp::ParaNull)
     {
         std::cerr << "Cannot specify two different levels of parallelism!" << std::endl;
         exit(1);
     }
-    else if (!argPresent && parallelism == ParaNull)
+    else if (!argPresent && parallelism == hp::ParaNull)
     {
         std::cerr << "Must specify a level of parallelism!" << std::endl;
         exit(1);
@@ -253,19 +253,19 @@ Parallelism parseParallelism(Sarge& sarge)
 
 void runDistributed(int& argc, char** argv, std::string filepath, const int32_t& numData, const int32_t& numFeatures,
                     const int32_t& numClusters, const int32_t& sampleSize, const int& numRestarts,
-                    Initializer initializer, Maximizer maximizer, CoresetCreator coresetCreator,
-                    Parallelism parallelism)
+                    hp::Initializer initializer, hp::Maximizer maximizer, hp::CoresetCreator coresetCreator,
+                    hp::Parallelism parallelism)
 {
     int rank = 0, numProcs;
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
-    MPIMatrixReader<double> reader;
+    hp::MPIMatrixReader<double> reader;
     auto data = reader.read(filepath, numData, numFeatures);
 
-    Kmeans<double> kmeans(initializer, maximizer, coresetCreator, parallelism,
-                          std::make_shared<EuclideanDistance<double>>(), sampleSize);
+    hp::Kmeans<double> kmeans(initializer, maximizer, coresetCreator, parallelism,
+                              std::make_shared<hp::EuclideanDistance<double>>(), sampleSize);
 
     auto start          = std::chrono::high_resolution_clock::now();
     auto clusterResults = kmeans.fit(&data, numClusters, numRestarts);
@@ -274,7 +274,7 @@ void runDistributed(int& argc, char** argv, std::string filepath, const int32_t&
 
     if (rank == 0)
     {
-        ClusterResultWriter<double> writer(initializer, maximizer, coresetCreator, parallelism);
+        hp::ClusterResultWriter<double> writer(initializer, maximizer, coresetCreator, parallelism);
         writer.writeClusterResults(clusterResults, duration, filepath);
     }
 
@@ -283,21 +283,21 @@ void runDistributed(int& argc, char** argv, std::string filepath, const int32_t&
 
 void runSharedMemory(int& argc, char** argv, std::string filepath, const int32_t& numData, const int32_t& numFeatures,
                      const int32_t& numClusters, const int32_t& sampleSize, const int& numRestarts,
-                     Initializer initializer, Maximizer maximizer, CoresetCreator coresetCreator,
-                     Parallelism parallelism)
+                     hp::Initializer initializer, hp::Maximizer maximizer, hp::CoresetCreator coresetCreator,
+                     hp::Parallelism parallelism)
 {
-    MatrixReader<double> reader;
+    hp::MatrixReader<double> reader;
     auto data = reader.read(filepath, numData, numFeatures);
 
-    Kmeans<double> kmeans(initializer, maximizer, coresetCreator, parallelism,
-                          std::make_shared<EuclideanDistance<double>>(), sampleSize);
+    hp::Kmeans<double> kmeans(initializer, maximizer, coresetCreator, parallelism,
+                              std::make_shared<hp::EuclideanDistance<double>>(), sampleSize);
 
     auto start          = std::chrono::high_resolution_clock::now();
     auto clusterResults = kmeans.fit(&data, numClusters, numRestarts);
     auto stop           = std::chrono::high_resolution_clock::now();
     auto duration       = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
 
-    ClusterResultWriter<double> writer(initializer, maximizer, coresetCreator, parallelism);
+    hp::ClusterResultWriter<double> writer(initializer, maximizer, coresetCreator, parallelism);
     writer.writeClusterResults(clusterResults, duration, filepath);
 }
 
@@ -338,7 +338,7 @@ int main(int argc, char** argv)
     auto coresetCreator = parseCoresetCreator(sarge, sampleSize);
     auto parallelism    = parseParallelism(sarge);
 
-    if (parallelism == MPI || parallelism == Hybrid)
+    if (parallelism == hp::MPI || parallelism == hp::Hybrid)
     {
         runDistributed(argc, argv, filepath, numData, numFeatures, numClusters, sampleSize, numRestarts, initializer,
                        maximizer, coresetCreator, parallelism);
