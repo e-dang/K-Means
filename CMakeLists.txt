@@ -4,10 +4,10 @@ cmake_minimum_required(VERSION 3.0)
 # project name
 project(HPKmeans VERSION 1.0.0)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # flags
 SET(CMAKE_CXX_FLAGS "-std=c++11 -O3 -Wall -Wpedantic -fopenmp")
-
 
 find_package(MPI REQUIRED)
 find_package(Boost 1.72.0 COMPONENTS random)
