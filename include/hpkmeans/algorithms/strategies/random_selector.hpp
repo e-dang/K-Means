@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include <hpkmeans/utils/Utils.hpp>
+#include <hpkmeans/utils/utils.hpp>
 #include <vector>
 
 namespace HPKmeans

@@ -5,8 +5,8 @@
 #include <fstream>
 #include <hpkmeans/data_types/data_chunks.hpp>
 #include <hpkmeans/data_types/matrix.hpp>
-#include <hpkmeans/utils/Utils.hpp>
 #include <hpkmeans/utils/mpi_class.hpp>
+#include <hpkmeans/utils/utils.hpp>
 #include <iostream>
 #include <string>
 

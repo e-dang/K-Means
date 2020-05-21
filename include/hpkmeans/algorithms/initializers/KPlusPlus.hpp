@@ -6,8 +6,8 @@
 #include <hpkmeans/algorithms/initializers/interface.hpp>
 #include <hpkmeans/algorithms/strategies/closest_cluster_updater.hpp>
 #include <hpkmeans/algorithms/strategies/random_selector.hpp>
-#include <hpkmeans/utils/Utils.hpp>
 #include <hpkmeans/utils/mpi_class.hpp>
+#include <hpkmeans/utils/utils.hpp>
 
 namespace HPKmeans
 {

@@ -9,7 +9,7 @@
 #include <hpkmeans/algorithms/strategies/random_selector.hpp>
 #include <hpkmeans/data_types/coreset.hpp>
 #include <hpkmeans/data_types/data_chunks.hpp>
-#include <hpkmeans/utils/Utils.hpp>
+#include <hpkmeans/utils/utils.hpp>
 #include <hpkmeans/utils/mpi_class.hpp>
 #include <memory>
 
