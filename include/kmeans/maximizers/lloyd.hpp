@@ -35,8 +35,9 @@ public:
     }
 
 private:
-    int32_t calcNumChanged(const std::vector<int32_t>* const currAssignments,
-                           std::vector<int32_t>* const prevAssignments) const
+    template <Parallelism _Level = Level>
+    std::enable_if_t<_Level == Parallelism::Serial, int32_t> calcNumChanged(
+      const std::vector<int32_t>* const currAssignments, std::vector<int32_t>* const prevAssignments) const
     {
         int32_t numChanged = 0;
 
@@ -52,8 +53,26 @@ private:
         return numChanged;
     }
 
+    template <Parallelism _Level = Level>
+    std::enable_if_t<_Level == Parallelism::OMP, int32_t> calcNumChanged(
+      const std::vector<int32_t>* const currAssignments, std::vector<int32_t>* const prevAssignments) const
+    {
+        int32_t numChanged = 0;
+
+#pragma omp parallel for schedule(static), reduction(+ : numChanged)
+        for (int i = 0; i < static_cast<int32_t>(currAssignments->size()); ++i)
+        {
+            if (currAssignments->at(i) != prevAssignments->at(i))
+            {
+                ++numChanged;
+                prevAssignments->at(i) = currAssignments->at(i);
+            }
+        }
+
+        return numChanged;
+    }
+
 private:
     std::unique_ptr<AbstractAssignmentUpdater<T, DistanceFunc>> p_updater;
-    // ReassignmentUpdater<T, Level, DistanceFunc> m_pointReassigner;
 };
 }  // namespace hpkmeans

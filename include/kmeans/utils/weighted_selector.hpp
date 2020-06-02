@@ -13,9 +13,7 @@ public:
         for (size_t i = 0; i < weights->size(); ++i)
         {
             if ((randomSumFrac -= weights->at(i)) <= 0)
-            {
                 return i;
-            }
         }
 
         return static_cast<int32_t>(weights->size()) - 1;

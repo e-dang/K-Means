@@ -58,8 +58,5 @@ private:
             sqDistances->at(dataIdx) = sqDist;
         }
     }
-
-    // private:
-    //     DistanceFunc m_distanceFunc;
 };
 }  // namespace hpkmeans
