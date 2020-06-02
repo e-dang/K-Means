@@ -39,9 +39,28 @@ private:
     void weightedClusterSelection(Clusters<T>* const clusters) const
     {
         auto sqDistances = clusters->sqDistances();
-        T randSumFrac    = getRandFraction() * std::accumulate(sqDistances->cbegin(), sqDistances->cend(), 0.0);
-        auto dataIdx     = m_weightedSelector.select(sqDistances, randSumFrac);
+        auto dataIdx     = m_weightedSelector.select(sqDistances, calcRandomSumFrac(sqDistances));
         clusters->addCentroid(dataIdx);
+    }
+
+    template <Parallelism _Level = Level>
+    std::enable_if_t<_Level == Parallelism::Serial, T> calcRandomSumFrac(const std::vector<T>* const sqDistances) const
+    {
+        return getRandFraction() * std::accumulate(sqDistances->cbegin(), sqDistances->cend(), 0.0);
+    }
+
+    template <Parallelism _Level = Level>
+    std::enable_if_t<_Level == Parallelism::OMP, T> calcRandomSumFrac(const std::vector<T>* const sqDistances) const
+    {
+        T sum = 0.0;
+
+#pragma omp parallel for schedule(static), reduction(+ : sum)
+        for (int i = 0; i < static_cast<int32_t>(sqDistances->size()); ++i)
+        {
+            sum += sqDistances->at(i);
+        }
+
+        return getRandFraction() * sum;
     }
 
 private:
