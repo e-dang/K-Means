@@ -1,0 +1,19 @@
+#pragma once
+
+#include <kmeans/initializers/kplusplus.hpp>
+#include <memory>
+#include <string>
+
+namespace hpkmeans
+{
+template <typename T, Parallelism Level, class DistanceFunc>
+std::unique_ptr<IInitializer<T>> createInitializer(const std::string& initializerString)
+{
+    if (initializerString == KPP)
+        return std::make_unique<KPlusPlus<T, Level, DistanceFunc>>();
+    else
+        std::cerr << "Unrecognized initializer string!\n";
+
+    exit(1);
+}
+}  // namespace hpkmeans
