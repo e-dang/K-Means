@@ -9,10 +9,14 @@ namespace hpkmeans
 template <typename T, class DistanceFunc>
 class AbstractAssignmentUpdater
 {
-protected:
-    AbstractAssignmentUpdater() : m_distanceFunc(DistanceFunc::instance()) {}
+public:
+    virtual void update(const Matrix<T>* const data, const Matrix<T>* const centroids,
+                        std::vector<int32_t>* const assignments, std::vector<T>* const sqDistances) const = 0;
 
     virtual ~AbstractAssignmentUpdater() = default;
+
+protected:
+    AbstractAssignmentUpdater() : m_distanceFunc(DistanceFunc::instance()) {}
 
     void updateClosestCentroid(const int32_t dataIdx, const Matrix<T>* const data, const Matrix<T>* const centroids,
                                std::vector<int32_t>* const assignments, std::vector<T>* const sqDistances) const
@@ -57,4 +61,4 @@ private:
 protected:
     DistanceFunc m_distanceFunc;
 };
-}
+}  // namespace hpkmeans

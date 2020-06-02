@@ -5,12 +5,15 @@
 
 namespace hpkmeans
 {
-constexpr char LLOYD[] = "lloyd";
+constexpr char LLOYD[]    = "lloyd";
+constexpr char OPTLLOYD[] = "optlloyd";
 
 template <typename T, Parallelism Level, class DistanceFunc>
 class Lloyd : public IMaximizer<T>
 {
 public:
+    Lloyd(AbstractAssignmentUpdater<T, DistanceFunc>* updater) : p_updater(updater) {}
+
     void maximize(const Matrix<T>* const data, Clusters<T>* const clusters) const override
     {
         int32_t changed;
@@ -22,7 +25,7 @@ public:
         {
             clusters->template updateCentroids<Level>();
 
-            clusters->updateAssignments(m_pointReassigner);
+            clusters->updateAssignments(p_updater.get());
 
             changed = calcNumChanged(currAssignments, &prevAssignments);
 
@@ -50,6 +53,7 @@ private:
     }
 
 private:
-    ReassignmentUpdater<T, Level, DistanceFunc> m_pointReassigner;
+    std::unique_ptr<AbstractAssignmentUpdater<T, DistanceFunc>> p_updater;
+    // ReassignmentUpdater<T, Level, DistanceFunc> m_pointReassigner;
 };
 }  // namespace hpkmeans

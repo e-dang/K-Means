@@ -3,28 +3,30 @@
 #include <kmeans/initializers/interface.hpp>
 #include <kmeans/utils/assignment_updaters.hpp>
 #include <kmeans/utils/uniform_selector.hpp>
-#include <kmeans/utils/utils.hpp>
 #include <kmeans/utils/weighted_selector.hpp>
 
 namespace hpkmeans
 {
-constexpr char KPP[] = "k++";
+constexpr char KPP[]    = "k++";
+constexpr char OPTKPP[] = "optk++";
 
 template <typename T, Parallelism Level, class DistanceFunc>
 class KPlusPlus : public IInitializer<T>
 {
 public:
+    KPlusPlus(AbstractAssignmentUpdater<T, DistanceFunc>* updater) : p_updater(updater) {}
+
     void initialize(const Matrix<T>* const data, Clusters<T>* const clusters) const override
     {
         selectFirstCluster(data, clusters);
 
         for (int32_t i = 1; i < clusters->maxSize(); ++i)
         {
-            clusters->updateAssignments(m_updater);
+            clusters->updateAssignments(p_updater.get());
             weightedClusterSelection(clusters);
         }
 
-        clusters->updateAssignments(m_updater);
+        clusters->updateAssignments(p_updater.get());
     }
 
 private:
@@ -43,7 +45,7 @@ private:
     }
 
 private:
-    NewCentroidAssignmentUpdater<T, Level, DistanceFunc> m_updater;
+    std::unique_ptr<AbstractAssignmentUpdater<T, DistanceFunc>> p_updater;
     UniformSelector m_uniformSelector;
     WeightedSelector<T> m_weightedSelector;
 };

@@ -10,27 +10,35 @@ class AssignmentUpdater : public AbstractAssignmentUpdater<T, DistanceFunc>
 public:
     AssignmentUpdater() : AbstractAssignmentUpdater<T, DistanceFunc>() {}
 
-    template <Parallelism _Level>
-    std::enable_if_t<_Level == Parallelism::Serial> update(const Matrix<T>* const data,
-                                                           const Matrix<T>* const centroids,
-                                                           std::vector<int32_t>* const assignments,
-                                                           std::vector<T>* const sqDistances) const
+    void update(const Matrix<T>* const data, const Matrix<T>* const centroids, std::vector<int32_t>* const assignments,
+                std::vector<T>* const sqDistances) const override
+    {
+        updateImpl(data, centroids, assignments, sqDistances);
+    }
+
+private:
+    template <Parallelism _Level = Level>
+    std::enable_if_t<_Level == Parallelism::Serial> updateImpl(const Matrix<T>* const data,
+                                                               const Matrix<T>* const centroids,
+                                                               std::vector<int32_t>* const assignments,
+                                                               std::vector<T>* const sqDistances) const
     {
         for (int32_t i = 0; i < data->numRows(); ++i)
         {
-            this->updateClosestCentroid(i, centroids, assignments, sqDistances);
+            this->updateClosestCentroid(i, data, centroids, assignments, sqDistances);
         }
     }
 
-    template <Parallelism _Level>
-    std::enable_if_t<_Level == Parallelism::OMP> update(const Matrix<T>* const data, const Matrix<T>* const centroids,
-                                                        std::vector<int32_t>* const assignments,
-                                                        std::vector<T>* const sqDistances) const
+    template <Parallelism _Level = Level>
+    std::enable_if_t<_Level == Parallelism::OMP> updateImpl(const Matrix<T>* const data,
+                                                            const Matrix<T>* const centroids,
+                                                            std::vector<int32_t>* const assignments,
+                                                            std::vector<T>* const sqDistances) const
     {
 #pragma omp parallel for schedule(static)
         for (int32_t i = 0; i < data->numRows(); ++i)
         {
-            this->updateClosestCentroid(i, centroids, assignments, sqDistances);
+            this->updateClosestCentroid(i, data, centroids, assignments, sqDistances);
         }
     }
 };

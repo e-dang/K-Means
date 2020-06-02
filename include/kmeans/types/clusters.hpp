@@ -53,9 +53,9 @@ public:
     }
 
     template <class AssignmentUpdater>
-    void updateAssignments(const AssignmentUpdater& updater)
+    void updateAssignments(const AssignmentUpdater updater)
     {
-        updater.update(p_data, &m_centroids, &m_assignments, &m_sqDistances);
+        updater->update(p_data, &m_centroids, &m_assignments, &m_sqDistances);
     }
 
     template <Parallelism Level>
