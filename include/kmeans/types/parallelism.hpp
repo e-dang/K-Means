@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace hpkmediods
+namespace hpkmeans
 {
 const std::string SERIAL = "serial";
 const std::string OMP    = "omp";
@@ -20,4 +20,4 @@ enum class Parallelism
 std::string parallelismToString(const Parallelism& parallelism);
 
 Parallelism parallelismFromString(const std::string& strParallelism);
-}  // namespace hpkmediods
+}  // namespace hpkmeans

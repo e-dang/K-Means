@@ -1,7 +1,7 @@
-#include <hpkmediods/types/parallelism.hpp>
 #include <iostream>
+#include <kmeans/types/parallelism.hpp>
 
-namespace hpkmediods
+namespace hpkmeans
 {
 std::string parallelismToString(const Parallelism& parallelism)
 {
@@ -34,4 +34,4 @@ Parallelism parallelismFromString(const std::string& strParallelism)
 
     exit(1);
 }
-}  // namespace hpkmediods
+}  // namespace hpkmeans
