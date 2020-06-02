@@ -65,11 +65,11 @@ def plot_data(data, clusters, clustering):
     plt.show()
 
 
-# NUM_DATA = 10000000
-# NUM_FEATURES = 50
-# NUM_CLUSTERS = 500
-# CLUSTER_STD = 1
-# BOX = (-100, 100)
+NUM_DATA = 10000
+NUM_FEATURES = 2
+NUM_CLUSTERS = 10
+CLUSTER_STD = 1
+BOX = (-100, 100)
 
 # NUM_DATA = 200000
 # NUM_FEATURES = 2
@@ -80,7 +80,16 @@ def plot_data(data, clusters, clustering):
 #                      f'test_{NUM_DATA}_{NUM_FEATURES}.txt', f'data_labels_{NUM_DATA}_{NUM_FEATURES}.txt')
 # exit()
 
-data = read_data('../data/test_200000_2.txt', 200000, 2)
-clusters = read_data('../data/test_200000_2_clusters_0.txt', 200000, 2)
-clustering = read_clustering('../data/test_200000_2_clustering_0.txt')
+
+num = 200000
+dims = 2
+file_num = 0
+data = read_data(f'../data/test_{num}_{dims}.txt', num, dims)
+clusters = read_data(f'../data/test_{num}_{dims}_clusters_{file_num}.txt', num, dims)
+clustering = read_clustering(f'../data/test_{num}_{dims}_clustering_{file_num}.txt')
 plot_data(data, clusters, clustering)
+
+# data = read_data('../data/test_200000_2.txt', 200000, 2)
+# clusters = read_data('../data/test_200000_2_clusters_0.txt', 200000, 2)
+# clustering = read_clustering('../data/test_200000_2_clustering_0.txt')
+# plot_data(data, clusters, clustering)
