@@ -99,17 +99,40 @@ private:
             throw std::length_error("The data and corresponding weights must have the same number of entries!");
     }
 
-    template <Parallelism Level>
-    std::enable_if_t<Level == Parallelism::Serial> updateCentroidsImpl()
+    inline void calcClusterSums()
+    {
+        if (p_weights == nullptr)
+            calcUnWeightedClusterSums();
+        else
+            calcWeightedClusterSums();
+    }
+
+    inline void calcUnWeightedClusterSums()
     {
         for (int32_t i = 0; i < p_data->numRows(); ++i)
         {
             for (int32_t j = 0; j < p_data->cols(); ++j)
             {
-                // m_centroids.at(m_assignments[i], j) += p_weights->at(i) * p_data->at(i, j);
                 m_centroids.at(m_assignments[i], j) += p_data->at(i, j);
             }
         }
+    }
+
+    inline void calcWeightedClusterSums()
+    {
+        for (int32_t i = 0; i < p_data->numRows(); ++i)
+        {
+            for (int32_t j = 0; j < p_data->cols(); ++j)
+            {
+                m_centroids.at(m_assignments[i], j) += p_weights->at(i) * p_data->at(i, j);
+            }
+        }
+    }
+
+    template <Parallelism Level>
+    std::enable_if_t<Level == Parallelism::Serial> updateCentroidsImpl()
+    {
+        calcClusterSums();
 
         for (int32_t i = 0; i < m_centroids.numRows(); ++i)
         {
@@ -123,14 +146,7 @@ private:
     template <Parallelism Level>
     std::enable_if_t<Level == Parallelism::OMP> updateCentroidsImpl()
     {
-        // #pragma omp parallel for schedule(static)
-        for (int32_t i = 0; i < p_data->numRows(); ++i)
-        {
-            for (int32_t j = 0; j < p_data->cols(); ++j)
-            {
-                m_centroids.at(m_assignments[i], j) += p_weights->at(i) * p_data->at(i, j);
-            }
-        }
+        calcClusterSums();
 
 #pragma omp parallel for schedule(static)
         for (int32_t i = 0; i < m_centroids.numRows(); ++i)
@@ -145,9 +161,9 @@ private:
     template <Parallelism Level>
     std::enable_if_t<Level == Parallelism::Serial> calcClusterCounts()
     {
-        for (int i = 0; i < m_centroids.numRows(); ++i)
+        for (int32_t i = 0; i < m_centroids.numRows(); ++i)
         {
-            for (int j = 0; j < m_assignments.size(); ++j)
+            for (int32_t j = 0; j < m_assignments.size(); ++j)
             {
                 if (i == m_assignments[j])
                     ++m_clusterCounts[i];
@@ -159,9 +175,9 @@ private:
     std::enable_if_t<Level == Parallelism::OMP> calcClusterCounts()
     {
 #pragma omp parallel for schedule(static)
-        for (int i = 0; i < m_centroids.numRows(); ++i)
+        for (int32_t i = 0; i < m_centroids.numRows(); ++i)
         {
-            for (int j = 0; j < m_assignments.size(); ++j)
+            for (int32_t j = 0; j < m_assignments.size(); ++j)
             {
                 if (i == m_assignments[j])
                     ++m_clusterCounts[i];
