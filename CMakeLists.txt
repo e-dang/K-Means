@@ -22,7 +22,7 @@ include_directories(./include ./libs/include ${CMAKE_CURRENT_BINARY_DIR} ${MPI_I
 if(Boost_FOUND AND MPI_FOUND)
     # add_executable(kmeans ./src/main.cpp
     #                       ./src/filesystem/file_rotator.cpp)
-    add_executable(new_kmeans ./src/main_kmeans.cpp ./src/types/parallelism.cpp ./src/utils/file_rotator.cpp)
+    add_executable(new_kmeans ./src/static_kmeans.cpp ./src/types/parallelism.cpp ./src/utils/file_rotator.cpp)
     # target_link_libraries(kmeans sarge ${MPI_LIBRARIES} ${Boost_LIBRARIES})
     target_link_libraries(new_kmeans matrix ${MPI_LIBRARIES} ${Boost_LIBRARIES})
 endif()
