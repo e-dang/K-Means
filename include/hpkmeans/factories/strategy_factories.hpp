@@ -20,8 +20,6 @@ public:
 
     IClosestClusterFinder<precision, int_size>* createClosestClusterFinder(Variant variant);
 
-    AbstractClosestClusterUpdater<precision, int_size>* createClosestClusterUpdater(Variant variant);
-
     AbstractPointReassigner<precision, int_size>* createPointReassigner(Variant variant);
 
     IMultiWeightedRandomSelector<precision, int_size>* createMultiWeightedRandomSelector();
@@ -29,6 +27,8 @@ public:
     IWeightedRandomSelector<precision, int_size>* createWeightedRandomSelector();
 
     AbstractClusteringDataUpdater<precision, int_size>* createCoresetClusteringDataUpdater();
+
+    virtual AbstractClosestClusterUpdater<precision, int_size>* createClosestClusterUpdater(Variant variant) = 0;
 
     virtual AbstractClusteringDataUpdater<precision, int_size>* createClusteringDataUpdater() = 0;
 
@@ -55,6 +55,8 @@ class SerialStrategyFactory : public AbstractStrategyFactory<precision, int_size
 public:
     ~SerialStrategyFactory() = default;
 
+    AbstractClosestClusterUpdater<precision, int_size>* createClosestClusterUpdater(Variant variant) override;
+
     AbstractClusteringDataUpdater<precision, int_size>* createClusteringDataUpdater() override;
 
     AbstractPointReassigner<precision, int_size>* createRegPointReassigner() override;
@@ -77,6 +79,8 @@ class OMPStrategyFactory : public AbstractStrategyFactory<precision, int_size>
 {
 public:
     ~OMPStrategyFactory() = default;
+
+    AbstractClosestClusterUpdater<precision, int_size>* createClosestClusterUpdater(Variant variant) override;
 
     AbstractClusteringDataUpdater<precision, int_size>* createClusteringDataUpdater() override;
 
@@ -101,6 +105,8 @@ class MPIStrategyFactory : public AbstractStrategyFactory<precision, int_size>
 public:
     ~MPIStrategyFactory() = default;
 
+    AbstractClosestClusterUpdater<precision, int_size>* createClosestClusterUpdater(Variant variant) override;
+
     AbstractClusteringDataUpdater<precision, int_size>* createClusteringDataUpdater() override;
 
     AbstractPointReassigner<precision, int_size>* createRegPointReassigner() override;
@@ -123,6 +129,8 @@ class HybridStrategyFactory : public AbstractStrategyFactory<precision, int_size
 {
 public:
     ~HybridStrategyFactory() = default;
+
+    AbstractClosestClusterUpdater<precision, int_size>* createClosestClusterUpdater(Variant variant) override;
 
     AbstractClusteringDataUpdater<precision, int_size>* createClusteringDataUpdater() override;
 
@@ -153,21 +161,6 @@ IClosestClusterFinder<precision, int_size>* AbstractStrategyFactory<precision, i
             return new ClosestNewClusterFinder<precision, int_size>();
         default:
             throw std::runtime_error("Invalid ClosestClusterFinder variant specified.");
-    }
-}
-
-template <typename precision, typename int_size>
-AbstractClosestClusterUpdater<precision, int_size>*
-  AbstractStrategyFactory<precision, int_size>::createClosestClusterUpdater(Variant variant)
-{
-    switch (variant)
-    {
-        case (SpecificCoreset):
-            return new SerialClosestClusterUpdater<precision, int_size>(createClosestClusterFinder(Reg),
-                                                                        createCoresetClusteringDataUpdater());
-        default:
-            return new SerialClosestClusterUpdater<precision, int_size>(createClosestClusterFinder(variant),
-                                                                        createClusteringDataUpdater());
     }
 }
 
@@ -205,6 +198,21 @@ AbstractClusteringDataUpdater<precision, int_size>*
   AbstractStrategyFactory<precision, int_size>::createCoresetClusteringDataUpdater()
 {
     return new CoresetClusteringDataUpdater<precision, int_size>();
+}
+
+template <typename precision, typename int_size>
+AbstractClosestClusterUpdater<precision, int_size>*
+  SerialStrategyFactory<precision, int_size>::createClosestClusterUpdater(Variant variant)
+{
+    switch (variant)
+    {
+        case (SpecificCoreset):
+            return new SerialClosestClusterUpdater<precision, int_size>(this->createClosestClusterFinder(Reg),
+                                                                        this->createCoresetClusteringDataUpdater());
+        default:
+            return new SerialClosestClusterUpdater<precision, int_size>(this->createClosestClusterFinder(variant),
+                                                                        this->createClusteringDataUpdater());
+    }
 }
 
 template <typename precision, typename int_size>
@@ -260,6 +268,21 @@ AbstractCoresetClusteringFinisher<precision, int_size>*
 }
 
 template <typename precision, typename int_size>
+AbstractClosestClusterUpdater<precision, int_size>*
+  OMPStrategyFactory<precision, int_size>::createClosestClusterUpdater(Variant variant)
+{
+    switch (variant)
+    {
+        case (SpecificCoreset):
+            return new OMPClosestClusterUpdater<precision, int_size>(this->createClosestClusterFinder(Reg),
+                                                                     this->createCoresetClusteringDataUpdater());
+        default:
+            return new OMPClosestClusterUpdater<precision, int_size>(this->createClosestClusterFinder(variant),
+                                                                     this->createClusteringDataUpdater());
+    }
+}
+
+template <typename precision, typename int_size>
 AbstractClusteringDataUpdater<precision, int_size>*
   OMPStrategyFactory<precision, int_size>::createClusteringDataUpdater()
 {
@@ -312,6 +335,21 @@ AbstractCoresetClusteringFinisher<precision, int_size>*
 }
 
 template <typename precision, typename int_size>
+AbstractClosestClusterUpdater<precision, int_size>*
+  MPIStrategyFactory<precision, int_size>::createClosestClusterUpdater(Variant variant)
+{
+    switch (variant)
+    {
+        case (SpecificCoreset):
+            return new SerialClosestClusterUpdater<precision, int_size>(this->createClosestClusterFinder(Reg),
+                                                                        this->createCoresetClusteringDataUpdater());
+        default:
+            return new SerialClosestClusterUpdater<precision, int_size>(this->createClosestClusterFinder(variant),
+                                                                        this->createClusteringDataUpdater());
+    }
+}
+
+template <typename precision, typename int_size>
 AbstractClusteringDataUpdater<precision, int_size>*
   MPIStrategyFactory<precision, int_size>::createClusteringDataUpdater()
 {
@@ -361,6 +399,21 @@ AbstractCoresetClusteringFinisher<precision, int_size>*
   MPIStrategyFactory<precision, int_size>::createCoresetClusteringFinisher()
 {
     return new MPICoresetClusteringFinisher<precision, int_size>(this->createClosestClusterUpdater(SpecificCoreset));
+}
+
+template <typename precision, typename int_size>
+AbstractClosestClusterUpdater<precision, int_size>*
+  HybridStrategyFactory<precision, int_size>::createClosestClusterUpdater(Variant variant)
+{
+    switch (variant)
+    {
+        case (SpecificCoreset):
+            return new OMPClosestClusterUpdater<precision, int_size>(this->createClosestClusterFinder(Reg),
+                                                                     this->createCoresetClusteringDataUpdater());
+        default:
+            return new OMPClosestClusterUpdater<precision, int_size>(this->createClosestClusterFinder(variant),
+                                                                     this->createClusteringDataUpdater());
+    }
 }
 
 template <typename precision, typename int_size>
