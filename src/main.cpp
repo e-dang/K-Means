@@ -1,6 +1,7 @@
 #include <mpi.h>
 #include <sarge/sarge.h>
 
+#include <boost/timer/timer.hpp>
 #include <chrono>
 #include <hpkmeans/distances.hpp>
 #include <hpkmeans/filesystem/reader.hpp>
@@ -267,15 +268,19 @@ void runDistributed(int& argc, char** argv, std::string filepath, const int32_t&
     hp::Kmeans<double> kmeans(initializer, maximizer, coresetCreator, parallelism,
                               std::make_shared<hp::EuclideanDistance<double>>(), sampleSize);
 
-    auto start          = std::chrono::high_resolution_clock::now();
-    auto clusterResults = kmeans.fit(&data, numClusters, numRestarts);
-    auto stop           = std::chrono::high_resolution_clock::now();
-    auto duration       = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
+    std::shared_ptr<hp::ClusterResults<double, int32_t>> clusterResults;
+    int64_t duration;
+    for (int i = 0; i < 10; ++i)
+    {
+        boost::timer::auto_cpu_timer t;
+        clusterResults = kmeans.fit(&data, numClusters, numRestarts);
+        duration       = static_cast<int64_t>(t.elapsed().wall);
+    }
 
     if (rank == 0)
     {
         hp::ClusterResultWriter<double> writer(initializer, maximizer, coresetCreator, parallelism);
-        writer.writeClusterResults(clusterResults, duration, filepath);
+        writer.writeClusterResults(clusterResults, duration / 1e9, filepath);
     }
 
     MPI_Finalize();
@@ -291,14 +296,17 @@ void runSharedMemory(int& argc, char** argv, std::string filepath, const int32_t
 
     hp::Kmeans<double> kmeans(initializer, maximizer, coresetCreator, parallelism,
                               std::make_shared<hp::EuclideanDistance<double>>(), sampleSize);
-
-    auto start          = std::chrono::high_resolution_clock::now();
-    auto clusterResults = kmeans.fit(&data, numClusters, numRestarts);
-    auto stop           = std::chrono::high_resolution_clock::now();
-    auto duration       = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
+    std::shared_ptr<hp::ClusterResults<double, int32_t>> clusterResults;
+    int64_t duration;
+    for (int i = 0; i < 10; ++i)
+    {
+        boost::timer::auto_cpu_timer t;
+        clusterResults = kmeans.fit(&data, numClusters, numRestarts);
+        duration       = static_cast<int64_t>(t.elapsed().wall);
+    }
 
     hp::ClusterResultWriter<double> writer(initializer, maximizer, coresetCreator, parallelism);
-    writer.writeClusterResults(clusterResults, duration, filepath);
+    writer.writeClusterResults(clusterResults, duration / 1e9, filepath);
 }
 
 int main(int argc, char** argv)
