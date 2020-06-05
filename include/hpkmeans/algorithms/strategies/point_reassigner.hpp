@@ -132,7 +132,7 @@ int_size OMPPointReassigner<precision, int_size>::reassignPoints(KmeansState<pre
 {
     int_size changed = 0;
 
-#pragma omp parallel for shared(kmeansState), schedule(static), reduction(+ : changed)
+#pragma omp parallel for schedule(static), reduction(+ : changed)
     for (int_size i = 0; i < kmeansState->dataSize(); ++i)
     {
         changed += this->reassignPoint(i, kmeansState);
@@ -147,7 +147,7 @@ int_size OMPOptimizedPointReassigner<precision, int_size>::reassignPoints(
 {
     int_size changed = 0;
 
-#pragma omp parallel for shared(kmeansState), schedule(static), reduction(+ : changed)
+#pragma omp parallel for schedule(static), reduction(+ : changed)
     for (int_size i = 0; i < kmeansState->dataSize(); ++i)
     {
         auto clusterIdx = kmeansState->clusteringAt(i);
