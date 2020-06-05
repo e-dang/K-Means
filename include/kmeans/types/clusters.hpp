@@ -1,6 +1,7 @@
 #pragma once
 
 #include <kmeans/types/parallelism.hpp>
+#include <kmeans/utils/utils.hpp>
 #include <limits>
 #include <matrix/matrix.hpp>
 #include <numeric>
@@ -34,14 +35,49 @@ public:
         validateWeights();
     }
 
+    Clusters<T>& operator=(const Clusters<T>& rhs)
+    {
+        if (this != &rhs)
+        {
+            if (p_data != rhs.p_data)
+            {
+                p_data          = rhs.p_data;
+                p_weights       = rhs.p_weights;
+                m_assignments   = rhs.m_assignments;
+                m_sqDistances   = rhs.m_sqDistances;
+                m_centroids     = rhs.m_centroids;
+                m_clusterCounts = rhs.m_clusterCounts;
+            }
+            else
+            {
+                std::copy(rhs.m_assignments.cbegin(), rhs.m_assignments.cend(), m_assignments.begin());
+                std::copy(rhs.m_sqDistances.cbegin(), rhs.m_sqDistances.cend(), m_sqDistances.begin());
+                std::copy(rhs.m_centroids.cbegin(), rhs.m_centroids.cend(), m_centroids.begin());
+                std::copy(rhs.m_clusterCounts.cbegin(), rhs.m_clusterCounts.cend(), m_clusterCounts.begin());
+            }
+
+            m_error = rhs.m_error;
+        }
+
+        return *this;
+    }
+
     bool operator<(const Clusters& lhs) const { return m_error < lhs.m_error; }
 
     bool operator>(const Clusters& lhs) const { return m_error > lhs.m_error; }
+
+    void clear()
+    {
+        std::fill(m_sqDistances.begin(), m_sqDistances.end(), std::numeric_limits<T>::max());
+        m_centroids.resize(0);
+    }
 
     void addCentroid(const int32_t dataIdx)
     {
         m_centroids.append(p_data->crowBegin(dataIdx), p_data->crowEnd(dataIdx));
     }
+
+    void reserveCentroidSpace() { m_centroids.resize(m_centroids.numRows() + 1); }
 
     template <Parallelism Level>
     void updateCentroids()
@@ -91,6 +127,37 @@ public:
     const std::vector<int32_t>* const getClustering() const { return &m_assignments; }
 
     const T getError() const { return m_error; }
+
+    // template <Parallelism Level>
+    // std::enable_if_t<Level == Parallelism::MPI || Level == Parallelism::Hybrid> bcastAssignments(const int rank)
+    // {
+    //     MPI_Bcast(m_assignments.data(), m_assignments.size(), MPI_INT, rank, MPI_COMM_WORLD);
+    // }
+
+    // template <Parallelism Level>
+    // std::enable_if_t<Level == Parallelism::MPI || Level == Parallelism::Hybrid> bcastCentroids(const int rank)
+    // {
+    //     static auto dtype = matchMPIType<T>();
+    //     MPI_Bcast(m_centroids.data(), m_centroids.size(), dtype, rank, MPI_COMM_WORLD);
+    // }
+
+    // template <Parallelism Level>
+    // std::enable_if_t<Level == Parallelism::MPI || Level == Parallelism::Hybrid> allGatherAssignments(const int rank)
+    // {
+    //     // static auto dtype = matchMPIType<T>();
+    //     // MPI_Allgatherv(MPI_IN_PLACE, myLength(), MPI_INT, ,
+    //     //            p_KmeansState->lengthsData(), p_KmeansState->displacementsData(), mpi_int_size,
+    //     MPI_COMM_WORLD);
+    // }
+
+    // template <Parallelism Level>
+    // std::enable_if_t<Level == Parallelism::MPI || Level == Parallelism::Hybrid> allGatherSqDistances(const int rank)
+    // {
+    //     static auto dtype = matchMPIType<T>();
+    //     MPI_Allgatherv(MPI_IN_PLACE, p_KmeansState->myLength(), dtype, p_KmeansState->sqDistancesData(),
+    //                    p_KmeansState->lengthsData(), p_KmeansState->displacementsData(), mpi_precision,
+    //                    MPI_COMM_WORLD);
+    // }
 
 private:
     void validateWeights()
@@ -161,13 +228,9 @@ private:
     template <Parallelism Level>
     std::enable_if_t<Level == Parallelism::Serial> calcClusterCounts()
     {
-        for (int32_t i = 0; i < m_centroids.numRows(); ++i)
+        for (int32_t i = 0; i < static_cast<int32_t>(m_assignments.size()); ++i)
         {
-            for (int32_t j = 0; j < m_assignments.size(); ++j)
-            {
-                if (i == m_assignments[j])
-                    ++m_clusterCounts[i];
-            }
+            ++m_clusterCounts[m_assignments[i]];
         }
     }
 

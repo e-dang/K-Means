@@ -22,12 +22,14 @@ public:
 
     const Clusters<T>* const fit(const Matrix<T>* const data, const int32_t& numClusters, const int& numRepeats)
     {
+        Clusters<T> clusters(numClusters, data);
+
         for (int i = 0; i < numRepeats; ++i)
         {
-            Clusters<T> clusters(numClusters, data);
             p_initializer->initialize(data, &clusters);
             p_maximizer->maximize(data, &clusters);
             compareResults(clusters, m_bestClusters);
+            clusters.clear();
         }
 
         return getResults();
@@ -39,7 +41,7 @@ protected:
     void compareResults(const Clusters<T>& candidateClusters, Clusters<T>& bestClusters)
     {
         if (candidateClusters < bestClusters)
-            bestClusters = std::move(candidateClusters);
+            bestClusters = candidateClusters;
     }
 
 protected:
