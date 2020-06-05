@@ -6,11 +6,12 @@
 using namespace hpkmeans;
 typedef double value_t;
 // constexpr char kmeansMethod[] = KPP;
-constexpr Parallelism parallelism = Parallelism::OMP;
+constexpr Parallelism parallelism = Parallelism::Serial;
 constexpr int numData             = 200000;
 constexpr int dims                = 2;
 constexpr int numClusters         = 30;
-constexpr int repeats             = 100;
+constexpr int repeats             = 10;
+constexpr int numIters            = 10;
 
 int main(int argc, char* argv[])
 {
@@ -26,6 +27,7 @@ int main(int argc, char* argv[])
 
     KMeans<value_t, parallelism> kmeans(OPTKPP, OPTLLOYD);
     const Clusters<value_t>* results;
+    for (int i = 0; i < numIters; ++i)
     {
         boost::timer::auto_cpu_timer t;
         results = kmeans.fit(&data, numClusters, repeats);
