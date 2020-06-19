@@ -40,6 +40,21 @@ public:
         validateWeights();
     }
 
+    Clusters(const Clusters& other) :
+        m_chunkifier(),
+        p_data(),
+        p_weights(),
+        m_assignments(),
+        m_sqDistances(),
+        m_centroids(),
+        m_clusterWeights(),
+        m_error(std::numeric_limits<T>::max())
+    {
+        *this = other;
+    }
+
+    Clusters(Clusters&& other) = default;
+
     Clusters<T, Level>& operator=(const Clusters<T, Level>& rhs)
     {
         if (this != &rhs)
@@ -67,6 +82,8 @@ public:
 
         return *this;
     }
+
+    Clusters<T, Level>& operator=(Clusters<T, Level>&& rhs) = default;
 
     bool operator<(const Clusters& lhs) const { return m_error < lhs.m_error; }
 
@@ -106,6 +123,15 @@ public:
             gatherSqDistances();
 
         m_error = accumulate<Level>(&m_sqDistances);
+    }
+
+    void copyCentroids(const Clusters<T, Level>& other)
+    {
+        if (maxSize() != other.maxSize() || m_centroids.cols() != other.m_centroids.cols())
+            throw std::length_error(
+              "Cannot copy centroids from one clusters object to another when the dimensions aren't the same!");
+
+        m_centroids = other.m_centroids;
     }
 
     int32_t size() const { return m_centroids.numRows(); }
@@ -149,6 +175,15 @@ public:
     {
         MPI_Allgatherv(MPI_IN_PLACE, m_chunkifier.myLength(), MPI_INT, m_assignments.data(), lengths().data(),
                        displacements().data(), MPI_INT, MPI_COMM_WORLD);
+    }
+
+    template <Parallelism _Level = Level>
+    std::enable_if_t<isDistributed(_Level)> gatherAssignments(const int rank = 0)
+    {
+        auto displacement = m_chunkifier.myDisplacement();
+        MPI_Gatherv(m_assignments.data() + displacement, m_chunkifier.myLength(), matchMPIType<T>(),
+                    m_assignments.data(), lengths().data(), displacements().data(), matchMPIType<T>(), rank,
+                    MPI_COMM_WORLD);
     }
 
     template <Parallelism _Level = Level>
