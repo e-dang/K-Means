@@ -7,7 +7,7 @@
 namespace hpkmeans
 {
 template <typename T, Parallelism Level, class DistanceFunc>
-std::unique_ptr<IMaximizer<T>> createMaximizer(const std::string& maximizerString)
+std::unique_ptr<IMaximizer<T, Level>> createMaximizer(const std::string& maximizerString)
 {
     if (maximizerString == LLOYD)
         return std::make_unique<Lloyd<T, Level, DistanceFunc>>(new AssignmentUpdater<T, Level, DistanceFunc>());
