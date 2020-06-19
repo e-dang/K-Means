@@ -41,7 +41,7 @@ private:
         if (weights == nullptr)
             calcClusterCounts(centroids, assignments, clusterWeights);
         else
-            calcClusterWeights(centroids, assignments, weights, clusterWeights);
+            calcClusterWeightsImpl(centroids, assignments, weights, clusterWeights);
     }
 
     template <Parallelism _Level = Level>
@@ -72,10 +72,10 @@ private:
     }
 
     template <Parallelism _Level = Level>
-    std::enable_if_t<isSingleThreaded(_Level)> calcClusterWeights(Matrix<T>* const,
-                                                                  const VectorView<int32_t>* const assignments,
-                                                                  const std::vector<T>* const weights,
-                                                                  std::vector<T>* const clusterWeights) const
+    std::enable_if_t<isSingleThreaded(_Level)> calcClusterWeightsImpl(Matrix<T>* const,
+                                                                      const VectorView<int32_t>* const assignments,
+                                                                      const std::vector<T>* const weights,
+                                                                      std::vector<T>* const clusterWeights) const
     {
         for (int32_t i = 0; i < assignments->viewSize(); ++i)
         {
@@ -84,10 +84,10 @@ private:
     }
 
     template <Parallelism _Level = Level>
-    std::enable_if_t<isMultiThreaded(_Level)> calcClusterWeights(Matrix<T>* const centroids,
-                                                                 const VectorView<int32_t>* const assignments,
-                                                                 const std::vector<T>* const weights,
-                                                                 std::vector<T>* const clusterWeights) const
+    std::enable_if_t<isMultiThreaded(_Level)> calcClusterWeightsImpl(Matrix<T>* const centroids,
+                                                                     const VectorView<int32_t>* const assignments,
+                                                                     const std::vector<T>* const weights,
+                                                                     std::vector<T>* const clusterWeights) const
     {
 #pragma omp parallel for schedule(static)
         for (int32_t i = 0; i < centroids->numRows(); ++i)
