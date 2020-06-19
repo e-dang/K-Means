@@ -67,7 +67,7 @@ private:
     std::enable_if_t<isSharedMemory(_Level)> weightedClusterSelection(Clusters<T, Level>* const clusters) const
     {
         auto sqDistances = clusters->sqDistances();
-        auto dataIdx     = m_weightedSelector.select(sqDistances, getRandFraction() * accumulate<Level>(sqDistances));
+        auto dataIdx = m_weightedSelector.selectSingle(sqDistances, getRandFraction() * accumulate<Level>(sqDistances));
         clusters->addCentroid(dataIdx);
     }
 
@@ -129,7 +129,7 @@ private:
         if (myRank == 0)
         {
             auto sqDistances = clusters->sqDistances();
-            dataIdx          = m_weightedSelector.select(
+            dataIdx          = m_weightedSelector.selectSingle(
               sqDistances, getRandFraction() * accumulate<getConjugateParallelism<Level>()>(sqDistances));
         }
 
@@ -141,6 +141,6 @@ private:
 private:
     std::unique_ptr<AbstractAssignmentUpdater<T, DistanceFunc>> p_updater;
     UniformSelector m_uniformSelector;
-    WeightedSelector<T> m_weightedSelector;
+    WeightedSelector m_weightedSelector;
 };
 }  // namespace hpkmeans
