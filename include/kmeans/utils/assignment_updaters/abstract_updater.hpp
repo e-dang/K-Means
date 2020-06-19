@@ -11,7 +11,7 @@ class AbstractAssignmentUpdater
 {
 public:
     virtual void update(const Matrix<T>* const data, const Matrix<T>* const centroids,
-                        std::vector<int32_t>* const assignments, std::vector<T>* const sqDistances) const = 0;
+                        VectorView<int32_t>* const assignments, VectorView<T>* const sqDistances) const = 0;
 
     virtual ~AbstractAssignmentUpdater() = default;
 
@@ -19,7 +19,7 @@ protected:
     AbstractAssignmentUpdater() : m_distanceFunc(DistanceFunc::instance()) {}
 
     void updateClosestCentroid(const int32_t dataIdx, const Matrix<T>* const data, const Matrix<T>* const centroids,
-                               std::vector<int32_t>* const assignments, std::vector<T>* const sqDistances) const
+                               VectorView<int32_t>* const assignments, VectorView<T>* const sqDistances) const
     {
         auto closestCentroid = this->findClosestCentroid(data->crowBegin(dataIdx), data->crowEnd(dataIdx), centroids);
         assignments->at(dataIdx) = closestCentroid.idx;

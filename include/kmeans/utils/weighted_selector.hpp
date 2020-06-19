@@ -8,7 +8,7 @@ template <typename T>
 class WeightedSelector
 {
 public:
-    int32_t select(const std::vector<T>* const weights, T randomSumFrac) const
+    int32_t select(const VectorView<T>* const weights, T randomSumFrac) const
     {
         for (size_t i = 0; i < weights->size(); ++i)
         {

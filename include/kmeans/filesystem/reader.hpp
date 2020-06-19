@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <kmeans/types/parallelism.hpp>
+#include <kmeans/utils/utils.hpp>
 #include <matrix/matrix.hpp>
 #include <string>
 
@@ -42,8 +43,8 @@ public:
 
 private:
     template <Parallelism _Level = Level>
-    std::enable_if_t<_Level == Parallelism::Serial || _Level == Parallelism::OMP, Matrix<T>> readImpl(
-      const std::string& filepath, const int32_t& numData, const int32_t& numFeatures)
+    std::enable_if_t<isSharedMemory(_Level), Matrix<T>> readImpl(const std::string& filepath, const int32_t& numData,
+                                                                 const int32_t& numFeatures)
     {
         auto file = openFile(filepath);
 
@@ -55,15 +56,13 @@ private:
     }
 
     template <Parallelism _Level = Level>
-    std::enable_if_t<_Level == Parallelism::MPI || _Level == Parallelism::Hybrid, Matrix<T>> readImpl(
-      const std::string& filepath, const int32_t& numData, const int32_t& numFeatures)
+    std::enable_if_t<isDistributed(_Level), Matrix<T>> readImpl(const std::string& filepath, const int32_t& numData,
+                                                                const int32_t& numFeatures)
     {
         int rank;
         int size;
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
         MPI_Comm_size(MPI_COMM_WORLD, &size);
-
-        auto file = openFile(filepath);
 
         auto chunk = numData / size;
         auto scrap = chunk + (numData % size);
@@ -76,8 +75,10 @@ private:
         lengths[size - 1] = scrap;
 
         Matrix<T> data(lengths[rank], numFeatures, true);
+        MPI_File file;
+        MPI_File_open(MPI_COMM_WORLD, filepath.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &file);
         MPI_File_read_ordered(file, data.data(), data.bytes(), MPI_CHAR, MPI_STATUS_IGNORE);
-        file.close();
+        MPI_File_close(&file);
 
         return data;
     }

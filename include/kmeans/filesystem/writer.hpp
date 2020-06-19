@@ -10,7 +10,7 @@
 
 namespace hpkmeans
 {
-template <typename T>
+template <typename T, Parallelism Level>
 class AbstractWriter
 {
 protected:
@@ -23,7 +23,7 @@ public:
 
     virtual ~AbstractWriter() = default;
 
-    void writeClusterResults(const Clusters<T>* clusterResults, const int_fast64_t& time, std::string& filepath);
+    void writeClusterResults(const Clusters<T, Level>* clusterResults, const int_fast64_t& time, std::string& filepath);
 
     void writeRunStats(const T& error, const int_fast64_t& time, std::string& filepath);
 
@@ -35,42 +35,42 @@ public:
 
     virtual void writeClusters(const Matrix<T>* clusters, std::string& filepath) = 0;
 
-    virtual void writeClustering(const std::vector<int32_t>* clustering, std::string& filepath) = 0;
+    virtual void writeClustering(const VectorView<int32_t>* clustering, std::string& filepath) = 0;
 
 protected:
     std::ofstream openFile(const std::string& filepath, const std::ios::openmode mode);
 };
 
-template <typename T>
-class ClusterResultWriter : public AbstractWriter<T>
+template <typename T, Parallelism Level>
+class ClusterResultWriter : public AbstractWriter<T, Level>
 {
 public:
-    ClusterResultWriter(Parallelism parallelism) : AbstractWriter<T>(parallelism) {}
+    ClusterResultWriter(Parallelism parallelism) : AbstractWriter<T, Level>(parallelism) {}
 
     ~ClusterResultWriter() = default;
 
     void writeClusters(const Matrix<T>* clusters, std::string& filepath) override;
 
-    void writeClustering(const std::vector<int32_t>* clustering, std::string& filepath) override;
+    void writeClustering(const VectorView<int32_t>* clustering, std::string& filepath) override;
 };
 
-template <typename T>
-AbstractWriter<T>::AbstractWriter(Parallelism parallelism, const int digits) : m_digits(digits)
+template <typename T, Parallelism Level>
+AbstractWriter<T, Level>::AbstractWriter(Parallelism parallelism, const int digits) : m_digits(digits)
 {
     m_runParams.push_back(parallelismToString(parallelism));
 }
 
-template <typename T>
-void AbstractWriter<T>::writeClusterResults(const Clusters<T>* clusterResults, const int_fast64_t& time,
-                                            std::string& filepath)
+template <typename T, Parallelism Level>
+void AbstractWriter<T, Level>::writeClusterResults(const Clusters<T, Level>* clusterResults, const int_fast64_t& time,
+                                                   std::string& filepath)
 {
     writeClusters(clusterResults->getCentroids(), filepath);
-    writeClustering(clusterResults->getClustering(), filepath);
+    writeClustering(clusterResults->assignments(), filepath);
     writeRunStats(clusterResults->getError(), time, filepath);
 }
 
-template <typename T>
-void AbstractWriter<T>::writeRunStats(const T& error, const int_fast64_t& time, std::string& filepath)
+template <typename T, Parallelism Level>
+void AbstractWriter<T, Level>::writeRunStats(const T& error, const int_fast64_t& time, std::string& filepath)
 {
     auto file = this->openFile(this->m_fileRotator.getUniqueFileName(filepath, "stats"), std::ios::out);
 
@@ -81,22 +81,22 @@ void AbstractWriter<T>::writeRunStats(const T& error, const int_fast64_t& time, 
     file.close();
 }
 
-template <typename T>
-void AbstractWriter<T>::writeError(const T& error, std::ofstream& file)
+template <typename T, Parallelism Level>
+void AbstractWriter<T, Level>::writeError(const T& error, std::ofstream& file)
 {
     auto ss = file.precision();
     file << std::fixed << std::setprecision(m_digits) << "Error: " << error << std::endl;
     file << std::defaultfloat << std::setprecision(ss);
 }
 
-template <typename T>
-void AbstractWriter<T>::writeTime(const T& time, std::ofstream& file)
+template <typename T, Parallelism Level>
+void AbstractWriter<T, Level>::writeTime(const T& time, std::ofstream& file)
 {
     file << "Time: " << time << std::endl;
 }
 
-template <typename T>
-void AbstractWriter<T>::writeRunParams(std::ofstream& file)
+template <typename T, Parallelism Level>
+void AbstractWriter<T, Level>::writeRunParams(std::ofstream& file)
 {
     for (auto& val : m_runParams)
     {
@@ -104,8 +104,8 @@ void AbstractWriter<T>::writeRunParams(std::ofstream& file)
     }
 }
 
-template <typename T>
-std::ofstream AbstractWriter<T>::openFile(const std::string& filepath, const std::ios::openmode mode)
+template <typename T, Parallelism Level>
+std::ofstream AbstractWriter<T, Level>::openFile(const std::string& filepath, const std::ios::openmode mode)
 {
     std::ofstream file(filepath, mode);
     if (!file.is_open())
@@ -117,16 +117,16 @@ std::ofstream AbstractWriter<T>::openFile(const std::string& filepath, const std
     return file;
 }
 
-template <typename T>
-void ClusterResultWriter<T>::writeClusters(const Matrix<T>* clusters, std::string& filepath)
+template <typename T, Parallelism Level>
+void ClusterResultWriter<T, Level>::writeClusters(const Matrix<T>* clusters, std::string& filepath)
 {
     auto file = this->openFile(this->m_fileRotator.getUniqueFileName(filepath, "clusters"), std::ios::binary);
     file.write(clusters->serialize(), clusters->bytes());
     file.close();
 }
 
-template <typename T>
-void ClusterResultWriter<T>::writeClustering(const std::vector<int32_t>* clustering, std::string& filepath)
+template <typename T, Parallelism Level>
+void ClusterResultWriter<T, Level>::writeClustering(const VectorView<int32_t>* clustering, std::string& filepath)
 {
     auto file = this->openFile(this->m_fileRotator.getUniqueFileName(filepath, "clustering"), std::ios::binary);
     file.write(reinterpret_cast<const char*>(clustering->data()), sizeof(int32_t) * clustering->size());
