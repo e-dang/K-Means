@@ -20,9 +20,9 @@ public:
 
     virtual ~KMeans() = default;
 
-    const Clusters<T>* const fit(const Matrix<T>* const data, const int32_t& numClusters, const int& numRepeats)
+    const Clusters<T, Level>* const fit(const Matrix<T>* const data, const int32_t& numClusters, const int& numRepeats)
     {
-        Clusters<T> clusters(numClusters, data);
+        Clusters<T, Level> clusters(numClusters, data);
 
         for (int i = 0; i < numRepeats; ++i)
         {
@@ -35,20 +35,20 @@ public:
         return getResults();
     }
 
-    const Clusters<T>* const getResults() const { return &m_bestClusters; }
+    const Clusters<T, Level>* const getResults() const { return &m_bestClusters; }
 
 protected:
-    void compareResults(const Clusters<T>& candidateClusters, Clusters<T>& bestClusters)
+    void compareResults(const Clusters<T, Level>& candidateClusters, Clusters<T, Level>& bestClusters)
     {
         if (candidateClusters < bestClusters)
             bestClusters = candidateClusters;
     }
 
 protected:
-    Clusters<T> m_bestClusters;
+    Clusters<T, Level> m_bestClusters;
 
 private:
-    std::unique_ptr<IInitializer<T>> p_initializer;
-    std::unique_ptr<IMaximizer<T>> p_maximizer;
+    std::unique_ptr<IInitializer<T, Level>> p_initializer;
+    std::unique_ptr<IMaximizer<T, Level>> p_maximizer;
 };
 }  // namespace hpkmeans
