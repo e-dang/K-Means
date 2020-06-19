@@ -20,39 +20,6 @@ public:
         initialize();
     }
 
-    Chunkifier(Chunkifier&& other) : m_rank(0), m_numProcs(0), m_totalNumData(0), m_lengths(), m_displacements()
-    {
-        *this = std::move(other);
-    }
-
-    Chunkifier& operator=(const Chunkifier& rhs)
-    {
-        if (this != &rhs)
-        {
-            m_rank          = rhs.m_rank;
-            m_numProcs      = rhs.m_numProcs;
-            m_totalNumData  = rhs.m_totalNumData;
-            m_lengths       = rhs.m_lengths;
-            m_displacements = rhs.m_displacements;
-        }
-
-        return *this;
-    }
-
-    Chunkifier& operator=(Chunkifier&& rhs)
-    {
-        if (this != &rhs)
-        {
-            m_rank          = rhs.m_rank;
-            m_numProcs      = rhs.m_numProcs;
-            m_totalNumData  = rhs.m_totalNumData;
-            m_lengths       = std::move(rhs.m_lengths);
-            m_displacements = std::move(rhs.m_displacements);
-        }
-
-        return *this;
-    }
-
     inline const int rank() const noexcept { return m_rank; }
 
     inline const int numProcs() const noexcept { return m_numProcs; }
