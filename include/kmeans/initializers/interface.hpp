@@ -5,12 +5,12 @@
 
 namespace hpkmeans
 {
-template <typename T>
+template <typename T, Parallelism Level>
 class IInitializer
 {
 public:
     virtual ~IInitializer() = default;
 
-    virtual void initialize(const Matrix<T>* const data, Clusters<T>* const clusters) const = 0;
+    virtual void initialize(const Matrix<T>* const data, Clusters<T, Level>* const clusters) const = 0;
 };
 }  // namespace hpkmeans
