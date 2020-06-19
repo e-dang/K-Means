@@ -28,11 +28,11 @@ public:
 private:
     std::vector<T> calcMean(const Matrix<T>* const data)
     {
-        std::vector<T> mean(data->cols());
+        std::vector<T> mean(data->cols(), 0.0);
 
         for (int32_t i = 0; i < data->cols(); ++i)
         {
-            std::accumulate(data->ccolBegin(i), data->ccolEnd(i), 0.0);
+            mean[i] = std::accumulate(data->ccolBegin(i), data->ccolEnd(i), 0.0) / static_cast<T>(data->numRows());
         }
 
         return mean;
