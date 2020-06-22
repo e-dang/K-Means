@@ -10,8 +10,10 @@ template <typename T, Parallelism Level, class DistanceFunc>
 class CoresetKmeans : public KMeansImpl<T, Level, DistanceFunc>
 {
 public:
-    CoresetKmeans(const std::string& initializer, const std::string& maximizer, const int32_t sampleSize) :
+    CoresetKmeans(const std::string& initializer, const std::string& maximizer, const int repeats,
+                  const int32_t sampleSize) :
         KMeansImpl<T, Level, DistanceFunc>(initializer, maximizer),
+        m_coresetRepeats(repeats),
         m_sampleSize(sampleSize),
         m_coresetCreator(),
         m_assignmentUpdater(),
@@ -22,14 +24,17 @@ public:
     const Clusters<T, Level>* const fit(const Matrix<T>* const data, const int32_t& numClusters, const int& numRepeats,
                                         const std::vector<T>* const weights = nullptr) override
     {
-        auto coreset = m_coresetCreator.createCoreset(data, m_sampleSize);
+        for (int i = 0; i < m_coresetRepeats; ++i)
+        {
+            auto coreset = m_coresetCreator.createCoreset(data, m_sampleSize);
 
-        auto coresetResults =
-          KMeansImpl<T, Level, DistanceFunc>::fit(coreset.getData(), numClusters, numRepeats, coreset.getWeights());
+            auto coresetResults =
+              KMeansImpl<T, Level, DistanceFunc>::fit(coreset.getData(), numClusters, numRepeats, coreset.getWeights());
 
-        auto newClusters = assignNonCoresetPoints(data, coresetResults);
-        newClusters.calcError();
-        this->compareResults(newClusters, m_bestCoresetClusters);
+            auto newClusters = assignNonCoresetPoints(data, coresetResults);
+            newClusters.calcError();
+            this->compareResults(newClusters, m_bestCoresetClusters);
+        }
 
         return getResults();
     }
@@ -57,6 +62,7 @@ private:
     }
 
 private:
+    int m_coresetRepeats;
     int32_t m_sampleSize;
     CoresetCreator<T, Level, DistanceFunc> m_coresetCreator;
     AssignmentUpdater<T, Level, DistanceFunc> m_assignmentUpdater;

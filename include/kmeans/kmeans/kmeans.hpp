@@ -14,8 +14,10 @@ public:
     {
     }
 
-    KMeans(const std::string& initializer, const std::string& maximizer, const int32_t sampleSize) :
-        p_impl(std::make_unique<CoresetKmeans<T, Level, DistanceFunc>>(initializer, maximizer, sampleSize))
+    KMeans(const std::string& initializer, const std::string& maximizer, const int coresetRepeats,
+           const int32_t sampleSize) :
+        p_impl(
+          std::make_unique<CoresetKmeans<T, Level, DistanceFunc>>(initializer, maximizer, coresetRepeats, sampleSize))
     {
     }
 

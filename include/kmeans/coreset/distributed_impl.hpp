@@ -8,21 +8,40 @@ template <typename T, Parallelism Level, class DistanceFunc>
 class DistributedCoresetCreatorImpl : public AbstractCoresetCreatorImpl<T, Level, DistanceFunc>
 {
 public:
-    DistributedCoresetCreatorImpl() : AbstractCoresetCreatorImpl<T, Level, DistanceFunc>() {}
+    DistributedCoresetCreatorImpl() :
+        AbstractCoresetCreatorImpl<T, Level, DistanceFunc>(),
+        p_data(nullptr),
+        m_sampleSize(-1),
+        m_numUniformSamples(-1),
+        m_numNonUniformSamples(-1),
+        m_distanceSums(),
+        m_distribution()
+    {
+    }
 
     Coreset<T> createCoreset(const Matrix<T>* const data, const int32_t& sampleSize) override
     {
-        m_chunkifier   = Chunkifier<Level>(data->numRows());
-        m_sampleSize   = sampleSize;
-        m_distanceSums = std::vector<T>(m_chunkifier.numProcs(), 0.0);
+        if (p_data != data || sampleSize != m_sampleSize)
+        {
+            setState(data, sampleSize);
+            auto mean        = calcMean(data);
+            auto sqDistances = calcDistsFromMean(data, mean);
+            calcDistribution(sqDistances);
+        }
 
-        auto mean         = calcMean(data);
-        auto sqDistances  = calcDistsFromMean(data, mean);
-        auto distribution = calcDistribution(sqDistances);
-        return sampleDistribution(data, distribution);
+        return sampleDistribution(data);
     }
 
 private:
+    void setState(const Matrix<T>* data, const int32_t& sampleSize)
+    {
+        p_data         = data;
+        m_chunkifier   = Chunkifier<Level>(data->numRows());
+        m_sampleSize   = sampleSize;
+        m_distanceSums = std::vector<T>(m_chunkifier.numProcs(), 0.0);
+        m_distribution = std::vector<T>(data->numRows(), 0.0);
+    }
+
     std::vector<T> calcMean(const Matrix<T>* const data)
     {
         std::vector<T> mean(data->cols(), 0.0);
@@ -51,10 +70,9 @@ private:
         return sqDistances;
     }
 
-    std::vector<T> calcDistribution(const std::vector<T>& sqDistances)
+    void calcDistribution(const std::vector<T>& sqDistances)
     {
         T totalDistanceSums;
-        std::vector<T> distribution(sqDistances.size(), 0.0);
         std::vector<int32_t> uniformSampleCounts(m_chunkifier.numProcs(), 0);
         std::vector<int32_t> nonUniformSampleCounts(m_chunkifier.numProcs(), 0);
 
@@ -68,10 +86,8 @@ private:
         MPI_Scatter(uniformSampleCounts.data(), 1, MPI_INT, &m_numUniformSamples, 1, MPI_INT, 0, MPI_COMM_WORLD);
         MPI_Scatter(nonUniformSampleCounts.data(), 1, MPI_INT, &m_numNonUniformSamples, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-        std::transform(sqDistances.cbegin(), sqDistances.cend(), distribution.begin(),
+        std::transform(sqDistances.cbegin(), sqDistances.cend(), m_distribution.begin(),
                        [&totalDistanceSums](const T& dist) { return dist / totalDistanceSums; });
-
-        return distribution;
     }
 
     void calculateSamplingStrategy(std::vector<int32_t>& uniformSampleCounts,
@@ -117,27 +133,27 @@ private:
         }
     }
 
-    Coreset<T> sampleDistribution(const Matrix<T>* const data, const std::vector<T>& distribution)
+    Coreset<T> sampleDistribution(const Matrix<T>* const data)
     {
         Coreset<T> coreset(m_sampleSize, data->cols());
-        std::vector<T> uniformWeights(distribution.size(), 1.0 / m_chunkifier.totalNumData());
+        std::vector<T> uniformWeights(m_distribution.size(), 1.0 / m_chunkifier.totalNumData());
 
-        appendDataToCoreset(data, coreset, uniformWeights, distribution, m_numUniformSamples);
-        appendDataToCoreset(data, coreset, distribution, distribution, m_numNonUniformSamples);
+        appendDataToCoreset(data, coreset, uniformWeights, m_numUniformSamples);
+        appendDataToCoreset(data, coreset, m_distribution, m_numNonUniformSamples);
         coreset = distributeCoreset(data, coreset);
 
         return coreset;
     }
 
     void appendDataToCoreset(const Matrix<T>* const data, Coreset<T>& coreset, const std::vector<T>& weights,
-                             const std::vector<T>& distribution, const int32_t& numSamples)
+                             const int32_t& numSamples)
     {
         T partialQ        = 0.5 * (1.0 / static_cast<T>(m_chunkifier.totalNumData()));
         auto selectedIdxs = this->m_weightedSelector.selectMultiple(&weights, numSamples);
         for (const auto& idx : selectedIdxs)
         {
             coreset.append(data->crowBegin(idx), data->crowEnd(idx),
-                           1.0 / (m_sampleSize * (partialQ + 0.5 * distribution[idx])));
+                           1.0 / (m_sampleSize * (partialQ + 0.5 * m_distribution[idx])));
         }
     }
 
@@ -192,9 +208,11 @@ private:
 
 private:
     Chunkifier<Level> m_chunkifier;
+    const Matrix<T>* p_data;
     int32_t m_sampleSize;
     int32_t m_numUniformSamples;
     int32_t m_numNonUniformSamples;
     std::vector<T> m_distanceSums;
+    std::vector<T> m_distribution;
 };
 }  // namespace hpkmeans

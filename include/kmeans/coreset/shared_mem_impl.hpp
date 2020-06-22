@@ -8,19 +8,33 @@ template <typename T, Parallelism Level, class DistanceFunc>
 class SharedMemoryCoresetCreatorImpl : public AbstractCoresetCreatorImpl<T, Level, DistanceFunc>
 {
 public:
-    SharedMemoryCoresetCreatorImpl() : AbstractCoresetCreatorImpl<T, Level, DistanceFunc>() {}
+    SharedMemoryCoresetCreatorImpl() :
+        AbstractCoresetCreatorImpl<T, Level, DistanceFunc>(), p_data(nullptr), m_sampleSize(-1), m_distribution()
+    {
+    }
 
     Coreset<T> createCoreset(const Matrix<T>* const data, const int32_t& sampleSize) override
     {
-        auto mean = calcMean(data);
-        std::vector<T> sqDistances(data->numRows());
-        auto distanceSum  = this->calcDistsFromMean(data, mean, sqDistances);
-        auto distribution = calcDistribution(sqDistances, distanceSum);
+        if (p_data != data || sampleSize != m_sampleSize)
+        {
+            setState(data, sampleSize);
+            auto mean = calcMean(data);
+            std::vector<T> sqDistances(data->numRows());
+            auto distanceSum = this->calcDistsFromMean(data, mean, sqDistances);
+            calcDistribution(sqDistances, distanceSum);
+        }
 
-        return sampleDistribution(data, distribution, sampleSize);
+        return sampleDistribution(data);
     }
 
 private:
+    void setState(const Matrix<T>* data, const int32_t& sampleSize)
+    {
+        p_data         = data;
+        m_sampleSize   = sampleSize;
+        m_distribution = std::vector<T>(data->numRows(), 0.0);
+    }
+
     template <Parallelism _Level = Level>
     std::enable_if_t<isSingleThreaded(_Level), std::vector<T>> calcMean(const Matrix<T>* const data)
     {
@@ -49,46 +63,41 @@ private:
     }
 
     template <Parallelism _Level = Level>
-    std::enable_if_t<isSingleThreaded(_Level), std::vector<T>> calcDistribution(const std::vector<T>& sqDistances,
-                                                                                const T& distanceSum)
+    std::enable_if_t<isSingleThreaded(_Level)> calcDistribution(const std::vector<T>& sqDistances, const T& distanceSum)
     {
-        std::vector<T> distribution(sqDistances.size());
         T partialQ = 0.5 * (1.0 / static_cast<T>(sqDistances.size()));
-        std::transform(sqDistances.cbegin(), sqDistances.cend(), distribution.begin(),
+        std::transform(sqDistances.cbegin(), sqDistances.cend(), m_distribution.begin(),
                        [&partialQ, &distanceSum](const T& dist) { return partialQ + (0.5 * dist / distanceSum); });
-
-        return distribution;
     }
 
     template <Parallelism _Level = Level>
-    std::enable_if_t<isMultiThreaded(_Level), std::vector<T>> calcDistribution(const std::vector<T>& sqDistances,
-                                                                               const T& distanceSum)
+    std::enable_if_t<isMultiThreaded(_Level)> calcDistribution(const std::vector<T>& sqDistances, const T& distanceSum)
     {
-        std::vector<T> distribution(sqDistances.size());
         T partialQ = 0.5 * (1.0 / static_cast<T>(sqDistances.size()));
 
-#pragma omp parallel for schedule(static), shared(partialQ, distribution)
+#pragma omp parallel for schedule(static), shared(partialQ)
         for (int32_t i = 0; i < static_cast<int32_t>(sqDistances.size()); ++i)
         {
-            distribution[i] = partialQ + (0.5 * sqDistances[i] / distanceSum);
+            m_distribution[i] = partialQ + (0.5 * sqDistances[i] / distanceSum);
         }
-
-        return distribution;
     }
 
-    Coreset<T> sampleDistribution(const Matrix<T>* const data, const std::vector<T>& distribution,
-                                  const int32_t& sampleSize)
+    Coreset<T> sampleDistribution(const Matrix<T>* const data)
     {
-        Coreset<T> coreset(sampleSize, data->cols());
+        Coreset<T> coreset(m_sampleSize, data->cols());
 
-        auto selectedIdxs = this->m_weightedSelector.selectMultiple(&distribution, sampleSize);
+        auto selectedIdxs = this->m_weightedSelector.selectMultiple(&m_distribution, m_sampleSize);
         for (const auto& idx : selectedIdxs)
         {
-            coreset.append(data->crowBegin(idx), data->crowEnd(idx), 1.0 / (sampleSize * distribution[idx]));
+            coreset.append(data->crowBegin(idx), data->crowEnd(idx), 1.0 / (m_sampleSize * m_distribution[idx]));
         }
 
         return coreset;
     }
-};
 
+private:
+    const Matrix<T>* p_data;
+    int32_t m_sampleSize;
+    std::vector<T> m_distribution;
+};
 }  // namespace hpkmeans
