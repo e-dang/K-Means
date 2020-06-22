@@ -123,6 +123,9 @@ public:
             gatherSqDistances();
 
         m_error = accumulate<Level>(&m_sqDistances);
+
+        if constexpr (isDistributed(Level))
+            MPI_Bcast(&m_error, 1, matchMPIType<T>(), 0, MPI_COMM_WORLD);
     }
 
     void copyCentroids(const Clusters<T, Level>& other)
@@ -181,9 +184,8 @@ public:
     std::enable_if_t<isDistributed(_Level)> gatherAssignments(const int rank = 0)
     {
         auto displacement = m_chunkifier.myDisplacement();
-        MPI_Gatherv(m_assignments.data() + displacement, m_chunkifier.myLength(), matchMPIType<T>(),
-                    m_assignments.data(), lengths().data(), displacements().data(), matchMPIType<T>(), rank,
-                    MPI_COMM_WORLD);
+        MPI_Gatherv(m_assignments.data() + displacement, m_chunkifier.myLength(), MPI_INT, m_assignments.data(),
+                    lengths().data(), displacements().data(), MPI_INT, rank, MPI_COMM_WORLD);
     }
 
     template <Parallelism _Level = Level>
