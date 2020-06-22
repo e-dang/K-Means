@@ -35,30 +35,10 @@ private:
         m_distribution = std::vector<T>(data->numRows(), 0.0);
     }
 
-    template <Parallelism _Level = Level>
-    std::enable_if_t<isSingleThreaded(_Level), std::vector<T>> calcMean(const Matrix<T>* const data)
+    std::vector<T> calcMean(const Matrix<T>* const data)
     {
-        std::vector<T> mean(data->cols(), 0.0);
-
-        for (int32_t i = 0; i < data->cols(); ++i)
-        {
-            mean[i] = std::accumulate(data->ccolBegin(i), data->ccolEnd(i), 0.0) / static_cast<T>(data->numRows());
-        }
-
-        return mean;
-    }
-
-    template <Parallelism _Level = Level>
-    std::enable_if_t<isMultiThreaded(_Level), std::vector<T>> calcMean(const Matrix<T>* const data)
-    {
-        std::vector<T> mean(data->cols(), 0.0);
-
-#pragma omp parallel for schedule(static), shared(mean)
-        for (int32_t i = 0; i < data->cols(); ++i)
-        {
-            mean[i] = std::accumulate(data->ccolBegin(i), data->ccolEnd(i), 0.0) / static_cast<T>(data->numRows());
-        }
-
+        auto mean = this->calcMeanSum(data);
+        std::for_each(mean.begin(), mean.end(), [&data](T val) { val /= static_cast<T>(data->numRows()); });
         return mean;
     }
 

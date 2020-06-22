@@ -54,6 +54,33 @@ protected:
         return distanceSum;
     }
 
+    template <Parallelism _Level = Level>
+    std::enable_if_t<isSingleThreaded(_Level), std::vector<T>> calcMeanSum(const Matrix<T>* const data)
+    {
+        std::vector<T> meanSum(data->cols(), 0.0);
+
+        for (int32_t i = 0; i < data->cols(); ++i)
+        {
+            meanSum[i] = std::accumulate(data->ccolBegin(i), data->ccolEnd(i), 0.0);
+        }
+
+        return meanSum;
+    }
+
+    template <Parallelism _Level = Level>
+    std::enable_if_t<isMultiThreaded(_Level), std::vector<T>> calcMeanSum(const Matrix<T>* const data)
+    {
+        std::vector<T> meanSum(data->cols(), 0.0);
+
+#pragma omp parallel for schedule(static), shared(meanSum)
+        for (int32_t i = 0; i < data->cols(); ++i)
+        {
+            meanSum[i] = std::accumulate(data->ccolBegin(i), data->ccolEnd(i), 0.0);
+        }
+
+        return meanSum;
+    }
+
 protected:
     WeightedSelector m_weightedSelector;
 

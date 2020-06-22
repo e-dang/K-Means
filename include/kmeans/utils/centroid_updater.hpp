@@ -28,6 +28,7 @@ public:
                                                             std::vector<T>* const clusterWeights) const
     {
         calcClusterWeights(centroids, assignments, weights, clusterWeights);
+
         MPI_Allreduce(MPI_IN_PLACE, clusterWeights->data(), clusterWeights->size(), matchMPIType<T>(), MPI_SUM,
                       MPI_COMM_WORLD);
 
