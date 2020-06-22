@@ -9,7 +9,14 @@ template <typename T>
 class Coreset
 {
 public:
-    Coreset(const int32_t rows, const int32_t cols) : m_data(rows, cols), m_weights() { m_weights.reserve(rows); }
+    Coreset(const int32_t rows, const int32_t cols, const bool& autoReserve = false) :
+        m_data(rows, cols, autoReserve), m_weights()
+    {
+        if (autoReserve)
+            m_weights.resize(rows);
+        else
+            m_weights.reserve(rows);
+    }
 
     Coreset(const Coreset& other) = delete;
 
@@ -26,9 +33,23 @@ public:
         m_weights.push_back(weight);
     }
 
-    const Matrix<T>* const data() const { return &m_data; }
+    const int32_t numRows() const { return m_data.numRows(); }
 
-    const std::vector<T>* const weights() const { return &m_weights; }
+    const int32_t cols() const { return m_data.cols(); }
+
+    const int64_t size() const { return m_data.size(); }
+
+    T* const data() { return m_data.data(); }
+
+    const T* const data() const { return m_data.data(); }
+
+    T* const weights() { return m_weights.data(); }
+
+    const T* const weights() const { return m_weights.data(); }
+
+    const Matrix<T>* const getData() const { return &m_data; }
+
+    const std::vector<T>* const getWeights() const { return &m_weights; }
 
 private:
     Matrix<T> m_data;
