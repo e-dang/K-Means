@@ -13,16 +13,7 @@ SET(CMAKE_CXX_FLAGS "-Wall -Wpedantic -fopenmp")
 find_package(MPI REQUIRED)
 find_package(Boost 1.72.0 COMPONENTS random timer)
 
-add_subdirectory(./libs)
+include_directories(include)
 
-# include
-include_directories(./include ./libs/include ${CMAKE_CURRENT_BINARY_DIR} ${MPI_INCLUDE_PATH} ${Boost_INCLUDE_DIRS})
-
-# target
-if(Boost_FOUND AND MPI_FOUND)
-    add_executable(kmeans ./src/main.cpp
-                          ./src/filesystem/file_rotator.cpp)
-    target_link_libraries(kmeans sarge ${MPI_LIBRARIES} ${Boost_LIBRARIES})
-    add_executable(static_kmeans ./src/static_kmeans.cpp ./src/types/parallelism.cpp ./src/utils/file_rotator.cpp)
-    target_link_libraries(static_kmeans matrix ${MPI_LIBRARIES} ${Boost_LIBRARIES})
-endif()
+add_subdirectory(libs)
+add_subdirectory(src)
