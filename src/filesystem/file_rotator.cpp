@@ -1,12 +1,12 @@
 #include <fstream>
-#include <hpkmeans/filesystem/file_rotator.hpp>
+#include <kmeans/filesystem/file_rotator.hpp>
 
-namespace HPKmeans
+namespace hpkmeans
 {
 std::string FileRotator::getUniqueFileName(std::string& baseFilepath, std::string identifier)
 {
-    std::set<char> delims{ '/' };
-    std::set<char> dot{ '.' };
+    std::set<char> delims = { '/' };
+    std::set<char> dot    = { '.' };
 
     auto splitFilepath = splitPath(baseFilepath, delims);
     auto splitFileName = splitPath(splitFilepath.back(), dot);
@@ -84,4 +84,4 @@ std::string FileRotator::reassemblePath(std::string& newFileName, std::string& e
 
     return newFilePath;
 }
-}  // namespace HPKmeans
+}  // namespace hpkmeans

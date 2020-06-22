@@ -1,361 +1,86 @@
-#include <mpi.h>
-#include <sarge/sarge.h>
-
 #include <boost/timer/timer.hpp>
-#include <chrono>
-#include <hpkmeans/distances.hpp>
-#include <hpkmeans/filesystem/reader.hpp>
-#include <hpkmeans/filesystem/writer.hpp>
-#include <hpkmeans/kmeans.hpp>
-#include <hpkmeans/version.hpp>
-#include <iostream>
+#include <kmeans/filesystem/reader.hpp>
+#include <kmeans/filesystem/writer.hpp>
+#include <kmeans/kmeans.hpp>
 
-const int DEFAULT_REPEATS = 10;
+using namespace hpkmeans;
+typedef double value_t;
+constexpr Parallelism parallelism = Parallelism::Hybrid;
+constexpr bool coreset            = true;
+constexpr int numData             = 200000;
+constexpr int dims                = 2;
+constexpr int numClusters         = 30;
+constexpr int repeats             = 10;
+constexpr int coresetRepeats      = 10;
+constexpr int numIters            = 1;
+constexpr int sampleSize          = numData / 10;
 
-namespace hp = HPKmeans;
-
-void parseFilePath(Sarge& sarge, std::string& filepath)
+std::unique_ptr<KMeans<value_t, parallelism>> createKmeans()
 {
-    if (!sarge.getTextArgument(0, filepath))
-    {
-        std::cerr << "Must specify a path to a datafile!" << std::endl;
-        exit(1);
-    }
-}
-
-int32_t parseNumData(Sarge& sarge)
-{
-    std::string rows;
-    int32_t numData;
-    if (sarge.getFlag("rows", rows))
-    {
-        numData = std::atoi(rows.c_str());
-        if (numData <= 0)
-        {
-            std::cerr << "The number of data points must be greater than 0!" << std::endl;
-            exit(1);
-        }
-    }
+    if constexpr (coreset)
+        return std::make_unique<KMeans<value_t, parallelism>>(OPTKPP, OPTLLOYD, coresetRepeats, sampleSize);
     else
-    {
-        std::cerr << "Must specify the number of datapoints to be clustered!" << std::endl;
-        exit(1);
-    }
-
-    return numData;
+        return std::make_unique<KMeans<value_t, parallelism>>(OPTKPP, OPTLLOYD);
 }
 
-int32_t parseNumFeatures(Sarge& sarge)
+void runSharedMemory(std::string& filepath)
 {
-    std::string cols;
-    int32_t numFeatures;
-    if (sarge.getFlag("cols", cols))
-    {
-        numFeatures = std::atoi(cols.c_str());
-        if (numFeatures <= 0)
-        {
-            std::cerr << "The number of features in each data point must be greater than 0!" << std::endl;
-            exit(1);
-        }
-    }
-    else
-    {
-        std::cerr << "Must specify the number of features in each data point!" << std::endl;
-        exit(1);
-    }
+    MatrixReader<value_t, parallelism> reader;
+    ClusterResultWriter<value_t, parallelism> writer(parallelism);
 
-    return numFeatures;
-}
+    auto data = reader.read(filepath, numData, dims);
 
-int32_t parseNumClusters(Sarge& sarge)
-{
-    std::string clusters;
-    int32_t numClusters;
-    if (sarge.getFlag("clusters", clusters))
-    {
-        numClusters = std::atoi(clusters.c_str());
-        if (numClusters <= 0)
-        {
-            std::cerr << "The number of clusters must be greater than 0!" << std::endl;
-            exit(1);
-        }
-    }
-    else
-    {
-        std::cerr << "Must specify the number of clusters to cluster the data into!" << std::endl;
-        exit(1);
-    }
-
-    return numClusters;
-}
-
-int32_t parseSampleSize(Sarge& sarge)
-{
-    std::string samples;
-    int32_t sampleSize;
-    if (sarge.getFlag("samples", samples))
-    {
-        sampleSize = std::atoi(samples.c_str());
-        if (sampleSize <= 0)
-        {
-            std::cerr << "The sample size must be greater than 0!" << std::endl;
-            exit(1);
-        }
-
-        return sampleSize;
-    }
-
-    return -1;
-}
-
-int parseNumRestarts(Sarge& sarge)
-{
-    std::string restarts;
-    int numRestarts;
-    if (sarge.getFlag("restarts", restarts))
-    {
-        numRestarts = std::atoi(restarts.c_str());
-        if (numRestarts <= 0)
-        {
-            std::cerr << "The number of restarts must be greater than 0!" << std::endl;
-            exit(1);
-        }
-
-        return numRestarts;
-    }
-
-    return DEFAULT_REPEATS;
-}
-
-hp::Initializer parseInitializer(Sarge& sarge)
-{
-    hp::Initializer initializer = hp::InitNull;
-    bool argPresent;
-    std::string kpp;
-    if (sarge.getFlag("kpp", kpp))
-        initializer = hp::KPP;
-
-    std::string optkpp;
-    argPresent = sarge.getFlag("optkpp", optkpp);
-    if (argPresent && initializer == hp::InitNull)
-    {
-        initializer = hp::OptKPP;
-    }
-    else if (argPresent && initializer != hp::InitNull)
-    {
-        std::cerr << "Cannot specify two types of initializer methods!" << std::endl;
-        exit(1);
-    }
-    else if (!argPresent && initializer == hp::InitNull)
-    {
-        std::cerr << "Must specify an initializer method!" << std::endl;
-        exit(1);
-    }
-
-    return initializer;
-}
-
-hp::Maximizer parseMaximizer(Sarge& sarge)
-{
-    hp::Maximizer maximizer = hp::MaxNull;
-    bool argPresent;
-    std::string lloyd;
-    if (sarge.getFlag("lloyd", lloyd))
-        maximizer = hp::Lloyd;
-
-    std::string optlloyd;
-    argPresent = sarge.getFlag("optlloyd", optlloyd);
-    if (sarge.getFlag("optlloyd", optlloyd) && maximizer == hp::MaxNull)
-    {
-        maximizer = hp::OptLloyd;
-    }
-    else if (argPresent && maximizer != hp::MaxNull)
-    {
-        std::cerr << "Cannot specify two types of maximizer methods!" << std::endl;
-        exit(1);
-    }
-    else if (!argPresent && maximizer == hp::MaxNull)
-    {
-        std::cerr << "Must specify a maximizer method!" << std::endl;
-        exit(1);
-    }
-
-    return maximizer;
-}
-
-hp::CoresetCreator parseCoresetCreator(Sarge& sarge, int32_t& sampleSize)
-{
-    hp::CoresetCreator coresetCreator = hp::None;
-    std::string coreset;
-    if (sarge.getFlag("coreset", coreset))
-    {
-        coresetCreator = hp::LWCoreset;
-        if (sampleSize <= 0)
-        {
-            std::cerr << "Must give a sample size greater than 0 when using a coreset!" << std::endl;
-            exit(1);
-        }
-    }
-
-    return coresetCreator;
-}
-
-hp::Parallelism parseParallelism(Sarge& sarge)
-{
-    hp::Parallelism parallelism = hp::ParaNull;
-    bool argPresent;
-    std::string serial;
-    if (sarge.getFlag("serial", serial))
-        parallelism = hp::Serial;
-
-    std::string omp;
-    argPresent = sarge.getFlag("omp", omp);
-    if (argPresent && parallelism == hp::ParaNull)
-    {
-        parallelism = hp::OMP;
-    }
-    else if (argPresent && parallelism != hp::ParaNull)
-    {
-        std::cerr << "Cannot specify two different levels of parallelism!" << std::endl;
-        exit(1);
-    }
-
-    std::string mpi;
-    argPresent = sarge.getFlag("mpi", mpi);
-    if (argPresent && parallelism == hp::ParaNull)
-    {
-        parallelism = hp::MPI;
-    }
-    else if (argPresent && parallelism != hp::ParaNull)
-    {
-        std::cerr << "Cannot specify two different levels of parallelism!" << std::endl;
-        exit(1);
-    }
-
-    std::string hybrid;
-    argPresent = sarge.getFlag("hybrid", hybrid);
-    if (argPresent && parallelism == hp::ParaNull)
-    {
-        parallelism = hp::Hybrid;
-    }
-    else if (argPresent && parallelism != hp::ParaNull)
-    {
-        std::cerr << "Cannot specify two different levels of parallelism!" << std::endl;
-        exit(1);
-    }
-    else if (!argPresent && parallelism == hp::ParaNull)
-    {
-        std::cerr << "Must specify a level of parallelism!" << std::endl;
-        exit(1);
-    }
-
-    return parallelism;
-}
-
-void runDistributed(int& argc, char** argv, std::string filepath, const int32_t& numData, const int32_t& numFeatures,
-                    const int32_t& numClusters, const int32_t& sampleSize, const int& numRestarts,
-                    hp::Initializer initializer, hp::Maximizer maximizer, hp::CoresetCreator coresetCreator,
-                    hp::Parallelism parallelism)
-{
-    int rank = 0, numProcs;
-    MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
-
-    hp::MPIMatrixReader<double> reader;
-    auto data = reader.read(filepath, numData, numFeatures);
-
-    hp::Kmeans<double> kmeans(initializer, maximizer, coresetCreator, parallelism,
-                              std::make_shared<hp::EuclideanDistance<double>>(), sampleSize);
-
-    std::shared_ptr<hp::ClusterResults<double, int32_t>> clusterResults;
-    int64_t duration;
-    for (int i = 0; i < 10; ++i)
+    auto kmeans = createKmeans();
+    const Clusters<value_t, parallelism>* results;
+    for (int i = 0; i < numIters; ++i)
     {
         boost::timer::auto_cpu_timer t;
-        clusterResults = kmeans.fit(&data, numClusters, numRestarts);
-        duration       = static_cast<int64_t>(t.elapsed().wall);
+        results = kmeans->fit(&data, numClusters, repeats);
+    }
+
+    std::cout << "Error: " << results->getError() << '\n';
+    writer.writeClusterResults(results, 0, filepath);
+}
+
+void runDistributed(std::string& filepath)
+{
+    int rank;
+    int size;
+    MPI_Init(nullptr, nullptr);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    MatrixReader<value_t, parallelism> reader;
+    ClusterResultWriter<value_t, parallelism> writer(parallelism);
+
+    auto data = reader.read(filepath, numData, dims);
+
+    auto kmeans = createKmeans();
+    const Clusters<value_t, parallelism>* results;
+    for (int i = 0; i < numIters; ++i)
+    {
+        boost::timer::auto_cpu_timer t;
+        results = kmeans->fit(&data, numClusters, repeats);
     }
 
     if (rank == 0)
     {
-        hp::ClusterResultWriter<double> writer(initializer, maximizer, coresetCreator, parallelism);
-        writer.writeClusterResults(clusterResults, duration / 1e9, filepath);
+        std::cout << "Error: " << results->getError() << '\n';
+        writer.writeClusterResults(results, 0, filepath);
     }
 
     MPI_Finalize();
 }
 
-void runSharedMemory(int& argc, char** argv, std::string filepath, const int32_t& numData, const int32_t& numFeatures,
-                     const int32_t& numClusters, const int32_t& sampleSize, const int& numRestarts,
-                     hp::Initializer initializer, hp::Maximizer maximizer, hp::CoresetCreator coresetCreator,
-                     hp::Parallelism parallelism)
+int main(int argc, char* argv[])
 {
-    hp::MatrixReader<double> reader;
-    auto data = reader.read(filepath, numData, numFeatures);
+    std::string filepath = /*INSERT FILEPATH HERE*/ std::to_string(numData) + "_" + std::to_string(dims) + ".txt";
 
-    hp::Kmeans<double> kmeans(initializer, maximizer, coresetCreator, parallelism,
-                              std::make_shared<hp::EuclideanDistance<double>>(), sampleSize);
-    std::shared_ptr<hp::ClusterResults<double, int32_t>> clusterResults;
-    int64_t duration;
-    for (int i = 0; i < 10; ++i)
-    {
-        boost::timer::auto_cpu_timer t;
-        clusterResults = kmeans.fit(&data, numClusters, numRestarts);
-        duration       = static_cast<int64_t>(t.elapsed().wall);
-    }
+    std::cout << "Method: " << KPP << "\nParallelism: " << parallelismToString(parallelism) << "\nData: " << filepath
+              << '\n';
 
-    hp::ClusterResultWriter<double> writer(initializer, maximizer, coresetCreator, parallelism);
-    writer.writeClusterResults(clusterResults, duration / 1e9, filepath);
-}
-
-int main(int argc, char** argv)
-{
-    Sarge sarge;
-    sarge.setArgument("f", "file", "The path the data file.", false);
-    sarge.setArgument("r", "rows", "The number of data points (rows) in the matrix.", true);
-    sarge.setArgument("c", "cols", "The number features (columns) in each data point.", true);
-    sarge.setArgument("k", "clusters", "The number of clusters to cluster the data into.", true);
-    sarge.setArgument("t", "restarts", "The number of tries to find the best clustering. Defaults to 10.", true);
-    sarge.setArgument("s", "samples", "The sample size to use for a Coreset.", true);
-    sarge.setArgument("", "kpp", "A switch to use K++ for initialization.", false);
-    sarge.setArgument("", "optkpp", "A switch to use OptimizedK++ for initialization.", false);
-    sarge.setArgument("", "lloyd", "A switch to use Lloyd for maximization.", false);
-    sarge.setArgument("", "optlloyd", "A switch to use OptimizedLloyd for maximization.", false);
-    sarge.setArgument("", "coreset", "A switch to use a Coreset for quicker approximation.", false);
-    sarge.setArgument("", "serial", "A switch to toggle serialized execution.", false);
-    sarge.setArgument("", "omp", "A switch to toggle OMP execution.", false);
-    sarge.setArgument("", "mpi", "A switch to toggle MPI execution.", false);
-    sarge.setArgument("", "hybrid", "A switch to toggle Hybrid (OMP and MPI) execution.", false);
-
-    if (!sarge.parseArguments(argc, argv))
-    {
-        std::cerr << "Failed to parse arguments." << std::endl;
-        exit(1);
-    }
-
-    std::string filepath;
-    parseFilePath(sarge, filepath);
-    auto numData        = parseNumData(sarge);
-    auto numFeatures    = parseNumFeatures(sarge);
-    auto numClusters    = parseNumClusters(sarge);
-    auto sampleSize     = parseSampleSize(sarge);
-    auto numRestarts    = parseNumRestarts(sarge);
-    auto initializer    = parseInitializer(sarge);
-    auto maximizer      = parseMaximizer(sarge);
-    auto coresetCreator = parseCoresetCreator(sarge, sampleSize);
-    auto parallelism    = parseParallelism(sarge);
-
-    if (parallelism == hp::MPI || parallelism == hp::Hybrid)
-    {
-        runDistributed(argc, argv, filepath, numData, numFeatures, numClusters, sampleSize, numRestarts, initializer,
-                       maximizer, coresetCreator, parallelism);
-    }
+    if (isSharedMemory(parallelism))
+        runSharedMemory(filepath);
     else
-    {
-        runSharedMemory(argc, argv, filepath, numData, numFeatures, numClusters, sampleSize, numRestarts, initializer,
-                        maximizer, coresetCreator, parallelism);
-    }
-
-    exit(0);
+        runDistributed(filepath);
 }
