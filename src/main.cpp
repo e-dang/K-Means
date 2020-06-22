@@ -74,9 +74,7 @@ void runDistributed(std::string& filepath)
 
 int main(int argc, char* argv[])
 {
-    // std::string filepath = /*INSERT FILEPATH HERE*/ std::to_string(numData) + "_" + std::to_string(dims) + ".txt";
-    std::string filepath = "/Users/ericdang/Documents/High_Performance_Computing_Fall_2019/K-Means/data/test_" +
-                           std::to_string(numData) + "_" + std::to_string(dims) + ".txt";
+    std::string filepath = /*INSERT FILEPATH HERE*/ std::to_string(numData) + "_" + std::to_string(dims) + ".txt";
 
     std::cout << "Method: " << KPP << "\nParallelism: " << parallelismToString(parallelism) << "\nData: " << filepath
               << '\n';
