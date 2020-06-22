@@ -52,7 +52,7 @@ constexpr MPI_Datatype matchMPIType()
 }
 
 template <typename Iter>
-void print(Iter begin, Iter end)
+inline void print(Iter begin, Iter end)
 {
     for (; begin != end; ++begin)
     {

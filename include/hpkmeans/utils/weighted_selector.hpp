@@ -8,7 +8,7 @@ class WeightedSelector
 {
 public:
     template <class Container>
-    int32_t selectSingle(const Container* const weights, typename Container::value_type randomSumFrac) const
+    inline int32_t selectSingle(const Container* const weights, typename Container::value_type randomSumFrac) const
     {
         for (size_t i = 0; i < weights->size(); ++i)
         {
@@ -20,7 +20,7 @@ public:
     }
 
     template <class Container>
-    std::vector<int32_t> selectMultiple(const Container* const weights, const int32_t sampleSize)
+    inline std::vector<int32_t> selectMultiple(const Container* const weights, const int32_t sampleSize)
     {
         typedef typename Container::value_type T;
 

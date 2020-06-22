@@ -20,9 +20,9 @@ protected:
     AbstractCoresetCreatorImpl() : m_distanceFunc(DistanceFunc::instance()) {}
 
     template <Parallelism _Level = Level>
-    std::enable_if_t<isSingleThreaded(_Level), T> calcDistsFromMean(const Matrix<T>* const data,
-                                                                    const std::vector<T>& mean,
-                                                                    std::vector<T>& sqDistances)
+    inline std::enable_if_t<isSingleThreaded(_Level), T> calcDistsFromMean(const Matrix<T>* const data,
+                                                                           const std::vector<T>& mean,
+                                                                           std::vector<T>& sqDistances)
     {
         T distanceSum = 0.0;
 
@@ -37,9 +37,9 @@ protected:
     }
 
     template <Parallelism _Level = Level>
-    std::enable_if_t<isMultiThreaded(_Level), T> calcDistsFromMean(const Matrix<T>* const data,
-                                                                   const std::vector<T>& mean,
-                                                                   std::vector<T>& sqDistances)
+    inline std::enable_if_t<isMultiThreaded(_Level), T> calcDistsFromMean(const Matrix<T>* const data,
+                                                                          const std::vector<T>& mean,
+                                                                          std::vector<T>& sqDistances)
     {
         T distanceSum = 0.0;
 
@@ -55,7 +55,7 @@ protected:
     }
 
     template <Parallelism _Level = Level>
-    std::enable_if_t<isSingleThreaded(_Level), std::vector<T>> calcMeanSum(const Matrix<T>* const data)
+    inline std::enable_if_t<isSingleThreaded(_Level), std::vector<T>> calcMeanSum(const Matrix<T>* const data)
     {
         std::vector<T> meanSum(data->cols(), 0.0);
 
@@ -68,7 +68,7 @@ protected:
     }
 
     template <Parallelism _Level = Level>
-    std::enable_if_t<isMultiThreaded(_Level), std::vector<T>> calcMeanSum(const Matrix<T>* const data)
+    inline std::enable_if_t<isMultiThreaded(_Level), std::vector<T>> calcMeanSum(const Matrix<T>* const data)
     {
         std::vector<T> meanSum(data->cols(), 0.0);
 

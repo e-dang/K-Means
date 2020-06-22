@@ -17,13 +17,13 @@ public:
             m_seed = *seed;
     }
 
-    int32_t selectSingle(const int32_t containerSize) const
+    inline int32_t selectSingle(const int32_t containerSize) const
     {
         auto selection = select(1, containerSize);
         return *selection.begin();
     }
 
-    std::set<int32_t> select(const int32_t sampleSize, const int32_t containerSize) const
+    inline std::set<int32_t> select(const int32_t sampleSize, const int32_t containerSize) const
     {
         static RNGType rng(m_seed);
         static boost::random::uniform_int_distribution<> dist(m_min, containerSize - 1);

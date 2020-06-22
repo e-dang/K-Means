@@ -19,7 +19,7 @@ public:
     {
     }
 
-    Coreset<T> createCoreset(const Matrix<T>* const data, const int32_t& sampleSize) override
+    inline Coreset<T> createCoreset(const Matrix<T>* const data, const int32_t& sampleSize) override
     {
         if (p_data != data || sampleSize != m_sampleSize)
         {
@@ -33,7 +33,7 @@ public:
     }
 
 private:
-    void setState(const Matrix<T>* data, const int32_t& sampleSize)
+    inline void setState(const Matrix<T>* data, const int32_t& sampleSize)
     {
         p_data         = data;
         m_chunkifier   = Chunkifier<Level>(data->numRows());
@@ -42,7 +42,7 @@ private:
         m_distribution = std::vector<T>(data->numRows(), 0.0);
     }
 
-    std::vector<T> calcMean(const Matrix<T>* const data)
+    inline std::vector<T> calcMean(const Matrix<T>* const data)
     {
         auto mean = this->calcMeanSum(data);
         MPI_Allreduce(MPI_IN_PLACE, mean.data(), mean.size(), matchMPIType<T>(), MPI_SUM, MPI_COMM_WORLD);
@@ -52,7 +52,7 @@ private:
         return mean;
     }
 
-    std::vector<T> calcDistsFromMean(const Matrix<T>* const data, const std::vector<T>& mean)
+    inline std::vector<T> calcDistsFromMean(const Matrix<T>* const data, const std::vector<T>& mean)
     {
         std::vector<T> sqDistances(data->numRows(), 0.0);
 
@@ -65,7 +65,7 @@ private:
         return sqDistances;
     }
 
-    void calcDistribution(const std::vector<T>& sqDistances)
+    inline void calcDistribution(const std::vector<T>& sqDistances)
     {
         T totalDistanceSums;
         std::vector<int32_t> uniformSampleCounts(m_chunkifier.numProcs(), 0);
@@ -85,8 +85,8 @@ private:
                        [&totalDistanceSums](const T& dist) { return dist / totalDistanceSums; });
     }
 
-    void calculateSamplingStrategy(std::vector<int32_t>& uniformSampleCounts,
-                                   std::vector<int32_t>& nonUniformSampleCounts, const T& totalDistanceSums)
+    inline void calculateSamplingStrategy(std::vector<int32_t>& uniformSampleCounts,
+                                          std::vector<int32_t>& nonUniformSampleCounts, const T& totalDistanceSums)
     {
         for (int32_t i = 0; i < m_sampleSize; ++i)
         {
@@ -98,7 +98,7 @@ private:
         }
     }
 
-    void updateUniformSampleCounts(std::vector<int32_t>& uniformSampleCounts)
+    inline void updateUniformSampleCounts(std::vector<int32_t>& uniformSampleCounts)
     {
         auto randNum          = getRandFraction() * m_chunkifier.totalNumData();
         int32_t cumulativeSum = 0;
@@ -113,7 +113,7 @@ private:
         }
     }
 
-    void updateNonUniformSampleCounts(std::vector<int32_t>& nonUniformSampleCounts, const T& totalDistanceSums)
+    inline void updateNonUniformSampleCounts(std::vector<int32_t>& nonUniformSampleCounts, const T& totalDistanceSums)
     {
         auto randNum    = getRandFraction() * totalDistanceSums;
         T cumulativeSum = 0.0;
@@ -128,7 +128,7 @@ private:
         }
     }
 
-    Coreset<T> sampleDistribution(const Matrix<T>* const data)
+    inline Coreset<T> sampleDistribution(const Matrix<T>* const data)
     {
         Coreset<T> coreset(m_sampleSize, data->cols());
         std::vector<T> uniformWeights(m_distribution.size(), 1.0 / m_chunkifier.totalNumData());
@@ -140,8 +140,8 @@ private:
         return coreset;
     }
 
-    void appendDataToCoreset(const Matrix<T>* const data, Coreset<T>& coreset, const std::vector<T>& weights,
-                             const int32_t& numSamples)
+    inline void appendDataToCoreset(const Matrix<T>* const data, Coreset<T>& coreset, const std::vector<T>& weights,
+                                    const int32_t& numSamples)
     {
         T partialQ        = 0.5 * (1.0 / static_cast<T>(m_chunkifier.totalNumData()));
         auto selectedIdxs = this->m_weightedSelector.selectMultiple(&weights, numSamples);
@@ -152,7 +152,7 @@ private:
         }
     }
 
-    Coreset<T> distributeCoreset(const Matrix<T>* const data, Coreset<T>& coreset)
+    inline Coreset<T> distributeCoreset(const Matrix<T>* const data, Coreset<T>& coreset)
     {
         // get the number of datapoints in each process' coreset
         auto numCoresetData = coreset.numRows();

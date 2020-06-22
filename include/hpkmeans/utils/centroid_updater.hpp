@@ -12,20 +12,22 @@ class CentroidUpdater
 {
 public:
     template <Parallelism _Level = Level>
-    std::enable_if_t<isSharedMemory(_Level)> updateCentroids(const Matrix<T>* const data, Matrix<T>* const centroids,
-                                                             const VectorView<int32_t>* const assignments,
-                                                             const std::vector<T>* const weights,
-                                                             std::vector<T>* const clusterWeights) const
+    inline std::enable_if_t<isSharedMemory(_Level)> updateCentroids(const Matrix<T>* const data,
+                                                                    Matrix<T>* const centroids,
+                                                                    const VectorView<int32_t>* const assignments,
+                                                                    const std::vector<T>* const weights,
+                                                                    std::vector<T>* const clusterWeights) const
     {
         calcClusterWeights(centroids, assignments, weights, clusterWeights);
         calcNewCentroids(data, centroids, assignments, weights, clusterWeights);
     }
 
     template <Parallelism _Level = Level>
-    std::enable_if_t<isDistributed(_Level)> updateCentroids(const Matrix<T>* const data, Matrix<T>* const centroids,
-                                                            const VectorView<int32_t>* const assignments,
-                                                            const std::vector<T>* const weights,
-                                                            std::vector<T>* const clusterWeights) const
+    inline std::enable_if_t<isDistributed(_Level)> updateCentroids(const Matrix<T>* const data,
+                                                                   Matrix<T>* const centroids,
+                                                                   const VectorView<int32_t>* const assignments,
+                                                                   const std::vector<T>* const weights,
+                                                                   std::vector<T>* const clusterWeights) const
     {
         calcClusterWeights(centroids, assignments, weights, clusterWeights);
 
@@ -36,8 +38,8 @@ public:
     }
 
 private:
-    void calcClusterWeights(Matrix<T>* const centroids, const VectorView<int32_t>* const assignments,
-                            const std::vector<T>* const weights, std::vector<T>* const clusterWeights) const
+    inline void calcClusterWeights(Matrix<T>* const centroids, const VectorView<int32_t>* const assignments,
+                                   const std::vector<T>* const weights, std::vector<T>* const clusterWeights) const
     {
         if (weights == nullptr)
             calcClusterCounts(centroids, assignments, clusterWeights);
@@ -46,9 +48,9 @@ private:
     }
 
     template <Parallelism _Level = Level>
-    std::enable_if_t<isSingleThreaded(_Level)> calcClusterCounts(Matrix<T>* const,
-                                                                 const VectorView<int32_t>* const assignments,
-                                                                 std::vector<T>* const clusterWeights) const
+    inline std::enable_if_t<isSingleThreaded(_Level)> calcClusterCounts(Matrix<T>* const,
+                                                                        const VectorView<int32_t>* const assignments,
+                                                                        std::vector<T>* const clusterWeights) const
     {
         for (int32_t i = 0; i < assignments->viewSize(); ++i)
         {
@@ -57,9 +59,9 @@ private:
     }
 
     template <Parallelism _Level = Level>
-    std::enable_if_t<isMultiThreaded(_Level)> calcClusterCounts(Matrix<T>* const centroids,
-                                                                const VectorView<int32_t>* const assignments,
-                                                                std::vector<T>* const clusterWeights) const
+    inline std::enable_if_t<isMultiThreaded(_Level)> calcClusterCounts(Matrix<T>* const centroids,
+                                                                       const VectorView<int32_t>* const assignments,
+                                                                       std::vector<T>* const clusterWeights) const
     {
 #pragma omp parallel for schedule(static)
         for (int32_t i = 0; i < centroids->numRows(); ++i)
@@ -73,10 +75,9 @@ private:
     }
 
     template <Parallelism _Level = Level>
-    std::enable_if_t<isSingleThreaded(_Level)> calcClusterWeightsImpl(Matrix<T>* const,
-                                                                      const VectorView<int32_t>* const assignments,
-                                                                      const std::vector<T>* const weights,
-                                                                      std::vector<T>* const clusterWeights) const
+    inline std::enable_if_t<isSingleThreaded(_Level)> calcClusterWeightsImpl(
+      Matrix<T>* const, const VectorView<int32_t>* const assignments, const std::vector<T>* const weights,
+      std::vector<T>* const clusterWeights) const
     {
         for (int32_t i = 0; i < assignments->viewSize(); ++i)
         {
@@ -85,10 +86,9 @@ private:
     }
 
     template <Parallelism _Level = Level>
-    std::enable_if_t<isMultiThreaded(_Level)> calcClusterWeightsImpl(Matrix<T>* const centroids,
-                                                                     const VectorView<int32_t>* const assignments,
-                                                                     const std::vector<T>* const weights,
-                                                                     std::vector<T>* const clusterWeights) const
+    inline std::enable_if_t<isMultiThreaded(_Level)> calcClusterWeightsImpl(
+      Matrix<T>* const centroids, const VectorView<int32_t>* const assignments, const std::vector<T>* const weights,
+      std::vector<T>* const clusterWeights) const
     {
 #pragma omp parallel for schedule(static)
         for (int32_t i = 0; i < centroids->numRows(); ++i)
@@ -102,20 +102,22 @@ private:
     }
 
     template <Parallelism _Level = Level>
-    std::enable_if_t<isSharedMemory(_Level)> calcNewCentroids(const Matrix<T>* const data, Matrix<T>* const centroids,
-                                                              const VectorView<int32_t>* const assignments,
-                                                              const std::vector<T>* const weights,
-                                                              std::vector<T>* const clusterWeights) const
+    inline std::enable_if_t<isSharedMemory(_Level)> calcNewCentroids(const Matrix<T>* const data,
+                                                                     Matrix<T>* const centroids,
+                                                                     const VectorView<int32_t>* const assignments,
+                                                                     const std::vector<T>* const weights,
+                                                                     std::vector<T>* const clusterWeights) const
     {
         calcClusterSums(data, centroids, assignments, weights);
         normalizeCentroidsSums(centroids, clusterWeights);
     }
 
     template <Parallelism _Level = Level>
-    std::enable_if_t<isDistributed(_Level)> calcNewCentroids(const Matrix<T>* const data, Matrix<T>* const centroids,
-                                                             const VectorView<int32_t>* const assignments,
-                                                             const std::vector<T>* const weights,
-                                                             std::vector<T>* const clusterWeights) const
+    inline std::enable_if_t<isDistributed(_Level)> calcNewCentroids(const Matrix<T>* const data,
+                                                                    Matrix<T>* const centroids,
+                                                                    const VectorView<int32_t>* const assignments,
+                                                                    const std::vector<T>* const weights,
+                                                                    std::vector<T>* const clusterWeights) const
     {
         calcClusterSums(data, centroids, assignments, weights);
 
@@ -159,8 +161,8 @@ private:
     }
 
     template <Parallelism _Level = Level>
-    std::enable_if_t<isSingleThreaded(_Level)> normalizeCentroidsSums(Matrix<T>* const centroids,
-                                                                      std::vector<T>* const clusterWeights) const
+    inline std::enable_if_t<isSingleThreaded(_Level)> normalizeCentroidsSums(Matrix<T>* const centroids,
+                                                                             std::vector<T>* const clusterWeights) const
     {
         for (int32_t i = 0; i < centroids->numRows(); ++i)
         {
@@ -172,8 +174,8 @@ private:
     }
 
     template <Parallelism _Level = Level>
-    std::enable_if_t<isMultiThreaded(_Level)> normalizeCentroidsSums(Matrix<T>* const centroids,
-                                                                     std::vector<T>* const clusterWeights) const
+    inline std::enable_if_t<isMultiThreaded(_Level)> normalizeCentroidsSums(Matrix<T>* const centroids,
+                                                                            std::vector<T>* const clusterWeights) const
     {
 #pragma omp parallel for schedule(static)
         for (int32_t i = 0; i < centroids->numRows(); ++i)

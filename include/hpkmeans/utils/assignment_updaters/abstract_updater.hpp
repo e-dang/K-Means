@@ -18,8 +18,9 @@ public:
 protected:
     AbstractAssignmentUpdater() : m_distanceFunc(DistanceFunc::instance()) {}
 
-    void updateClosestCentroid(const int32_t dataIdx, const Matrix<T>* const data, const Matrix<T>* const centroids,
-                               VectorView<int32_t>* const assignments, VectorView<T>* const sqDistances) const
+    inline void updateClosestCentroid(const int32_t dataIdx, const Matrix<T>* const data,
+                                      const Matrix<T>* const centroids, VectorView<int32_t>* const assignments,
+                                      VectorView<T>* const sqDistances) const
     {
         auto closestCentroid = this->findClosestCentroid(data->crowBegin(dataIdx), data->crowEnd(dataIdx), centroids);
         assignments->at(dataIdx) = closestCentroid.idx;
@@ -44,7 +45,7 @@ private:
     };
 
     template <typename Iter>
-    ClosestCentroid findClosestCentroid(Iter begin, Iter end, const Matrix<T>* const centroids) const
+    inline ClosestCentroid findClosestCentroid(Iter begin, Iter end, const Matrix<T>* const centroids) const
     {
         ClosestCentroid closestCentroid;
 

@@ -16,7 +16,7 @@ public:
     {
     }
 
-    Coreset<T> createCoreset(const Matrix<T>* const data, const int32_t& sampleSize)
+    inline Coreset<T> createCoreset(const Matrix<T>* const data, const int32_t& sampleSize)
     {
         return p_impl->createCoreset(data, sampleSize);
     }

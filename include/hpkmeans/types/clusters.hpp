@@ -89,22 +89,22 @@ public:
 
     bool operator>(const Clusters& lhs) const { return m_error > lhs.m_error; }
 
-    void clear()
+    inline void clear()
     {
         std::fill(m_sqDistances.begin(), m_sqDistances.end(), std::numeric_limits<T>::max());
         m_centroids.resize(0);
     }
 
-    void addCentroid(const int32_t dataIdx)
+    inline void addCentroid(const int32_t dataIdx)
     {
         auto displacedDataIdx = dataIdx - m_chunkifier.myDisplacement();
         m_centroids.append(p_data->crowBegin(displacedDataIdx), p_data->crowEnd(displacedDataIdx));
     }
 
-    void reserveCentroidSpace() { m_centroids.resize(m_centroids.numRows() + 1); }
+    inline void reserveCentroidSpace() { m_centroids.resize(m_centroids.numRows() + 1); }
 
     template <class CentroidUpdater>
-    void updateCentroids(const CentroidUpdater updater)
+    inline void updateCentroids(const CentroidUpdater updater)
     {
         m_centroids.fill(0.0);
         std::fill(m_clusterWeights.begin(), m_clusterWeights.end(), 0.0);
@@ -112,12 +112,12 @@ public:
     }
 
     template <class AssignmentUpdater>
-    void updateAssignments(const AssignmentUpdater updater)
+    inline void updateAssignments(const AssignmentUpdater updater)
     {
         updater->update(p_data, &m_centroids, &m_assignments, &m_sqDistances);
     }
 
-    void calcError()
+    inline void calcError()
     {
         if constexpr (isDistributed(Level))
             gatherSqDistances();
@@ -128,7 +128,7 @@ public:
             MPI_Bcast(&m_error, 1, matchMPIType<T>(), 0, MPI_COMM_WORLD);
     }
 
-    void copyCentroids(const Clusters<T, Level>& other)
+    inline void copyCentroids(const Clusters<T, Level>& other)
     {
         if (maxSize() != other.maxSize() || m_centroids.cols() != other.m_centroids.cols())
             throw std::length_error(
@@ -137,51 +137,51 @@ public:
         m_centroids = other.m_centroids;
     }
 
-    int32_t size() const { return m_centroids.numRows(); }
+    inline int32_t size() const { return m_centroids.numRows(); }
 
-    int32_t maxSize() const { return m_centroids.rows(); }
+    inline int32_t maxSize() const { return m_centroids.rows(); }
 
-    const VectorView<int32_t>* const assignments() const { return &m_assignments; }
+    inline const VectorView<int32_t>* const assignments() const { return &m_assignments; }
 
-    const VectorView<T>* const sqDistances() const { return &m_sqDistances; }
+    inline const VectorView<T>* const sqDistances() const { return &m_sqDistances; }
 
-    const Matrix<T>* const getCentroids() const { return &m_centroids; }
+    inline const Matrix<T>* const getCentroids() const { return &m_centroids; }
 
-    const T getError() const { return m_error; }
+    inline const T getError() const { return m_error; }
 
     template <Parallelism _Level = Level>
-    std::enable_if_t<isDistributed(_Level), const std::vector<int32_t>&> lengths() const
+    inline std::enable_if_t<isDistributed(_Level), const std::vector<int32_t>&> lengths() const
     {
         return m_chunkifier.lengths();
     }
 
     template <Parallelism _Level = Level>
-    std::enable_if_t<isDistributed(_Level), const std::vector<int32_t>&> displacements() const
+    inline std::enable_if_t<isDistributed(_Level), const std::vector<int32_t>&> displacements() const
     {
         return m_chunkifier.displacements();
     }
 
     template <Parallelism _Level = Level>
-    std::enable_if_t<isDistributed(_Level), const int32_t> totalNumData() const
+    inline std::enable_if_t<isDistributed(_Level), const int32_t> totalNumData() const
     {
         return m_chunkifier.totalNumData();
     }
 
     template <Parallelism _Level = Level>
-    std::enable_if_t<isDistributed(_Level)> bcastCentroids(const int rank)
+    inline std::enable_if_t<isDistributed(_Level)> bcastCentroids(const int rank)
     {
         MPI_Bcast(&*m_centroids.rowBegin(size() - 1), m_centroids.cols(), matchMPIType<T>(), rank, MPI_COMM_WORLD);
     }
 
     template <Parallelism _Level = Level>
-    std::enable_if_t<isDistributed(_Level)> allGatherAssignments()
+    inline std::enable_if_t<isDistributed(_Level)> allGatherAssignments()
     {
         MPI_Allgatherv(MPI_IN_PLACE, m_chunkifier.myLength(), MPI_INT, m_assignments.data(), lengths().data(),
                        displacements().data(), MPI_INT, MPI_COMM_WORLD);
     }
 
     template <Parallelism _Level = Level>
-    std::enable_if_t<isDistributed(_Level)> gatherAssignments(const int rank = 0)
+    inline std::enable_if_t<isDistributed(_Level)> gatherAssignments(const int rank = 0)
     {
         auto displacement = m_chunkifier.myDisplacement();
         MPI_Gatherv(m_assignments.data() + displacement, m_chunkifier.myLength(), MPI_INT, m_assignments.data(),
@@ -189,7 +189,7 @@ public:
     }
 
     template <Parallelism _Level = Level>
-    std::enable_if_t<isDistributed(_Level)> gatherSqDistances(const int rank = 0)
+    inline std::enable_if_t<isDistributed(_Level)> gatherSqDistances(const int rank = 0)
     {
         auto displacement = m_chunkifier.myDisplacement();
         MPI_Gatherv(m_sqDistances.data() + displacement, m_chunkifier.myLength(), matchMPIType<T>(),
@@ -198,7 +198,7 @@ public:
     }
 
 private:
-    void validateWeights()
+    inline void validateWeights()
     {
         if (p_weights != nullptr && p_data->numRows() != static_cast<int32_t>(p_weights->size()))
             throw std::length_error("The data and corresponding weights must have the same number of entries!");

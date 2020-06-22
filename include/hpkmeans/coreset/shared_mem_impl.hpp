@@ -13,7 +13,7 @@ public:
     {
     }
 
-    Coreset<T> createCoreset(const Matrix<T>* const data, const int32_t& sampleSize) override
+    inline Coreset<T> createCoreset(const Matrix<T>* const data, const int32_t& sampleSize) override
     {
         if (p_data != data || sampleSize != m_sampleSize)
         {
@@ -28,14 +28,14 @@ public:
     }
 
 private:
-    void setState(const Matrix<T>* data, const int32_t& sampleSize)
+    inline void setState(const Matrix<T>* data, const int32_t& sampleSize)
     {
         p_data         = data;
         m_sampleSize   = sampleSize;
         m_distribution = std::vector<T>(data->numRows(), 0.0);
     }
 
-    std::vector<T> calcMean(const Matrix<T>* const data)
+    inline std::vector<T> calcMean(const Matrix<T>* const data)
     {
         auto mean = this->calcMeanSum(data);
         std::for_each(mean.begin(), mean.end(), [&data](T val) { val /= static_cast<T>(data->numRows()); });
@@ -43,7 +43,8 @@ private:
     }
 
     template <Parallelism _Level = Level>
-    std::enable_if_t<isSingleThreaded(_Level)> calcDistribution(const std::vector<T>& sqDistances, const T& distanceSum)
+    inline std::enable_if_t<isSingleThreaded(_Level)> calcDistribution(const std::vector<T>& sqDistances,
+                                                                       const T& distanceSum)
     {
         T partialQ = 0.5 * (1.0 / static_cast<T>(sqDistances.size()));
         std::transform(sqDistances.cbegin(), sqDistances.cend(), m_distribution.begin(),
@@ -51,7 +52,8 @@ private:
     }
 
     template <Parallelism _Level = Level>
-    std::enable_if_t<isMultiThreaded(_Level)> calcDistribution(const std::vector<T>& sqDistances, const T& distanceSum)
+    inline std::enable_if_t<isMultiThreaded(_Level)> calcDistribution(const std::vector<T>& sqDistances,
+                                                                      const T& distanceSum)
     {
         T partialQ = 0.5 * (1.0 / static_cast<T>(sqDistances.size()));
 
@@ -62,7 +64,7 @@ private:
         }
     }
 
-    Coreset<T> sampleDistribution(const Matrix<T>* const data)
+    inline Coreset<T> sampleDistribution(const Matrix<T>* const data)
     {
         Coreset<T> coreset(m_sampleSize, data->cols());
 

@@ -32,33 +32,33 @@ public:
 
     const T& operator[](const int32_t idx) const { return m_data[m_displacement + idx]; }
 
-    T& at(const int32_t idx) { return m_data.at(m_displacement + idx); }
+    inline T& at(const int32_t idx) { return m_data.at(m_displacement + idx); }
 
-    const T& at(const int32_t idx) const { return m_data.at(m_displacement + idx); }
+    inline const T& at(const int32_t idx) const { return m_data.at(m_displacement + idx); }
 
-    const int32_t viewSize() const { return m_length; }
+    inline const int32_t viewSize() const { return m_length; }
 
-    const int32_t size() const { return static_cast<int32_t>(m_data.size()); }
+    inline const int32_t size() const { return static_cast<int32_t>(m_data.size()); }
 
-    T* const data() { return m_data.data(); }
+    inline T* const data() { return m_data.data(); }
 
-    const T* const data() const { return m_data.data(); }
+    inline const T* const data() const { return m_data.data(); }
 
-    iterator viewBegin() { return m_data.begin() + m_displacement; }
+    inline iterator viewBegin() { return m_data.begin() + m_displacement; }
 
-    iterator viewEnd() { return m_data.begin() + m_displacement + m_length; }
+    inline iterator viewEnd() { return m_data.begin() + m_displacement + m_length; }
 
-    iterator begin() { return m_data.begin(); }
+    inline iterator begin() { return m_data.begin(); }
 
-    iterator end() { return m_data.end(); }
+    inline iterator end() { return m_data.end(); }
 
-    const_iterator cviewBegin() const { return m_data.cbegin() + m_displacement; }
+    inline const_iterator cviewBegin() const { return m_data.cbegin() + m_displacement; }
 
-    const_iterator cviewEnd() const { return m_data.cbegin() + m_displacement + m_length; }
+    inline const_iterator cviewEnd() const { return m_data.cbegin() + m_displacement + m_length; }
 
-    const_iterator cbegin() const { return m_data.cbegin(); }
+    inline const_iterator cbegin() const { return m_data.cbegin(); }
 
-    const_iterator cend() const { return m_data.cend(); }
+    inline const_iterator cend() const { return m_data.cend(); }
 
 private:
     int32_t m_length;
