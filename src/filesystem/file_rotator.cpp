@@ -1,5 +1,5 @@
 #include <fstream>
-#include <kmeans/filesystem/file_rotator.hpp>
+#include <hpkmeans/filesystem/file_rotator.hpp>
 
 namespace hpkmeans
 {

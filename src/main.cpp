@@ -1,7 +1,7 @@
 #include <boost/timer/timer.hpp>
-#include <kmeans/filesystem/reader.hpp>
-#include <kmeans/filesystem/writer.hpp>
-#include <kmeans/kmeans.hpp>
+#include <hpkmeans/filesystem/reader.hpp>
+#include <hpkmeans/filesystem/writer.hpp>
+#include <hpkmeans/kmeans.hpp>
 
 using namespace hpkmeans;
 typedef double value_t;

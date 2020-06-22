@@ -1,5 +1,5 @@
+#include <hpkmeans/types/parallelism.hpp>
 #include <iostream>
-#include <kmeans/types/parallelism.hpp>
 
 namespace hpkmeans
 {
