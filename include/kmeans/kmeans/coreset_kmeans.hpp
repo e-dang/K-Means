@@ -15,7 +15,7 @@ public:
         m_sampleSize(sampleSize),
         m_coresetCreator(),
         m_assignmentUpdater(),
-        m_bestClusters()
+        m_bestCoresetClusters()
     {
     }
 
@@ -23,17 +23,18 @@ public:
                                         const std::vector<T>* const weights = nullptr) override
     {
         auto coreset = m_coresetCreator.createCoreset(data, m_sampleSize);
+
         auto coresetResults =
-          KMeansImpl<T, Level, DistanceFunc>::fit(coreset.data(), numClusters, numRepeats, coreset.weights());
+          KMeansImpl<T, Level, DistanceFunc>::fit(coreset.getData(), numClusters, numRepeats, coreset.getWeights());
 
         auto newClusters = assignNonCoresetPoints(data, coresetResults);
         newClusters.calcError();
-        this->compareResults(newClusters, m_bestClusters);
+        this->compareResults(newClusters, m_bestCoresetClusters);
 
         return getResults();
     }
 
-    const Clusters<T, Level>* const getResults() const override { return &m_bestClusters; }
+    const Clusters<T, Level>* const getResults() const override { return &m_bestCoresetClusters; }
 
 private:
     template <Parallelism _Level = Level>
@@ -59,6 +60,6 @@ private:
     int32_t m_sampleSize;
     CoresetCreator<T, Level, DistanceFunc> m_coresetCreator;
     AssignmentUpdater<T, Level, DistanceFunc> m_assignmentUpdater;
-    Clusters<T, Level> m_bestClusters;
+    Clusters<T, Level> m_bestCoresetClusters;
 };
 }  // namespace hpkmeans
