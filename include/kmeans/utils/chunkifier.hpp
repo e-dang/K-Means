@@ -14,10 +14,10 @@ class Chunkifier
 public:
     Chunkifier() : m_rank(0), m_numProcs(0), m_totalNumData(0), m_lengths(), m_displacements() {}
 
-    Chunkifier(const int32_t totalNumData) :
-        m_rank(0), m_numProcs(1), m_totalNumData(totalNumData), m_lengths(), m_displacements()
+    Chunkifier(const int32_t numData, const bool isTotal = false) :
+        m_rank(0), m_numProcs(1), m_totalNumData(numData), m_lengths(), m_displacements()
     {
-        initialize();
+        initialize(isTotal);
     }
 
     inline const int rank() const noexcept { return m_rank; }
@@ -38,18 +38,20 @@ public:
 
 private:
     template <Parallelism _Level = Level>
-    inline std::enable_if_t<isSharedMemory(_Level)> initialize()
+    inline std::enable_if_t<isSharedMemory(_Level)> initialize(const bool)
     {
         m_lengths       = std::vector<int32_t>(1, m_totalNumData);
         m_displacements = std::vector<int32_t>(1, 0);
     }
 
     template <Parallelism _Level = Level>
-    inline std::enable_if_t<isDistributed(_Level)> initialize()
+    inline std::enable_if_t<isDistributed(_Level)> initialize(const bool isTotal)
     {
         MPI_Comm_rank(MPI_COMM_WORLD, &m_rank);
         MPI_Comm_size(MPI_COMM_WORLD, &m_numProcs);
-        MPI_Allreduce(MPI_IN_PLACE, &m_totalNumData, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+        if (!isTotal)
+            MPI_Allreduce(MPI_IN_PLACE, &m_totalNumData, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
         int32_t chunk = m_totalNumData / m_numProcs;
         int32_t scrap = chunk + (m_totalNumData % m_numProcs);
