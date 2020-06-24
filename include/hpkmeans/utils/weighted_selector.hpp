@@ -10,7 +10,7 @@ public:
     template <class Container>
     inline int32_t selectSingle(const Container* const weights, typename Container::value_type randomSumFrac) const
     {
-        for (size_t i = 0; i < weights->size(); ++i)
+        for (int32_t i = 0; i < weights->size(); ++i)
         {
             if ((randomSumFrac -= weights->at(i)) <= 0)
                 return i;
