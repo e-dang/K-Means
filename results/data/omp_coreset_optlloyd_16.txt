@@ -1,0 +1,7 @@
+num threads = 16
+Method: optk++
+Parallelism: omp
+Coreset: 1
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+ 0.554840s wall, 4.910000s user + 0.020000s system = 4.930000s CPU (888.5%)
+Error: 1.00083e+07

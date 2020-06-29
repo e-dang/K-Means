@@ -1,0 +1,41 @@
+Method: optk++
+Parallelism: mpi
+Coreset: 0
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 0
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 0
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 0
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 0
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 0
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 0
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 0
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+ 6.852040s wall, 5.640000s user + 1.220000s system = 6.860000s CPU (100.1%)
+Error: 1.00041e+07
+ 6.852184s wall, 6.690000s user + 0.170000s system = 6.860000s CPU (100.1%)
+ 6.852045s wall, 6.670000s user + 0.180000s system = 6.850000s CPU (100.0%)
+ 6.852192s wall, 6.680000s user + 0.170000s system = 6.850000s CPU (100.0%)
+ 6.852039s wall, 6.670000s user + 0.170000s system = 6.840000s CPU (99.8%)
+ 6.852189s wall, 6.670000s user + 0.170000s system = 6.840000s CPU (99.8%)
+ 6.852051s wall, 6.670000s user + 0.170000s system = 6.840000s CPU (99.8%)
+ 6.852172s wall, 6.680000s user + 0.160000s system = 6.840000s CPU (99.8%)

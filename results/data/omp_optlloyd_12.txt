@@ -1,0 +1,6 @@
+Method: optk++
+Parallelism: omp
+Coreset: 0
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+ 5.502088s wall, 43.050000s user + 0.040000s system = 43.090000s CPU (783.2%)
+Error: 1.00041e+07

@@ -1,7 +1,20 @@
 # K-Means
 
 ## Description
-K-Means library written in C++17 using the K-Means algorithms K++<sup>[1]</sup> and Lloyd's algorithm<sup>[2]</sup>. In addition, this library also includes an implementation of a K-Means approximation algorithm using lightweight coresets<sup>[3]</sup>, as well as an optimization to Lloyd's algorithm<sup>[4]</sup>. Each algorithm has been implemented for serial, muli-threaded, distributed, and hybrid execution. The level of parallelism, as well as the distance function that is used for clustering, is selected statically at compile time.
+K-Means library written in C++17 using the K-Means algorithms K++<sup>[1]</sup> and Lloyd's algorithm<sup>[2]</sup>. In addition, this library also includes an implementation of a K-Means approximation algorithm using lightweight coresets<sup>[3]</sup>, as well as an optimization to Lloyd's algorithm<sup>[4]</sup>. Each algorithm has been implemented for serial, muli-threaded, distributed, and hybrid execution. The level of parallelism, as well as the distance function that is used for clustering, is selected statically at compile time. Benchmarks for the optimized Lloyd and lightweight coreset algorithms, which ran on a centOS cluster using a dataset consisting of 1,000,000 datapoints each with dimensionality of 10, organized into 50 clusters, where each cluster was generated from a guassian distribution with standard deviation of 1 in a (-100, 100) box, can be seen below. For each run, the KMeans algorithm was repeated 10 times. In runs that used the lightweight coresets algorithm<sup>[3]</sup>, the sample size was 1/10<sup>th</sup> the size of full dataset. The scripts used to generate the test data and plot the results can be found in the __results__ directory.
+
+<div style="text-align:center">
+<img src="results/plots/omp_optlloyd.png" width="300"/>
+<img src="results/plots/omp_optlloyd_coreset.png" width="300"/>
+</div>
+<div style="text-align:center">
+<img src="results/plots/mpi_optlloyd.png" width="300"/>
+<img src="results/plots/mpi_optlloyd_coreset.png" width="300"/>
+</div>
+<div style="text-align:center">
+<img src="results/plots/hybrid_optlloyd.png" width="300"/>
+<img src="results/plots/hybrid_optlloyd_coreset.png" width="300"/>
+</div>
 
 ## Dependencies
 - C++17
@@ -35,10 +48,10 @@ There is also a __main.cpp__ src file included which can be edited to specify a 
 All code in the current version was written by:
 - Eric Dang
 
-Original version written for our class (all code written prior to 2020) was written by:
+[Original version written for our class](https://docs.google.com/document/d/16eGwxOLUhvTCcHL0FJ_clUwuB37_pZPFDyxGHFDVrWA/edit) (all code written prior to 2020) was written by:
 - Eric Dang
-- Trevor Rollins
-- Will Yang
+- [Trevor Rollins](https://github.com/tkrollins/K-Means)
+- [Will Yang](https://github.com/pr33ch/K-Means)
 
 ## References
 1. Arthur, D.; Vassilvitskii, S. (2007). "[k-means++: the advantages of careful seeding](http://ilpubs.stanford.edu:8090/778/1/2006-13.pdf)" (PDF). Proceedings of the eighteenth annual ACM-SIAM symposium on Discrete algorithms. Society for Industrial and Applied Mathematics Philadelphia, PA, USA. pp. 1027–1035.

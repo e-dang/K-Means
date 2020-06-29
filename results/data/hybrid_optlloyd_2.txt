@@ -1,0 +1,11 @@
+Method: optk++
+Parallelism: hybrid
+Coreset: 0
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: hybrid
+Coreset: 0
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+ 18.165880s wall, 18.080000s user + 0.070000s system = 18.150000s CPU (99.9%)
+Error: 1.00041e+07
+ 18.166229s wall, 18.120000s user + 0.030000s system = 18.150000s CPU (99.9%)

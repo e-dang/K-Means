@@ -1,0 +1,71 @@
+Method: optk++
+Parallelism: mpi
+Coreset: 0
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 0
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 0
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 0
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 0
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 0
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 0
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 0
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 0
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 0
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 0
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 0
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 0
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 0
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+ 4.863029s wall, 4.760000s user + 0.090000s system = 4.850000s CPU (99.7%)
+ 4.863346s wall, 4.820000s user + 0.050000s system = 4.870000s CPU (100.1%)
+ 4.853241s wall, 4.740000s user + 0.110000s system = 4.850000s CPU (99.9%)
+ 4.853117s wall, 4.750000s user + 0.100000s system = 4.850000s CPU (99.9%)
+ 4.863034s wall, 4.770000s user + 0.090000s system = 4.860000s CPU (99.9%)
+ 4.853073s wall, 4.800000s user + 0.050000s system = 4.850000s CPU (99.9%)
+ 4.864020s wall, 4.740000s user + 0.120000s system = 4.860000s CPU (99.9%)
+ 4.864025s wall, 4.730000s user + 0.130000s system = 4.860000s CPU (99.9%)
+ 4.854081s wall, 4.750000s user + 0.100000s system = 4.850000s CPU (99.9%)
+ 4.864186s wall, 4.190000s user + 0.670000s system = 4.860000s CPU (99.9%)
+Error: 1.00041e+07
+ 4.854178s wall, 4.740000s user + 0.120000s system = 4.860000s CPU (100.1%)
+ 4.854321s wall, 4.730000s user + 0.130000s system = 4.860000s CPU (100.1%)
+ 4.864104s wall, 4.730000s user + 0.140000s system = 4.870000s CPU (100.1%)
+ 4.854181s wall, 4.740000s user + 0.110000s system = 4.850000s CPU (99.9%)

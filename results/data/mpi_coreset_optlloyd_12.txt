@@ -1,0 +1,61 @@
+Method: optk++
+Parallelism: mpi
+Coreset: 1
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 1
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 1
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 1
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 1
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 1
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 1
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 1
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 1
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 1
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 1
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 1
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+ 0.555307s wall, 0.520000s user + 0.030000s system = 0.550000s CPU (99.0%)
+ 0.555593s wall, 0.520000s user + 0.030000s system = 0.550000s CPU (99.0%)
+ 0.556254s wall, 0.450000s user + 0.090000s system = 0.540000s CPU (97.1%)
+Error: 1.00141e+07
+ 0.555948s wall, 0.520000s user + 0.030000s system = 0.550000s CPU (98.9%)
+ 0.556130s wall, 0.520000s user + 0.030000s system = 0.550000s CPU (98.9%)
+ 0.555911s wall, 0.530000s user + 0.030000s system = 0.560000s CPU (100.7%)
+ 0.555822s wall, 0.530000s user + 0.020000s system = 0.550000s CPU (99.0%)
+ 0.555916s wall, 0.520000s user + 0.040000s system = 0.560000s CPU (100.7%)
+ 0.556054s wall, 0.520000s user + 0.040000s system = 0.560000s CPU (100.7%)
+ 0.556021s wall, 0.520000s user + 0.040000s system = 0.560000s CPU (100.7%)
+ 0.555789s wall, 0.520000s user + 0.030000s system = 0.550000s CPU (99.0%)
+ 0.555989s wall, 0.530000s user + 0.030000s system = 0.560000s CPU (100.7%)

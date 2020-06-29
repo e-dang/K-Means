@@ -1,0 +1,21 @@
+Method: optk++
+Parallelism: mpi
+Coreset: 1
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 1
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 1
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+Method: optk++
+Parallelism: mpi
+Coreset: 1
+Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
+ 1.246157s wall, 1.230000s user + 0.020000s system = 1.250000s CPU (100.3%)
+ 1.246124s wall, 1.160000s user + 0.090000s system = 1.250000s CPU (100.3%)
+Error: 1.00138e+07
+ 1.246268s wall, 1.220000s user + 0.020000s system = 1.240000s CPU (99.5%)
+ 1.246609s wall, 1.220000s user + 0.030000s system = 1.250000s CPU (100.3%)
