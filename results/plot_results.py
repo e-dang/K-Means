@@ -121,11 +121,11 @@ def parse_method(filename):
 if __name__ == "__main__":
     times = parse_times()
 
-    # opt_serial, opt_parallel = plot_times(times, OMP, OPTLLOYD, SERIAL_COLOR2, PARALLEL_COLOR2)
+    opt_serial, opt_parallel = plot_times(times, OMP, OPTLLOYD, SERIAL_COLOR2, PARALLEL_COLOR2)
     # opt_coreset_serial, opt_coreset_parallel = plot_times(
     #     times, OMP, OPTLLOYD, SERIAL_COLOR1, PARALLEL_COLOR1, coreset=True)
 
-    opt_serial, opt_parallel = plot_times(times, MPI, OPTLLOYD, SERIAL_COLOR2, PARALLEL_COLOR2)
+    # opt_serial, opt_parallel = plot_times(times, MPI, OPTLLOYD, SERIAL_COLOR2, PARALLEL_COLOR2)
     # opt_coreset_serial, opt_coreset_parallel = plot_times(
     #     times, MPI, OPTLLOYD, SERIAL_COLOR1, PARALLEL_COLOR1, coreset=True)
 
@@ -135,7 +135,7 @@ if __name__ == "__main__":
 
     plt.legend(handles=[opt_serial, opt_parallel], loc='center', bbox_to_anchor=(0.825, 0.75))
     # plt.legend(handles=[opt_coreset_serial, opt_coreset_parallel], loc='center', bbox_to_anchor=(0.825, 0.75))
-    plt.title('MPI OptLloyd KMeans')
+    plt.title('OMP OptLloyd KMeans')
     plt.tight_layout()
     # plt.show()
-    plt.savefig('mpi_optlloyd.png', dpi=1400)
+    plt.savefig('omp_optlloyd.png', dpi=1400)
