@@ -46,16 +46,16 @@ Method: optk++
 Parallelism: mpi
 Coreset: 0
 Data: /u/home/e/ericdang/Kmeans/data/data_1000000_10_50.txt
- 8.310808s wall, 6.640000s user + 1.650000s system = 8.290000s CPU (99.7%)
+ 6.529780s wall, 6.100000s user + 0.430000s system = 6.530000s CPU (100.0%)
+ 6.530151s wall, 5.100000s user + 1.420000s system = 6.520000s CPU (99.8%)
 Error: 1.00041e+07
- 8.310821s wall, 7.590000s user + 0.700000s system = 8.290000s CPU (99.7%)
- 8.311051s wall, 7.650000s user + 0.660000s system = 8.310000s CPU (100.0%)
- 8.310660s wall, 7.580000s user + 0.700000s system = 8.280000s CPU (99.6%)
- 8.311060s wall, 7.610000s user + 0.690000s system = 8.300000s CPU (99.9%)
- 8.310820s wall, 7.560000s user + 0.640000s system = 8.200000s CPU (98.7%)
- 8.310910s wall, 7.560000s user + 0.700000s system = 8.260000s CPU (99.4%)
- 8.310616s wall, 7.600000s user + 0.690000s system = 8.290000s CPU (99.8%)
- 8.310910s wall, 7.580000s user + 0.710000s system = 8.290000s CPU (99.7%)
- 8.310655s wall, 7.620000s user + 0.680000s system = 8.300000s CPU (99.9%)
- 8.310975s wall, 7.600000s user + 0.700000s system = 8.300000s CPU (99.9%)
- 8.311105s wall, 7.570000s user + 0.730000s system = 8.300000s CPU (99.9%)
+ 6.530167s wall, 6.090000s user + 0.430000s system = 6.520000s CPU (99.8%)
+ 6.530173s wall, 6.110000s user + 0.420000s system = 6.530000s CPU (100.0%)
+ 6.530167s wall, 6.090000s user + 0.430000s system = 6.520000s CPU (99.8%)
+ 6.530165s wall, 6.080000s user + 0.440000s system = 6.520000s CPU (99.8%)
+ 6.530829s wall, 6.090000s user + 0.430000s system = 6.520000s CPU (99.8%)
+ 6.530951s wall, 6.090000s user + 0.430000s system = 6.520000s CPU (99.8%)
+ 6.531003s wall, 6.070000s user + 0.450000s system = 6.520000s CPU (99.8%)
+ 6.521091s wall, 6.000000s user + 0.440000s system = 6.440000s CPU (98.8%)
+ 6.531007s wall, 6.080000s user + 0.450000s system = 6.530000s CPU (100.0%)
+ 6.531043s wall, 6.000000s user + 0.430000s system = 6.430000s CPU (98.5%)
